@@ -1,0 +1,45 @@
+# Force LF line endings on the artifact and tooling so the manifest's
+# sha256 hashes verify identically on Windows and Unix checkouts.
+*.html        text eol=lf
+*.mjs         text eol=lf
+*.py          text eol=lf
+*.md          text eol=lf
+*.json        text eol=lf
+LICENSE       text eol=lf
+# Content-addressed/witnessed artifacts whose bytes are sha256-pinned but whose
+# extensions the rules above do NOT match. The image witnesses (*.svg, hashed
+# into the fixture's data-witness attrs) and the sealed gold/canary corpora
+# (*.jsonl — note *.json does NOT match *.jsonl) must stay LF so their hashes
+# verify identically on Windows (autocrlf) and Unix checkouts.
+*.svg         text eol=lf
+*.jsonl       text eol=lf
+
+# --- export-ignore: restrict `git archive` to the public share bundle ---
+# The bundle ships: SPEC.md README.md LICENSE EVIDENCE.md doc.html verify.mjs
+# verify.py build-doc.mjs .gitattributes examples/* tools/conformance.mjs.
+# Everything below is internal source/research and is excluded from archives.
+# (Derived from `git ls-files`; the ship set is everything NOT listed here.)
+.agents/                  export-ignore
+.claude/                  export-ignore
+.gitignore                export-ignore
+MISSION.md                export-ignore
+USAGE.md                  export-ignore
+VOWS.md                   export-ignore
+_meta/                    export-ignore
+build/                    export-ignore
+build.mjs                 export-ignore
+canon/                    export-ignore
+count_loc.py              export-ignore
+experiments/              export-ignore
+plans/                    export-ignore
+research/                 export-ignore
+runs/                     export-ignore
+scriptorium/              export-ignore
+scripts/                  export-ignore
+test_case_sensitivity.py  export-ignore
+tests/                    export-ignore
+trials/                   export-ignore
+# tools/ ships, but these three internal files within it do not:
+tools/check_pairs.py      export-ignore
+tools/PAIRS.md            export-ignore
+tools/pairs.json          export-ignore

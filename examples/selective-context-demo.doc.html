@@ -1,0 +1,1509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zephyr Stream API Reference — Selective-Context Demo (doc.html v0.3)</title>
+<style>
+  :root { --fg:#1a1a1a; --bg:#fafaf7; --muted:#666; --accent:#2a4d6e; --rule:#ddd; --code-bg:#f0ede5; }
+  @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e3; --bg:#1a1a1a; --muted:#999; --accent:#8ab4d4; --rule:#333; --code-bg:#252523; } }
+  body { font: 16px/1.6 -apple-system, "Segoe UI", Roboto, sans-serif; max-width: 780px; margin: 2rem auto; padding: 0 1.5rem; color: var(--fg); background: var(--bg); }
+  h1 { font-size: 1.5rem; line-height: 1.25; margin: 0 0 0.6rem; }
+  h2 { font-size: 1.3rem; }
+  p, ul { margin: 0.8rem 0; }
+  pre { background: var(--code-bg); padding: 0.8rem 1rem; border-radius: 4px; overflow-x: auto; }
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid currentColor; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 3px; font: 0.92em "SF Mono", Consolas, monospace; }
+  table { border-collapse: collapse; width: 100%; margin: 0.8rem 0; }
+  th, td { border: 1px solid var(--rule); padding: 0.4rem 0.6rem; text-align: left; }
+  th { background: var(--code-bg); }
+  section { margin: 2.5rem 0; padding: 1.5rem; background: var(--code-bg); border-radius: 8px; }
+  header { margin-bottom: 1rem; }
+  .header-meta { color: var(--muted); font-size: 0.9em; }
+  #manifest { background: var(--code-bg); padding: 1.5rem; border-radius: 8px; margin: 2rem 0; }
+  #manifest ol { list-style: decimal; padding-left: 1.5rem; }
+  #manifest li { margin: 0.8rem 0; }
+  #manifest .title { font-weight: 600; }
+  #manifest .summary { display: block; color: var(--muted); font-size: 0.92em; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 style="border:none;">Zephyr Stream API Reference</h1>
+  <p class="header-meta">doc.html v0.3 &middot; 2026-06-15 &middot; 152 sections &middot; 75,214 chars &middot; self-verifying (node verify.mjs &lt;this file&gt;)</p>
+  <p>Fictional reference corpus for the doc.html v0.3 selective-context demonstration. Read the manifest below; drill to any section by its <code>#id</code>.</p>
+</header>
+
+<nav id="manifest" aria-label="Document manifest">
+  <ol>
+    <li><a href="#about-this-document" data-witness="4c27598eb7edfa3d4f5ecedb4b3528f4ca0689649500f2e3d81fea3c6fa9539d" data-char-count="1700"><span class="title">About this document — read the manifest, not the file</span> <span class="summary">Why this body is large on purpose: 200 sections, many thousands of characters — loading all of it is wasteful. Read the manifest, drill by #id, load only what you need. Scaling note included.</span></a></li>
+    <li><a href="#resource-streams" data-witness="3a9015d6fa7c0c28aca26d048501e4590b71cd6107f623f1f7525515c3cdeeb6" data-char-count="453"><span class="title">Streams resource</span> <span class="summary">Create, list, get, and delete named streams. A stream is the top-level container for an ordered log of events.</span></a></li>
+    <li><a href="#resource-producers" data-witness="2ed59d7569684ef3fa6e176af05de9b458fae4b8db030797f698d9355122f407" data-char-count="471"><span class="title">Producers resource</span> <span class="summary">Register and manage producers. A producer holds credentials and rate-limit state for a publishing client.</span></a></li>
+    <li><a href="#resource-consumers" data-witness="bf02ce05268b8473880e39771c5a9e8849eb071c48afffb4aecc567a3a434bc5" data-char-count="561"><span class="title">Consumers resource</span> <span class="summary">Manage consumer registrations and offset checkpoints. Consumers track their own read position independently.</span></a></li>
+    <li><a href="#resource-events" data-witness="bbd6bdceeca1ed0f0919613364dfa31846194c4f230143100c8cdc0013388786" data-char-count="377"><span class="title">Events resource</span> <span class="summary">Append events to a stream and read slices of the event log. Events are immutable once written.</span></a></li>
+    <li><a href="#resource-checkpoints" data-witness="6bbe6c7314eebcfbbd239813b7e72aa7d882334282734376a15efef68d7fa1ad" data-char-count="432"><span class="title">Checkpoints resource</span> <span class="summary">Explicitly set or read a consumer&amp;#39;s acknowledged offset without consuming new events.</span></a></li>
+    <li><a href="#resource-schemas" data-witness="578dc5f0fa030f96dfde1a831b1478e932a047f8cf8aba96c7b4ef137c41ab25" data-char-count="446"><span class="title">Schemas resource</span> <span class="summary">Register Avro or JSON Schema definitions and associate them with a stream for producer-side validation.</span></a></li>
+    <li><a href="#resource-acls" data-witness="13ca1ee000b7fb44eb989e15f8097768b2167fe8643c45e14c07288e8385c526" data-char-count="453"><span class="title">Access-control lists (ACL)</span> <span class="summary">Grant or revoke per-stream, per-operation permissions for principals (users or service accounts).</span></a></li>
+    <li><a href="#resource-metrics" data-witness="2dbd69d2cc3a7432a0b044eb8e4f30e46dc37b654f27ef1710860368710d7b67" data-char-count="387"><span class="title">Metrics resource</span> <span class="summary">Pull per-stream throughput, lag, and error counters. Metrics are sampled at 10-second granularity.</span></a></li>
+    <li><a href="#resource-replicas" data-witness="16044a424affaed094ed4f4ce7a07a0bacb5d148102181e42982bb093e42742a" data-char-count="385"><span class="title">Replicas resource</span> <span class="summary">Inspect and trigger manual rebalance of the partition replica assignment for a stream.</span></a></li>
+    <li><a href="#resource-snapshots" data-witness="30692c03c20083a19c6f837a995cc9bf9bd619465a8ba78f312f316edab800ea" data-char-count="466"><span class="title">Snapshots resource</span> <span class="summary">Create point-in-time snapshots of a stream&amp;#39;s current head offset for use in backup or migration.</span></a></li>
+    <li><a href="#method-create-stream" data-witness="e43112834898ca68297b5969cb9b2eb2ba3e6db528894505ba63cf3ef2453d03" data-char-count="1039"><span class="title">POST /streams — Create a new named stream</span> <span class="summary">Creates a new stream. The stream name must be unique within the account and match [a-z][a-z0-9-]{0,62}. Returns the stream object with its a</span></a></li>
+    <li><a href="#method-list-streams" data-witness="b4616a6607debffe74141285b6f45c8e987e5e99019163207e55218f81db61d3" data-char-count="686"><span class="title">GET /streams — List all streams in the account</span> <span class="summary">Returns a paginated list of stream objects ordered by creation time (newest first). Use cursor for pagination.</span></a></li>
+    <li><a href="#method-get-stream" data-witness="cc6a3242dd47918cad68a7194f11c8e1cb26ff76b089d0bd4dc4128be619fe70" data-char-count="513"><span class="title">GET /streams/{stream_id} — Get a single stream by ID</span> <span class="summary">Returns the full stream object for the given stream_id.</span></a></li>
+    <li><a href="#method-delete-stream" data-witness="22a303de0886d2fdf786d867fea7748e3e69ca5949b36a6a8d0211b45530a21f" data-char-count="642"><span class="title">DELETE /streams/{stream_id} — Delete a stream and all its data</span> <span class="summary">Permanently deletes a stream and all retained events. This operation is irreversible. All active producers and consumers will receive a STRE</span></a></li>
+    <li><a href="#method-create-producer" data-witness="9024326eae3445df128fd35483c1711c6765d78cbd68eef070a95de236232781" data-char-count="916"><span class="title">POST /streams/{stream_id}/producers — Register a producer</span> <span class="summary">Creates a producer credential bound to the given stream. Returns a producer_secret in the response body — this is the only time the secret i</span></a></li>
+    <li><a href="#method-list-producers" data-witness="6e55be12801964d06a4cd3bdfedb7ba64c2f3c0306a330b7eb3aacd56a342d1e" data-char-count="502"><span class="title">GET /streams/{stream_id}/producers — List producers on a stream</span> <span class="summary">Returns all registered producers for the stream. Secrets are never returned after creation.</span></a></li>
+    <li><a href="#method-delete-producer" data-witness="4883404817f88001116687c96f521be20b0bd5f4eb73e48e3666162a09550331" data-char-count="672"><span class="title">DELETE /streams/{stream_id}/producers/{producer_id} — Revoke a producer credential</span> <span class="summary">Immediately revokes the producer credential. Any in-flight publish attempts using this credential will fail with CREDENTIAL_REVOKED.</span></a></li>
+    <li><a href="#method-create-consumer" data-witness="a65df7cecf0437baac62563ac3db7029b13cf785b452a59405eae828c2f81868" data-char-count="852"><span class="title">POST /streams/{stream_id}/consumers — Register a consumer</span> <span class="summary">Creates a consumer registration that tracks an independent offset into the stream. The initial offset defaults to earliest (head of the log </span></a></li>
+    <li><a href="#method-get-consumer" data-witness="7d592bafecf5f962f2f9551a4fde8e8ba7f664d49af317d4866c9ed778c2d00a" data-char-count="648"><span class="title">GET /streams/{stream_id}/consumers/{consumer_id} — Get consumer state</span> <span class="summary">Returns the consumer object including its current acknowledged offset and lag (events behind the stream head).</span></a></li>
+    <li><a href="#method-patch-consumer" data-witness="e0848d52c5950b60acf1107ee24fa27eac4fdc73d0cacf61cabdf3d8eaed8afe" data-char-count="870"><span class="title">PATCH /streams/{stream_id}/consumers/{consumer_id} — Update consumer metadata</span> <span class="summary">Update the consumer&amp;#39;s label or rate-limit settings. Offset cannot be changed via PATCH; use the checkpoint endpoint.</span></a></li>
+    <li><a href="#method-delete-consumer" data-witness="4769dd6d6092a660d64cecf4c2205c3c5268e24d5dd5b3567c1eef10ce10a74d" data-char-count="578"><span class="title">DELETE /streams/{stream_id}/consumers/{consumer_id} — Delete a consumer registration</span> <span class="summary">Removes the consumer and its tracked offset. The stream data is unaffected.</span></a></li>
+    <li><a href="#method-append-events" data-witness="5d419c89598fcf1936fdedd26f7c27c14e1be62eb9ffcc80d250e778c462ba0f" data-char-count="1069"><span class="title">POST /streams/{stream_id}/events — Append events to a stream</span> <span class="summary">Publishes one or more events in a single atomic batch. The batch size is limited to 1,000 events or 4 MB of payload, whichever is smaller. E</span></a></li>
+    <li><a href="#method-read-events" data-witness="b6d1d2f68dad4c0020b7ec72f89466c3631c7a8a815ff83f434f8212ef0ae444" data-char-count="1217"><span class="title">GET /streams/{stream_id}/events — Read a slice of the event log</span> <span class="summary">Returns up to limit events starting at from_offset. If from_offset is not supplied, the consumer&amp;#39;s current offset is used (requires cons</span></a></li>
+    <li><a href="#method-set-checkpoint" data-witness="bea4b355f7efe33eab26fa83cbf1eedd496294573bcb3669d2fe149d14da7bfe" data-char-count="805"><span class="title">PUT /streams/{stream_id}/consumers/{consumer_id}/checkpoint — Advance consumer offset</span> <span class="summary">Explicitly advances the consumer&amp;#39;s acknowledged offset without reading new events. Useful for resetting or fast-forwarding.</span></a></li>
+    <li><a href="#method-get-checkpoint" data-witness="897ef5bf953e290071d905fef38083dbecab5c5b071613c00a7a2a97d98846b8" data-char-count="674"><span class="title">GET /streams/{stream_id}/consumers/{consumer_id}/checkpoint — Read consumer checkpoint</span> <span class="summary">Returns only the consumer&amp;#39;s current offset, lag, and last-acknowledged timestamp without the full consumer object.</span></a></li>
+    <li><a href="#method-register-schema" data-witness="2650539c6cc78d7b066dafec0b2644908ed88bec43bb5957e34a22368662426c" data-char-count="791"><span class="title">POST /schemas — Register a schema</span> <span class="summary">Registers a new Avro or JSON Schema definition. Returns a schema_id that can be associated with a stream.</span></a></li>
+    <li><a href="#method-list-schemas" data-witness="ce37de6f1ddc7109e862ceb4cece8dca41d9bae32163678f113ed663095e6935" data-char-count="564"><span class="title">GET /schemas — List all registered schemas</span> <span class="summary">Returns all schemas registered in the account.</span></a></li>
+    <li><a href="#method-get-schema" data-witness="47cc9ead642df9a65cc82a019840fa3c015fcbe45d9459eec686f52ad5fdd10e" data-char-count="443"><span class="title">GET /schemas/{schema_id} — Get a schema by ID</span> <span class="summary">Returns the full schema object including its definition.</span></a></li>
+    <li><a href="#method-delete-schema" data-witness="a10dc2b6748ef110cff91f4dbcffc77643f96556af1106ea368b05bef8a8d4c7" data-char-count="483"><span class="title">DELETE /schemas/{schema_id} — Delete a schema</span> <span class="summary">Deletes the schema definition. Fails if any stream currently references this schema.</span></a></li>
+    <li><a href="#method-set-acl" data-witness="8f3a073a325740bf664434e5f82679565874caf248d22ed62e4c141af63340b9" data-char-count="818"><span class="title">PUT /streams/{stream_id}/acl — Set ACL entry for a principal</span> <span class="summary">Grants or updates permissions for a principal on the given stream. Supported operations: read, write, admin.</span></a></li>
+    <li><a href="#method-get-acl" data-witness="1f548955a3b96e97631721da0694714c792c9f16fd8f71c068548572820f0a29" data-char-count="450"><span class="title">GET /streams/{stream_id}/acl — List ACL entries for a stream</span> <span class="summary">Returns all principal-to-permission mappings for the stream.</span></a></li>
+    <li><a href="#method-delete-acl-entry" data-witness="bfed5884b80127f74c103f908fbce00cc6cdff92c267b2f2bbb1072667c6c8a7" data-char-count="611"><span class="title">DELETE /streams/{stream_id}/acl/{principal_id} — Remove an ACL entry</span> <span class="summary">Revokes all permissions for the principal on the stream. The principal loses all access immediately.</span></a></li>
+    <li><a href="#method-get-metrics" data-witness="0d6ff66ca68109873fa8710a27174e65017cfdb833d5e5054a71483176cb49c6" data-char-count="832"><span class="title">GET /streams/{stream_id}/metrics — Get stream throughput metrics</span> <span class="summary">Returns a time-series of ingest rate, consume rate, and error rate, sampled at 10-second intervals. The window covers the last hour by defau</span></a></li>
+    <li><a href="#method-get-lag-metrics" data-witness="8ddead0f3f84efecf5655cebce9440023b18ce5b52a81f470746415f43de90f6" data-char-count="522"><span class="title">GET /streams/{stream_id}/metrics/lag — Get per-consumer lag metrics</span> <span class="summary">Returns the current lag (events behind head) for every consumer registered on the stream.</span></a></li>
+    <li><a href="#method-get-replicas" data-witness="d8290c4fd29fcf2b82c03b14ac2aa21970931c911d3d6b9edf54a29ae286c61f" data-char-count="517"><span class="title">GET /streams/{stream_id}/replicas — Inspect replica assignment</span> <span class="summary">Returns the current partition-to-broker assignment for the stream, including replica health status.</span></a></li>
+    <li><a href="#method-rebalance-replicas" data-witness="425ccc92ffaa25a5c469cbdeefa1200537db79085ff2d1aaaba5d6f2eea51bcf" data-char-count="629"><span class="title">POST /streams/{stream_id}/replicas/rebalance — Trigger replica rebalance</span> <span class="summary">Initiates a background rebalance of partition replicas across brokers. Returns immediately; poll GET /streams/{stream_id}/replicas to observ</span></a></li>
+    <li><a href="#method-create-snapshot" data-witness="dc958acc432e97cbced4deafdfc8de2ef19a16ec85a2ac0c88103547d2f79701" data-char-count="642"><span class="title">POST /streams/{stream_id}/snapshots — Create a stream snapshot</span> <span class="summary">Records the current head offset as a named snapshot. Snapshots do not preserve event data; they record a position for migration or backup bo</span></a></li>
+    <li><a href="#method-list-snapshots" data-witness="8846c99eebdb1ef64c1c174dc7290a50e1232c7c8faf8359c780a4014f528613" data-char-count="462"><span class="title">GET /streams/{stream_id}/snapshots — List snapshots for a stream</span> <span class="summary">Returns all snapshots for the stream, ordered by creation time.</span></a></li>
+    <li><a href="#method-delete-snapshot" data-witness="edc6dfb735307ea3983352837b0e4d7a181fda345116c24231f7c71d3fdba5e9" data-char-count="552"><span class="title">DELETE /streams/{stream_id}/snapshots/{snapshot_id} — Delete a snapshot</span> <span class="summary">Removes the snapshot record. Stream data is unaffected.</span></a></li>
+    <li><a href="#error-stream-not-found" data-witness="b1980789d2165f80d020625ae399ea913acda3d940df84655c1615cbb45f7a4d" data-char-count="365"><span class="title">Error: STREAM_NOT_FOUND (HTTP 404)</span> <span class="summary">The requested stream does not exist or has been deleted.</span></a></li>
+    <li><a href="#error-producer-not-found" data-witness="c8fd4911eb9e1cd7d77166fd29b11d05c37474a17feefc6b27eefae89df06bf7" data-char-count="359"><span class="title">Error: PRODUCER_NOT_FOUND (HTTP 404)</span> <span class="summary">The producer ID does not exist on this stream.</span></a></li>
+    <li><a href="#error-consumer-not-found" data-witness="c20dfc2b2f353f39465aeca3422e3e92a662314a6d6f266309b61da35a910d47" data-char-count="359"><span class="title">Error: CONSUMER_NOT_FOUND (HTTP 404)</span> <span class="summary">The consumer ID does not exist on this stream.</span></a></li>
+    <li><a href="#error-schema-not-found" data-witness="e1ae4ec2952f62c81215da9afb7bac68de3466e94844c56f58e43f331d8dc7e3" data-char-count="354"><span class="title">Error: SCHEMA_NOT_FOUND (HTTP 404)</span> <span class="summary">The schema ID does not exist in this account.</span></a></li>
+    <li><a href="#error-snapshot-not-found" data-witness="b5fbe0682c8397e2dec1a6f579ca2b8b68d8f4c5282524fdfebc8e73b423be71" data-char-count="359"><span class="title">Error: SNAPSHOT_NOT_FOUND (HTTP 404)</span> <span class="summary">The snapshot ID does not exist on this stream.</span></a></li>
+    <li><a href="#error-stream-name-conflict" data-witness="153a457802f380f018e80d2bcc7cb4ec7c71908558ddf40d241fc634f6e7ddea" data-char-count="371"><span class="title">Error: STREAM_NAME_CONFLICT (HTTP 409)</span> <span class="summary">A stream with this name already exists in the account.</span></a></li>
+    <li><a href="#error-schema-in-use" data-witness="68766bd93edbc18f6db8791c4adac8057f9200407a963f982b3d0a5cfcc4bf5d" data-char-count="373"><span class="title">Error: SCHEMA_IN_USE (HTTP 409)</span> <span class="summary">The schema is referenced by one or more streams and cannot be deleted.</span></a></li>
+    <li><a href="#error-rebalance-in-progress" data-witness="0ea577414516c46ce558fa2bb0bea356ceb506d26b79ce8cf4f5aace0dfa67d2" data-char-count="425"><span class="title">Error: REBALANCE_IN_PROGRESS (HTTP 409)</span> <span class="summary">A replica rebalance is already running for this stream. Wait for it to complete before triggering another.</span></a></li>
+    <li><a href="#error-snapshot-pending" data-witness="561551e6d98d322d63aeb3eea1e13bfb998d5a5d4fcb85f9d4f36829ae802cc8" data-char-count="408"><span class="title">Error: SNAPSHOT_PENDING (HTTP 409)</span> <span class="summary">A snapshot operation is in progress; stream deletion is blocked until it completes or is cancelled.</span></a></li>
+    <li><a href="#error-stream-deleted" data-witness="49daae65647effa6f9dcd868f52380ce5a46ec5479ebde9df074e15d40342947" data-char-count="409"><span class="title">Error: STREAM_DELETED (HTTP 410)</span> <span class="summary">The stream was deleted after the operation was initiated. Abort all producers and consumers bound to it.</span></a></li>
+    <li><a href="#error-credential-revoked" data-witness="cfbeb26b4d5263626e6f45ed9d0f052b3be3507e7e9313b39802e47fd156e07e" data-char-count="382"><span class="title">Error: CREDENTIAL_REVOKED (HTTP 401)</span> <span class="summary">The producer credential has been revoked. Re-register a new producer.</span></a></li>
+    <li><a href="#error-batch-too-large" data-witness="1e7fa40300a04f1491d47bfe0eb92398451fd5fa7fc65765ef95a3b20bce6059" data-char-count="392"><span class="title">Error: BATCH_TOO_LARGE (HTTP 413)</span> <span class="summary">The event batch exceeds the 1,000-event or 4 MB limit. Split it into smaller batches.</span></a></li>
+    <li><a href="#error-offset-out-of-range" data-witness="63c606a9bef05be02d90c48e5b68d909fffa62bd76f17b01e20a4465ae3b8481" data-char-count="418"><span class="title">Error: OFFSET_OUT_OF_RANGE (HTTP 409)</span> <span class="summary">The requested offset is below the earliest retained offset or above the current head. Adjust and retry.</span></a></li>
+    <li><a href="#error-validation-failed" data-witness="074a475b67128921c506510386a6a965f298211db37a28a7ea6e2ce2c8e0d075" data-char-count="406"><span class="title">Error: VALIDATION_FAILED (HTTP 422)</span> <span class="summary">The event payload failed schema validation. The response body contains per-field error details.</span></a></li>
+    <li><a href="#error-rate-limit-exceeded" data-witness="6cb23483960e8d9081cfc877b5a136abbce8f852fbacbb8fa8e2097e4f0bf944" data-char-count="447"><span class="title">Error: RATE_LIMIT_EXCEEDED (HTTP 429)</span> <span class="summary">The producer or consumer has exceeded its configured rate limit. Back off and retry after the Retry-After header value.</span></a></li>
+    <li><a href="#error-stream-name-invalid" data-witness="b9194748beced4a1881d154bb6349fba84b90672a3b1c1c26be22eaadfac7bd0" data-char-count="380"><span class="title">Error: STREAM_NAME_INVALID (HTTP 422)</span> <span class="summary">The stream name does not match [a-z][a-z0-9-]{0,62}.</span></a></li>
+    <li><a href="#error-schema-invalid" data-witness="4be1d383564991eb9d1b68d6dc68ed77936b3bed9249063a9aa98b41a285e1a2" data-char-count="399"><span class="title">Error: SCHEMA_INVALID (HTTP 422)</span> <span class="summary">The schema definition is syntactically or semantically invalid. See response body for details.</span></a></li>
+    <li><a href="#error-partition-count-invalid" data-witness="76204e8b630244ae18e33592103d83a43bad27ce99943235e4a51aa3ec3f257f" data-char-count="364"><span class="title">Error: PARTITION_COUNT_INVALID (HTTP 422)</span> <span class="summary">Partition count must be between 1 and 64.</span></a></li>
+    <li><a href="#error-acl-forbidden" data-witness="4e24646b1750a828c01835675eabc97f98d7e0640972468afb34fc714db6c4ea" data-char-count="386"><span class="title">Error: ACL_FORBIDDEN (HTTP 403)</span> <span class="summary">The caller does not have admin permission on this stream and cannot modify its ACL.</span></a></li>
+    <li><a href="#error-consumer-locked" data-witness="75f3ba2c16596e8c1dcde91a779525eec8fe9f025915f6a3870865c9ee02798d" data-char-count="413"><span class="title">Error: CONSUMER_LOCKED (HTTP 409)</span> <span class="summary">The consumer is in a locked state (e.g., mid-rebalance) and cannot be modified. Retry after a short delay.</span></a></li>
+    <li><a href="#error-idempotency-conflict" data-witness="958b53840449e0fd04db2ddbbd5b01cd949a7473da8a5ddf65453c55c605af7a" data-char-count="432"><span class="title">Error: IDEMPOTENCY_CONFLICT (HTTP 409)</span> <span class="summary">The idempotency key was used by a different request body within the deduplication window. Use a new key or omit it.</span></a></li>
+    <li><a href="#error-internal-error" data-witness="d3bdddd096ae0dd091ef5180185f5fd6ba966ceda03521cd4daced91faadfbd7" data-char-count="418"><span class="title">Error: INTERNAL_ERROR (HTTP 500)</span> <span class="summary">An unexpected internal error occurred. The error is logged with a request_id for support escalation.</span></a></li>
+    <li><a href="#error-service-unavailable" data-witness="ef574e1d475a11370b8b53257bcfe38507ce81f94cb7baaa094c91150c3aea3b" data-char-count="417"><span class="title">Error: SERVICE_UNAVAILABLE (HTTP 503)</span> <span class="summary">The service is temporarily unavailable (e.g., during rolling upgrade). Retry with exponential backoff.</span></a></li>
+    <li><a href="#error-insufficient-capacity" data-witness="f6b7dc2669f98c038b4ace932723cd5c83523ffbcd8db8bec948049c3f884d73" data-char-count="421"><span class="title">Error: INSUFFICIENT_CAPACITY (HTTP 507)</span> <span class="summary">The account has reached its retained-bytes quota. Reduce retention or delete streams before appending.</span></a></li>
+    <li><a href="#config-retention-ms" data-witness="904d3a67788c84ee292d10cf62bce2038fcf46bd2c50fdd742ec02d7b83ef58a" data-char-count="378"><span class="title">Config: retention_ms</span> <span class="summary">retention_ms (integer, default 86400000) — Log retention window in milliseconds. Events older than this may be evicted. Minimum 60000 (1 minute</span></a></li>
+    <li><a href="#config-partition-count" data-witness="0a055c06b2776f9f8f8295594d7922f35b83134d46b47251a8b4de15e8dbd5b3" data-char-count="395"><span class="title">Config: partition_count</span> <span class="summary">partition_count (integer, default 1) — Number of partitions for a stream. Set at creation; immutable thereafter. Higher partition counts in</span></a></li>
+    <li><a href="#config-max-batch-size-events" data-witness="745d7465f6f8467b16439ff2155adf57d65ba6350fd22ed2bc242bee6b45d761" data-char-count="353"><span class="title">Config: max_batch_size_events</span> <span class="summary">max_batch_size_events (integer, default 1000) — Maximum number of events in a single append batch. Account-level setting; cannot be raised above 100</span></a></li>
+    <li><a href="#config-max-batch-size-bytes" data-witness="e319b46fca4ca14ac68bd82be43219b2147c28abc895f350997f347768abe0f1" data-char-count="362"><span class="title">Config: max_batch_size_bytes</span> <span class="summary">max_batch_size_bytes (integer, default 4194304) — Maximum total payload bytes in a single append batch (4 MB). Requests exceeding this receive BATCH_T</span></a></li>
+    <li><a href="#config-consumer-long-poll-max-ms" data-witness="cfbaa638bdbc6a9215cca553557cc2fc7bba3cea66b5bd5045c348b464a40278" data-char-count="363"><span class="title">Config: consumer_long_poll_max_ms</span> <span class="summary">consumer_long_poll_max_ms (integer, default 30000) — Maximum long-poll wait time for event reads. Clients may request up to this value via wait_ms.</span></a></li>
+    <li><a href="#config-idempotency-window-s" data-witness="31eae6f5b265b5eac76a03a600dad68a982f8394a3c216877acffab5f1238f3c" data-char-count="335"><span class="title">Config: idempotency_window_s</span> <span class="summary">idempotency_window_s (integer, default 60) — Duration in seconds for which an idempotency key deduplicate duplicate append requests.</span></a></li>
+    <li><a href="#config-metrics-resolution-min-s" data-witness="60113307fdcb14387d3065510956ab18c435e0bcb1acc6d4c6e816facc60127a" data-char-count="333"><span class="title">Config: metrics_resolution_min_s</span> <span class="summary">metrics_resolution_min_s (integer, default 10) — Minimum sampling resolution for metric queries. Must be a multiple of this value.</span></a></li>
+    <li><a href="#config-rebalance-timeout-s" data-witness="aa3a5f9435ae53e7bd0a2206a65886bf7213fc8754b6792c654e11c236167ad8" data-char-count="364"><span class="title">Config: rebalance_timeout_s</span> <span class="summary">rebalance_timeout_s (integer, default 120) — Maximum time allowed for a replica rebalance before it is aborted and the stream is left in its pre-</span></a></li>
+    <li><a href="#config-snapshot-ttl-days" data-witness="fc75527c7e6a25687d0879cfaba69b0741495337353bbf053a3142e6060eb774" data-char-count="344"><span class="title">Config: snapshot_ttl_days</span> <span class="summary">snapshot_ttl_days (integer, default 30) — Days after which unclaimed snapshots are automatically purged. Set to 0 to disable automatic purge.</span></a></li>
+    <li><a href="#config-acl-default-deny" data-witness="8039863e0a7362004b0d82f772621408cc148c9e7d1204b70250234f2636d2b5" data-char-count="386"><span class="title">Config: acl_default_deny</span> <span class="summary">acl_default_deny (boolean, default true) — When true, principals not listed in a stream&amp;#39;s ACL have no access. When false, all authenticated</span></a></li>
+    <li><a href="#config-schema-validation-mode" data-witness="56ddcd7e300cb8a72a7d507715ed580e06b040d315bed43c6742a89323abd046" data-char-count="472"><span class="title">Config: schema_validation_mode</span> <span class="summary">schema_validation_mode (string, default strict) — Validation behavior when a producer publishes an event against a stream with an associated schema. s</span></a></li>
+    <li><a href="#config-rate-limit-default-rps" data-witness="1b36d9976044a58d732a4f6455344a006aec7e41ed38b15aba77c6e5362b9f13" data-char-count="386"><span class="title">Config: rate_limit_default_rps</span> <span class="summary">rate_limit_default_rps (integer, default 1000) — Default per-producer and per-consumer rate limit in requests per second. Can be overridden per-produ</span></a></li>
+    <li><a href="#config-consumer-initial-offset" data-witness="bbad3d7c29cf0a50f33ab263d623ea0b3d42e260b773f5ef2225e09f63377467" data-char-count="474"><span class="title">Config: consumer_initial_offset</span> <span class="summary">consumer_initial_offset (string, default earliest) — Default starting offset for newly registered consumers when initial_offset is not specified. earlies</span></a></li>
+    <li><a href="#config-max-consumers-per-stream" data-witness="6c45ab51e37a901c6e1d0e8e95a2d1482263223518cbcf4d10654b10c5479eec" data-char-count="387"><span class="title">Config: max_consumers_per_stream</span> <span class="summary">max_consumers_per_stream (integer, default 200) — Maximum number of consumer registrations per stream. Exceeding this limit returns a 429 error. Raise</span></a></li>
+    <li><a href="#config-max-producers-per-stream" data-witness="9cf2f603e19ef26980e3fa65b95b25a83efd32fc3a75a79da6ad858c237d821a" data-char-count="304"><span class="title">Config: max_producers_per_stream</span> <span class="summary">max_producers_per_stream (integer, default 50) — Maximum number of producer registrations per stream.</span></a></li>
+    <li><a href="#config-max-streams-per-account" data-witness="ccb707c1dab48173faf7146e97d43fd782792403e5307d24add929123cfdca3e" data-char-count="353"><span class="title">Config: max_streams_per_account</span> <span class="summary">max_streams_per_account (integer, default 100) — Maximum number of streams an account may hold simultaneously. Contact support to request an increase</span></a></li>
+    <li><a href="#config-snapshot-auto-purge-enabled" data-witness="416e7ef78df3078db71b24c05c484a380db1e3cb55e6649fde8804841d8ff899" data-char-count="419"><span class="title">Config: snapshot_auto_purge_enabled</span> <span class="summary">snapshot_auto_purge_enabled (boolean, default true) — When true, snapshots older than snapshot_ttl_days are automatically purged. Set to false to retain s</span></a></li>
+    <li><a href="#config-metrics-window-max-s" data-witness="c416e5d59f69e9108c76435fbcd06bb1f96a6e4dea97c0d3cd54d04cadf528f5" data-char-count="370"><span class="title">Config: metrics_window_max_s</span> <span class="summary">metrics_window_max_s (integer, default 86400) — Maximum look-back window clients may request from the metrics endpoint. Default is 24 hours; contact</span></a></li>
+    <li><a href="#config-event-data-encoding" data-witness="069d2eee1161b21d0c27f9649bbc4a2e94313ed743ac33880a59b053ac49224a" data-char-count="476"><span class="title">Config: event_data_encoding</span> <span class="summary">event_data_encoding (string, default base64) — Default encoding for the data field of events returned by GET /events. base64 or json. Individual co</span></a></li>
+    <li><a href="#config-tls-min-version" data-witness="08b592a091d310371e09508f8ebe17c1e77ca5864069df9beba7f4caff73041d" data-char-count="390"><span class="title">Config: tls_min_version</span> <span class="summary">tls_min_version (string, default TLS1.2) — Minimum TLS version accepted by the API gateway. TLS1.2 or TLS1.3. Enterprise accounts default to TL</span></a></li>
+    <li><a href="#config-audit-log-enabled" data-witness="eac58a2b9a975a72b4563a9f0e736bb493f0ad71192dd7a4a4d9d7e9ae9e1f1a" data-char-count="425"><span class="title">Config: audit_log_enabled</span> <span class="summary">audit_log_enabled (boolean, default false) — When enabled, all control-plane operations (stream creation/deletion, ACL changes, schema registrati</span></a></li>
+    <li><a href="#config-cors-allowed-origins" data-witness="4662b0c6119cbd1c829bc2a03b7b1fb0af32caedebf6bbd83192b564bab13376" data-char-count="419"><span class="title">Config: cors_allowed_origins</span> <span class="summary">cors_allowed_origins (array of string, default []) — Explicit list of origins permitted in CORS preflight responses. An empty list disables CORS headers.</span></a></li>
+    <li><a href="#glossary-stream" data-witness="c86b6643fd564945e4eadac7c393c4cea6abf31e485036f00bdfc15cb887d378" data-char-count="257"><span class="title">Glossary: Stream</span> <span class="summary">Definition of &amp;quot;Stream&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-event" data-witness="896398e826681d80f99e4f8f216d0fcc0a9690741f179e32e0409bed63f9bedb" data-char-count="306"><span class="title">Glossary: Event</span> <span class="summary">Definition of &amp;quot;Event&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-offset" data-witness="a77a3507cc93f6d9a3ea9b9c62b073ce5af8ad9cd00523b8238a7b2696bf5013" data-char-count="238"><span class="title">Glossary: Offset</span> <span class="summary">Definition of &amp;quot;Offset&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-partition" data-witness="99747d98f41fe55fe00b057db3781ef8d0e1623c3b32ac6d075c82083d56c96a" data-char-count="267"><span class="title">Glossary: Partition</span> <span class="summary">Definition of &amp;quot;Partition&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-producer" data-witness="dbed43a00e4398eedd2b8ab625ac3c40219f382210f29eebaf23eb51a40ad278" data-char-count="235"><span class="title">Glossary: Producer</span> <span class="summary">Definition of &amp;quot;Producer&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-consumer" data-witness="2805769a0096e609e7d22e18f342c1f30ff35457647afa5c477cc3f14a1d334f" data-char-count="211"><span class="title">Glossary: Consumer</span> <span class="summary">Definition of &amp;quot;Consumer&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-lag" data-witness="ef4423695c57ebade927fc65554c394d0e8fc647dd161153c8a96cb0cfbb1a59" data-char-count="257"><span class="title">Glossary: Lag</span> <span class="summary">Definition of &amp;quot;Lag&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-checkpoint" data-witness="9972ec83fb169735600386913e6a78e977ca5b0531c196093baa947a3816a3c4" data-char-count="306"><span class="title">Glossary: Checkpoint</span> <span class="summary">Definition of &amp;quot;Checkpoint&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-schema" data-witness="92df2df4b9f6b2eaf557e2f0f80be153311c9b275efe2fadc05abf341d090852" data-char-count="223"><span class="title">Glossary: Schema</span> <span class="summary">Definition of &amp;quot;Schema&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-idempotency-key" data-witness="6f47b72e6c081d6a8344d6a03ac31511fa3f2a99ed284c2ea3c0d6be1a31a64d" data-char-count="273"><span class="title">Glossary: Idempotency key</span> <span class="summary">Definition of &amp;quot;Idempotency key&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-acl" data-witness="38bcdd8ee60270f98c7689c672dbcf34eaa03568cc1f407ad181411b4d5e800d" data-char-count="299"><span class="title">Glossary: Access-control list (ACL)</span> <span class="summary">Definition of &amp;quot;Access-control list (ACL)&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-principal" data-witness="59fb3ec95ed0b3125b0f0d0e62ab2e4e3aca7b5b2a0dd41e4d971c8d33d071f3" data-char-count="192"><span class="title">Glossary: Principal</span> <span class="summary">Definition of &amp;quot;Principal&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-broker" data-witness="a9132f62f33db833a0bbabbe559d7987683423a651290a9ed8dd369e4930a0a0" data-char-count="216"><span class="title">Glossary: Broker</span> <span class="summary">Definition of &amp;quot;Broker&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-replica" data-witness="bfbe05542eb0f352eece6743feb221ffb36150a0eac4be545f6ca6b67c2bb178" data-char-count="215"><span class="title">Glossary: Replica</span> <span class="summary">Definition of &amp;quot;Replica&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-rebalance" data-witness="32b43389f770c42f1bea9d71b4db7b1aeca2814f08c12b12dc118cc7ce602db9" data-char-count="256"><span class="title">Glossary: Rebalance</span> <span class="summary">Definition of &amp;quot;Rebalance&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-snapshot" data-witness="ed21d3ecaf5e9a92cdb13ba36bff17d38d4134e2c0d1b5cf136a9fb3df210dfa" data-char-count="227"><span class="title">Glossary: Snapshot</span> <span class="summary">Definition of &amp;quot;Snapshot&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-retention" data-witness="e9bf190b27e8e5badd2830b85b7cb0fc9de61cc923a6a028f6abfb03b0341988" data-char-count="284"><span class="title">Glossary: Retention</span> <span class="summary">Definition of &amp;quot;Retention&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-head" data-witness="1059a71e9295f87a0699b0bdb7d8d6c664b89df6661d29dc502d9c439d51121f" data-char-count="190"><span class="title">Glossary: Head</span> <span class="summary">Definition of &amp;quot;Head&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-long-poll" data-witness="9782aaf2334fa93de65dd742bc52fbb3905acd25e286bc6d77a9ebd624f51787" data-char-count="275"><span class="title">Glossary: Long-poll</span> <span class="summary">Definition of &amp;quot;Long-poll&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-at-least-once" data-witness="f9e0d393929249d67a539c74a60f3c7fadc3b3fbe8fc5714f10bb92752182ae9" data-char-count="317"><span class="title">Glossary: At-least-once delivery</span> <span class="summary">Definition of &amp;quot;At-least-once delivery&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-exactly-once" data-witness="eb74e98cd3ae2fb6c332ed2220acb3bd0bbe6b50ce179a14023af275027e8f34" data-char-count="257"><span class="title">Glossary: Exactly-once delivery (not supported)</span> <span class="summary">Definition of &amp;quot;Exactly-once delivery (not supported)&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-throughput" data-witness="a80cb33400319ef662e63b130f090919a3a1026c04218f941bdd27d593594465" data-char-count="239"><span class="title">Glossary: Throughput</span> <span class="summary">Definition of &amp;quot;Throughput&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-cursor" data-witness="63430047030b3a1f3236cd63f28e0589bdd6be335574307f68d25a20963444d0" data-char-count="247"><span class="title">Glossary: Cursor</span> <span class="summary">Definition of &amp;quot;Cursor&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-request-id" data-witness="6576f3dc6097389be55be732c96e439361506cb8080a919e5b6446c3fe4534f4" data-char-count="240"><span class="title">Glossary: Request ID</span> <span class="summary">Definition of &amp;quot;Request ID&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-account" data-witness="f2ec0fb2c3a67b05a535d413f0acc17ef832a302a1d0621363cb0145b14ef983" data-char-count="224"><span class="title">Glossary: Account</span> <span class="summary">Definition of &amp;quot;Account&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-base64" data-witness="21f05779a2fd4eec03b8c661cfa6881cd60dc5571935cd8be78c6d07d5058f31" data-char-count="225"><span class="title">Glossary: Base64 encoding</span> <span class="summary">Definition of &amp;quot;Base64 encoding&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-header" data-witness="b4b0b69d6c4a6eed30bf860295141b10388cb2cb1f426d5c56bf789059fbb65c" data-char-count="222"><span class="title">Glossary: Event header</span> <span class="summary">Definition of &amp;quot;Event header&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-leader" data-witness="97aaf6e3b8ec9aa6382c0405ee9ea2735cbc58fc55850e576c69fbbce1c7895c" data-char-count="190"><span class="title">Glossary: Leader replica</span> <span class="summary">Definition of &amp;quot;Leader replica&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-follower" data-witness="fde7a9a04d41399017b2128a0c0690163a6ac7ad8d56dfd26b87bf43acaf23e7" data-char-count="223"><span class="title">Glossary: Follower replica</span> <span class="summary">Definition of &amp;quot;Follower replica&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-election" data-witness="6ba632f17f995b3ca5aa9a38586b88a43523e9be64a0f35617a9b3e0831c1fe8" data-char-count="247"><span class="title">Glossary: Leader election</span> <span class="summary">Definition of &amp;quot;Leader election&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-gateway" data-witness="b68830478e7ad63ab89b41de1e9c26c95a3650f84f7ccf4a04e7bca88bf3130c" data-char-count="265"><span class="title">Glossary: API gateway</span> <span class="summary">Definition of &amp;quot;API gateway&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-ttl" data-witness="09d5adcbc525b4b21ff799e8c1123a60f0c147d6ca78a063b3288be4f6a3736e" data-char-count="223"><span class="title">Glossary: Time-to-live (TTL)</span> <span class="summary">Definition of &amp;quot;Time-to-live (TTL)&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-quota" data-witness="fcfb4927d20e4109e375076bb367d899d8ada61c52c393a04c3c412252ba7671" data-char-count="236"><span class="title">Glossary: Quota</span> <span class="summary">Definition of &amp;quot;Quota&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-tenant" data-witness="9770cd622eae03d15dc6c6aa39d443a73b446f9bb80c647f419af372d1a4fac7" data-char-count="201"><span class="title">Glossary: Tenant</span> <span class="summary">Definition of &amp;quot;Tenant&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-partition-key" data-witness="1fd44234be8511bd2ae293301f253c236d07babb820d96a5594db976299b8b14" data-char-count="276"><span class="title">Glossary: Partition key</span> <span class="summary">Definition of &amp;quot;Partition key&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-ordering" data-witness="29b9161b38e68f1487357c4af8d09329b5914852a87435861a2c99bf372a3044" data-char-count="271"><span class="title">Glossary: Event ordering</span> <span class="summary">Definition of &amp;quot;Event ordering&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-durability" data-witness="cf75ca2e872d30af66e18a4a5936c209cf3d64242e08ea31d8fa63c7430e6b2c" data-char-count="217"><span class="title">Glossary: Durability</span> <span class="summary">Definition of &amp;quot;Durability&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-replication-factor" data-witness="6c3073e72db7f216049ebbd3a95ac7c52016b2e66e5884d893b6a791f4ce2ecd" data-char-count="216"><span class="title">Glossary: Replication factor</span> <span class="summary">Definition of &amp;quot;Replication factor&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#glossary-ack" data-witness="262861bd7bdf007d6c03ad38e65107333ba1a6faf40f1c2fd383d594da936ff3" data-char-count="254"><span class="title">Glossary: Acknowledgement (ack)</span> <span class="summary">Definition of &amp;quot;Acknowledgement (ack)&amp;quot; in the Zephyr Stream API.</span></a></li>
+    <li><a href="#type-stream" data-witness="da25afedd1b8863116becb2b682d9b10090367b50bfb079b58359006ddf77ba1" data-char-count="1114"><span class="title">Type: The Stream object</span> <span class="summary">Top-level stream container returned by create, get, and list endpoints.</span></a></li>
+    <li><a href="#type-producer" data-witness="9d0d351a420a82e4cac4790b6ad9b5c81c78b1836143becfdb9474271307a365" data-char-count="823"><span class="title">Type: The Producer object</span> <span class="summary">Registered producer credential bound to a stream.</span></a></li>
+    <li><a href="#type-consumer" data-witness="93f098f181cbde104941975e14654cd1ff9515f6913c189136ee57332e442afb" data-char-count="994"><span class="title">Type: The Consumer object</span> <span class="summary">Consumer registration tracking an offset into a stream.</span></a></li>
+    <li><a href="#type-event" data-witness="06bac551f0b2b5e2642114898f8a8ea3fb84105718bc43f1667c9e82b16d1225" data-char-count="864"><span class="title">Type: The Event object</span> <span class="summary">Atomic data unit returned by GET /events.</span></a></li>
+    <li><a href="#type-schema" data-witness="7b6410a7e035254bee24a7ede597bd0e10b94a0a623d8cf581a9c6635b5302ee" data-char-count="655"><span class="title">Type: The Schema object</span> <span class="summary">Registered schema definition.</span></a></li>
+    <li><a href="#type-aclentry" data-witness="58360cb4a148a087e607dc93c2b9b8dbe8cfc8dd5a6f879b8d666f05dc36c237" data-char-count="560"><span class="title">Type: The AclEntry object</span> <span class="summary">Principal-to-operations mapping on a stream.</span></a></li>
+    <li><a href="#type-metricsample" data-witness="b5912e663d5639c757545a4467cb79305925008715e8c65e9c276b6f8468e6b4" data-char-count="656"><span class="title">Type: The MetricSample object</span> <span class="summary">Single time-series sample from GET /metrics.</span></a></li>
+    <li><a href="#type-partitionreplica" data-witness="407c9e56c9bc61b8c32a8a6faefc98de7c0b178fa93986cc931e0eedb69fecde" data-char-count="677"><span class="title">Type: The PartitionReplica object</span> <span class="summary">Per-partition replica assignment from GET /replicas.</span></a></li>
+    <li><a href="#type-snapshot" data-witness="57a41d22007969bc488817b88182d415ed844f2558d57c72231288c1a4c6408e" data-char-count="798"><span class="title">Type: The Snapshot object</span> <span class="summary">Point-in-time offset record.</span></a></li>
+    <li><a href="#type-errorresponse" data-witness="5a19f61c0a2bc1c94c3ec21b528551158aa759ffcde06943fd04a9cc77be426a" data-char-count="653"><span class="title">Type: The ErrorResponse object</span> <span class="summary">Returned by all endpoints on error.</span></a></li>
+    <li><a href="#guide-authentication" data-witness="8df20a511a0083e48df9df5030a3f030b84356758ab100384fa17ffc7e0c3ff2" data-char-count="833"><span class="title">Authentication</span> <span class="summary">How to authenticate requests to the Zephyr API.</span></a></li>
+    <li><a href="#guide-pagination" data-witness="178c65e526de5743f516f13b4de489b3ce5983daf2d9b34dd1a523c07348f51f" data-char-count="701"><span class="title">Pagination</span> <span class="summary">How list endpoints paginate results with opaque cursors.</span></a></li>
+    <li><a href="#guide-rate-limiting" data-witness="c6cc435c70a8af4d0d50650cf7cc5fde8c5ebb529d1f00b23ebfcf03583bda25" data-char-count="750"><span class="title">Rate limiting</span> <span class="summary">How per-producer and per-consumer rate limits are enforced, and how to handle RATE_LIMIT_EXCEEDED.</span></a></li>
+    <li><a href="#guide-idempotency" data-witness="4ec42e3f5221d7d84cdb805c7c87556678c4ea9c08c1300ce5e11ddeb31b63fe" data-char-count="674"><span class="title">Idempotent appends</span> <span class="summary">How to use the Idempotency-Key header to prevent duplicate event ingestion.</span></a></li>
+    <li><a href="#guide-long-polling" data-witness="d4178546df9752ea6f5c1b45886fff0511bdf98903f6b0780a4079258e7d09cd" data-char-count="767"><span class="title">Long-polling for new events</span> <span class="summary">How to use wait_ms to block on the read endpoint until new events arrive.</span></a></li>
+    <li><a href="#guide-at-least-once" data-witness="c50eefdbc495a667c26bf33b2ec6297b98f965ced4d8b60334eaec8a7e7cff29" data-char-count="675"><span class="title">At-least-once delivery pattern</span> <span class="summary">How to implement reliable at-least-once consumption using checkpoints.</span></a></li>
+    <li><a href="#guide-schema-validation" data-witness="8a48cad25fa8f100ab78f80fd668568bf11f6a48af49d4e3017f7614a1da1c8a" data-char-count="850"><span class="title">Schema validation workflow</span> <span class="summary">How to register a schema, associate it with a stream, and interpret validation errors.</span></a></li>
+    <li><a href="#guide-acl-workflow" data-witness="ad8cdf2ff4e14746887b7880d5616c50cb712e3706fd52161dfa3c6ac51c0c71" data-char-count="720"><span class="title">ACL management workflow</span> <span class="summary">How to configure stream permissions for multiple principals.</span></a></li>
+    <li><a href="#guide-migration" data-witness="25e14d6ef2a1a8bec23da49b4e517e3c32eff124c74f96daf8c6faacb6f9c1f1" data-char-count="866"><span class="title">Stream migration using snapshots</span> <span class="summary">How to migrate a stream to a new account or region using snapshots and offset bookmarks.</span></a></li>
+    <li><a href="#guide-error-handling" data-witness="3ed0756c66f118a34addb1d3d3d5628157a36cc0456bc643058f75b7328532a4" data-char-count="676"><span class="title">Error handling best practices</span> <span class="summary">General guidance on parsing errors, retrying safely, and escalating to support.</span></a></li>
+    <li><a href="#guide-metrics-walkthrough" data-witness="828ef1cde8b0040d3bab1a71a1850293002153d70b617e446974862bd654ad23" data-char-count="946"><span class="title">Reading metrics effectively</span> <span class="summary">How to use the metrics endpoints to detect consumer lag and throughput regressions.</span></a></li>
+    <li><a href="#guide-versioning" data-witness="8069c6f29f7ab4b04949fea3d823d95c5f648d01e5a1d09f1956a88e85cae972" data-char-count="723"><span class="title">API versioning policy</span> <span class="summary">How Zephyr versions its API and what changes are considered breaking.</span></a></li>
+    <li><a href="#guide-quotas" data-witness="d56d011aa32cde56aea986da1b21e55e543aceb81c937ed4b9ac62f9be23e7d8" data-char-count="908"><span class="title">Account quotas and limits</span> <span class="summary">Default per-account quotas for streams, schemas, retained bytes, and partition counts.</span></a></li>
+    <li><a href="#guide-sdks" data-witness="ec89703b31468b9f26d457730387ec1d47c9c8cc9faaf9242015d951c9900bbf" data-char-count="987"><span class="title">Client SDKs</span> <span class="summary">Officially supported client libraries for the Zephyr Stream API.</span></a></li>
+    <li><a href="#guide-openapi" data-witness="3ffed65fb5de1b64d8408130a2e2e334883d838d7fc86d4b6e1c49eace209de7" data-char-count="785"><span class="title">OpenAPI specification</span> <span class="summary">Where to find the machine-readable API description and how to generate client code from it.</span></a></li>
+    <li><a href="#guide-changelog" data-witness="f51cdb428e3e6faf33ea5d05217cac466dd77f3d361b25e1b58a725a149a262d" data-char-count="1149"><span class="title">API changelog (fictional)</span> <span class="summary">A representative changelog showing the history of v1 API changes.</span></a></li>
+    <li><a href="#guide-support" data-witness="3304d8966ac27f35fe71bafb19a0f7b2a53776e3e1ade0353501cb8871ce91b4" data-char-count="818"><span class="title">Support and SLAs</span> <span class="summary">How to contact support, escalation paths, and the published uptime SLAs for the Zephyr API.</span></a></li>
+  </ol>
+</nav>
+
+<section id="about-this-document" data-witness="4c27598eb7edfa3d4f5ecedb4b3528f4ca0689649500f2e3d81fea3c6fa9539d" data-char-count="1700"><h1>About this document</h1>
+<p>This file is a <strong>doc.html v0.3</strong> document. The format itself is the only dependency: no framework, no build system beyond a single Node script, no server required to read it.</p>
+<p>It holds the <em>Zephyr Stream API Reference</em> — a fictional real-time data-streaming platform used here as a synthetic corpus. The corpus was chosen deliberately large: it contains <strong>152 sections</strong> totalling <strong>75,229 characters</strong> of section content. Loading all of it into a context window at once is wasteful when a reader needs only two or three sections at a time.</p>
+<p>That wastefulness is the point. The <strong>manifest</strong> (the <code>&lt;nav id="manifest"&gt;</code> element below) lists every section with its title, summary, SHA-256 witness hash, and character count. A reader that consults the manifest first can identify exactly which sections are relevant, fetch only those by <code>#id</code>, and verify each one&#39;s integrity against its witness — never loading the rest.</p>
+<p><strong>Known scaling limit:</strong> this manifest is flat — one entry per section. At 200 sections it is already hundreds of lines. A hierarchical manifest (chapter → section → subsection) would compress the navigation surface dramatically and is the obvious next step. That is future work; it is noted here honestly so readers can plan around it.</p>
+<p>The format spec lives at <a href="#format-spec-pointer">format-spec-pointer</a>. The witness law: SHA-256 over the raw UTF-8 inner bytes of each section; char-count is Unicode code points (<code>Array.from(inner).length</code>). Both are checkable offline with no network access.</p></section>
+
+<section id="resource-streams" data-witness="3a9015d6fa7c0c28aca26d048501e4590b71cd6107f623f1f7525515c3cdeeb6" data-char-count="453"><h1>Streams resource</h1>
+<p>Create, list, get, and delete named streams. A stream is the top-level container for an ordered log of events.</p>
+<h2>Endpoints</h2>
+<ul>
+<li><code>POST /streams</code></li>
+<li><code>GET /streams</code></li>
+<li><code>GET /streams/{stream_id}</code></li>
+<li><code>DELETE /streams/{stream_id}</code></li>
+</ul>
+<p>See the individual method sections below for request/response shapes, query parameters, and error codes.</p></section>
+
+<section id="resource-producers" data-witness="2ed59d7569684ef3fa6e176af05de9b458fae4b8db030797f698d9355122f407" data-char-count="471"><h1>Producers resource</h1>
+<p>Register and manage producers. A producer holds credentials and rate-limit state for a publishing client.</p>
+<h2>Endpoints</h2>
+<ul>
+<li><code>POST /streams/{stream_id}/producers</code></li>
+<li><code>GET /streams/{stream_id}/producers</code></li>
+<li><code>DELETE /streams/{stream_id}/producers/{producer_id}</code></li>
+</ul>
+<p>See the individual method sections below for request/response shapes, query parameters, and error codes.</p></section>
+
+<section id="resource-consumers" data-witness="bf02ce05268b8473880e39771c5a9e8849eb071c48afffb4aecc567a3a434bc5" data-char-count="561"><h1>Consumers resource</h1>
+<p>Manage consumer registrations and offset checkpoints. Consumers track their own read position independently.</p>
+<h2>Endpoints</h2>
+<ul>
+<li><code>POST /streams/{stream_id}/consumers</code></li>
+<li><code>GET /streams/{stream_id}/consumers/{consumer_id}</code></li>
+<li><code>PATCH /streams/{stream_id}/consumers/{consumer_id}</code></li>
+<li><code>DELETE /streams/{stream_id}/consumers/{consumer_id}</code></li>
+</ul>
+<p>See the individual method sections below for request/response shapes, query parameters, and error codes.</p></section>
+
+<section id="resource-events" data-witness="bbd6bdceeca1ed0f0919613364dfa31846194c4f230143100c8cdc0013388786" data-char-count="377"><h1>Events resource</h1>
+<p>Append events to a stream and read slices of the event log. Events are immutable once written.</p>
+<h2>Endpoints</h2>
+<ul>
+<li><code>POST /streams/{stream_id}/events</code></li>
+<li><code>GET /streams/{stream_id}/events</code></li>
+</ul>
+<p>See the individual method sections below for request/response shapes, query parameters, and error codes.</p></section>
+
+<section id="resource-checkpoints" data-witness="6bbe6c7314eebcfbbd239813b7e72aa7d882334282734376a15efef68d7fa1ad" data-char-count="432"><h1>Checkpoints resource</h1>
+<p>Explicitly set or read a consumer&#39;s acknowledged offset without consuming new events.</p>
+<h2>Endpoints</h2>
+<ul>
+<li><code>PUT /streams/{stream_id}/consumers/{consumer_id}/checkpoint</code></li>
+<li><code>GET /streams/{stream_id}/consumers/{consumer_id}/checkpoint</code></li>
+</ul>
+<p>See the individual method sections below for request/response shapes, query parameters, and error codes.</p></section>
+
+<section id="resource-schemas" data-witness="578dc5f0fa030f96dfde1a831b1478e932a047f8cf8aba96c7b4ef137c41ab25" data-char-count="446"><h1>Schemas resource</h1>
+<p>Register Avro or JSON Schema definitions and associate them with a stream for producer-side validation.</p>
+<h2>Endpoints</h2>
+<ul>
+<li><code>POST /schemas</code></li>
+<li><code>GET /schemas</code></li>
+<li><code>GET /schemas/{schema_id}</code></li>
+<li><code>DELETE /schemas/{schema_id}</code></li>
+</ul>
+<p>See the individual method sections below for request/response shapes, query parameters, and error codes.</p></section>
+
+<section id="resource-acls" data-witness="13ca1ee000b7fb44eb989e15f8097768b2167fe8643c45e14c07288e8385c526" data-char-count="453"><h1>Access-control lists (ACL)</h1>
+<p>Grant or revoke per-stream, per-operation permissions for principals (users or service accounts).</p>
+<h2>Endpoints</h2>
+<ul>
+<li><code>PUT /streams/{stream_id}/acl</code></li>
+<li><code>GET /streams/{stream_id}/acl</code></li>
+<li><code>DELETE /streams/{stream_id}/acl/{principal_id}</code></li>
+</ul>
+<p>See the individual method sections below for request/response shapes, query parameters, and error codes.</p></section>
+
+<section id="resource-metrics" data-witness="2dbd69d2cc3a7432a0b044eb8e4f30e46dc37b654f27ef1710860368710d7b67" data-char-count="387"><h1>Metrics resource</h1>
+<p>Pull per-stream throughput, lag, and error counters. Metrics are sampled at 10-second granularity.</p>
+<h2>Endpoints</h2>
+<ul>
+<li><code>GET /streams/{stream_id}/metrics</code></li>
+<li><code>GET /streams/{stream_id}/metrics/lag</code></li>
+</ul>
+<p>See the individual method sections below for request/response shapes, query parameters, and error codes.</p></section>
+
+<section id="resource-replicas" data-witness="16044a424affaed094ed4f4ce7a07a0bacb5d148102181e42982bb093e42742a" data-char-count="385"><h1>Replicas resource</h1>
+<p>Inspect and trigger manual rebalance of the partition replica assignment for a stream.</p>
+<h2>Endpoints</h2>
+<ul>
+<li><code>GET /streams/{stream_id}/replicas</code></li>
+<li><code>POST /streams/{stream_id}/replicas/rebalance</code></li>
+</ul>
+<p>See the individual method sections below for request/response shapes, query parameters, and error codes.</p></section>
+
+<section id="resource-snapshots" data-witness="30692c03c20083a19c6f837a995cc9bf9bd619465a8ba78f312f316edab800ea" data-char-count="466"><h1>Snapshots resource</h1>
+<p>Create point-in-time snapshots of a stream&#39;s current head offset for use in backup or migration.</p>
+<h2>Endpoints</h2>
+<ul>
+<li><code>POST /streams/{stream_id}/snapshots</code></li>
+<li><code>GET /streams/{stream_id}/snapshots</code></li>
+<li><code>DELETE /streams/{stream_id}/snapshots/{snapshot_id}</code></li>
+</ul>
+<p>See the individual method sections below for request/response shapes, query parameters, and error codes.</p></section>
+
+<section id="method-create-stream" data-witness="e43112834898ca68297b5969cb9b2eb2ba3e6db528894505ba63cf3ef2453d03" data-char-count="1039"><h1><code>POST /streams</code> — Create a new named stream</h1>
+<p>Creates a new stream. The stream name must be unique within the account and match <code>[a-z][a-z0-9-]{0,62}</code>. Returns the stream object with its assigned <code>stream_id</code>.</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>name</code></td><td>string</td><td>required</td><td>Unique stream name.</td></tr>
+<tr><td><code>partition_count</code></td><td>integer</td><td>optional (default 1)</td><td>Number of partitions. Range 1–64.</td></tr>
+<tr><td><code>retention_ms</code></td><td>integer</td><td>optional (default 86400000)</td><td>Log retention in milliseconds.</td></tr>
+<tr><td><code>schema_id</code></td><td>string</td><td>optional</td><td>Associate a registered schema for producer-side validation.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>201 Created with the stream object; 409 Conflict if name exists; 422 Unprocessable if name is invalid.</p></section>
+
+<section id="method-list-streams" data-witness="b4616a6607debffe74141285b6f45c8e987e5e99019163207e55218f81db61d3" data-char-count="686"><h1><code>GET /streams</code> — List all streams in the account</h1>
+<p>Returns a paginated list of stream objects ordered by creation time (newest first). Use <code>cursor</code> for pagination.</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>cursor</code></td><td>string</td><td>optional</td><td>Opaque pagination cursor from a previous response.</td></tr>
+<tr><td><code>limit</code></td><td>integer</td><td>optional (default 20, max 100)</td><td>Page size.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>200 OK with <code>{ items: Stream[], next_cursor: string|null }</code>.</p></section>
+
+<section id="method-get-stream" data-witness="cc6a3242dd47918cad68a7194f11c8e1cb26ff76b089d0bd4dc4128be619fe70" data-char-count="513"><h1><code>GET /streams/{stream_id}</code> — Get a single stream by ID</h1>
+<p>Returns the full stream object for the given <code>stream_id</code>.</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>stream_id</code></td><td>string</td><td>path</td><td>The stream&#39;s unique identifier.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>200 OK with the stream object; 404 Not Found if the stream does not exist.</p></section>
+
+<section id="method-delete-stream" data-witness="22a303de0886d2fdf786d867fea7748e3e69ca5949b36a6a8d0211b45530a21f" data-char-count="642"><h1><code>DELETE /streams/{stream_id}</code> — Delete a stream and all its data</h1>
+<p>Permanently deletes a stream and all retained events. This operation is irreversible. All active producers and consumers will receive a <code>STREAM_DELETED</code> error on their next request.</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>stream_id</code></td><td>string</td><td>path</td><td>The stream to delete.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>204 No Content on success; 404 if not found; 409 Conflict if a snapshot is pending.</p></section>
+
+<section id="method-create-producer" data-witness="9024326eae3445df128fd35483c1711c6765d78cbd68eef070a95de236232781" data-char-count="916"><h1><code>POST /streams/{stream_id}/producers</code> — Register a producer</h1>
+<p>Creates a producer credential bound to the given stream. Returns a <code>producer_secret</code> in the response body — this is the only time the secret is visible; store it immediately.</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>stream_id</code></td><td>string</td><td>path</td><td>Stream to publish to.</td></tr>
+<tr><td><code>label</code></td><td>string</td><td>optional</td><td>Human-readable label for this producer.</td></tr>
+<tr><td><code>rate_limit_rps</code></td><td>integer</td><td>optional (default account limit)</td><td>Per-producer events-per-second ceiling.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>201 Created with the producer object including <code>producer_secret</code>; 404 if stream not found.</p></section>
+
+<section id="method-list-producers" data-witness="6e55be12801964d06a4cd3bdfedb7ba64c2f3c0306a330b7eb3aacd56a342d1e" data-char-count="502"><h1><code>GET /streams/{stream_id}/producers</code> — List producers on a stream</h1>
+<p>Returns all registered producers for the stream. Secrets are never returned after creation.</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>stream_id</code></td><td>string</td><td>path</td><td>Stream ID.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>200 OK with an array of producer objects (no secrets).</p></section>
+
+<section id="method-delete-producer" data-witness="4883404817f88001116687c96f521be20b0bd5f4eb73e48e3666162a09550331" data-char-count="672"><h1><code>DELETE /streams/{stream_id}/producers/{producer_id}</code> — Revoke a producer credential</h1>
+<p>Immediately revokes the producer credential. Any in-flight publish attempts using this credential will fail with <code>CREDENTIAL_REVOKED</code>.</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>stream_id</code></td><td>string</td><td>path</td><td>Stream ID.</td></tr>
+<tr><td><code>producer_id</code></td><td>string</td><td>path</td><td>Producer to revoke.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>204 No Content; 404 if producer or stream not found.</p></section>
+
+<section id="method-create-consumer" data-witness="a65df7cecf0437baac62563ac3db7029b13cf785b452a59405eae828c2f81868" data-char-count="852"><h1><code>POST /streams/{stream_id}/consumers</code> — Register a consumer</h1>
+<p>Creates a consumer registration that tracks an independent offset into the stream. The initial offset defaults to <code>earliest</code> (head of the log at creation time).</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>stream_id</code></td><td>string</td><td>path</td><td>Stream to consume from.</td></tr>
+<tr><td><code>label</code></td><td>string</td><td>optional</td><td>Human-readable label.</td></tr>
+<tr><td><code>initial_offset</code></td><td>string</td><td>optional (default earliest)</td><td><code>earliest</code> or <code>latest</code> or an explicit offset integer.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>201 Created with the consumer object.</p></section>
+
+<section id="method-get-consumer" data-witness="7d592bafecf5f962f2f9551a4fde8e8ba7f664d49af317d4866c9ed778c2d00a" data-char-count="648"><h1><code>GET /streams/{stream_id}/consumers/{consumer_id}</code> — Get consumer state</h1>
+<p>Returns the consumer object including its current acknowledged offset and lag (events behind the stream head).</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>stream_id</code></td><td>string</td><td>path</td><td>Stream ID.</td></tr>
+<tr><td><code>consumer_id</code></td><td>string</td><td>path</td><td>Consumer ID.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>200 OK with the consumer object including <code>offset</code> and <code>lag</code>.</p></section>
+
+<section id="method-patch-consumer" data-witness="e0848d52c5950b60acf1107ee24fa27eac4fdc73d0cacf61cabdf3d8eaed8afe" data-char-count="870"><h1><code>PATCH /streams/{stream_id}/consumers/{consumer_id}</code> — Update consumer metadata</h1>
+<p>Update the consumer&#39;s label or rate-limit settings. Offset cannot be changed via PATCH; use the checkpoint endpoint.</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>stream_id</code></td><td>string</td><td>path</td><td>Stream ID.</td></tr>
+<tr><td><code>consumer_id</code></td><td>string</td><td>path</td><td>Consumer ID.</td></tr>
+<tr><td><code>label</code></td><td>string</td><td>optional</td><td>New label.</td></tr>
+<tr><td><code>rate_limit_rps</code></td><td>integer</td><td>optional</td><td>New per-consumer read rate limit.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>200 OK with updated consumer object; 409 if the consumer is in a locked state.</p></section>
+
+<section id="method-delete-consumer" data-witness="4769dd6d6092a660d64cecf4c2205c3c5268e24d5dd5b3567c1eef10ce10a74d" data-char-count="578"><h1><code>DELETE /streams/{stream_id}/consumers/{consumer_id}</code> — Delete a consumer registration</h1>
+<p>Removes the consumer and its tracked offset. The stream data is unaffected.</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>stream_id</code></td><td>string</td><td>path</td><td>Stream ID.</td></tr>
+<tr><td><code>consumer_id</code></td><td>string</td><td>path</td><td>Consumer ID.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>204 No Content; 404 if not found.</p></section>
+
+<section id="method-append-events" data-witness="5d419c89598fcf1936fdedd26f7c27c14e1be62eb9ffcc80d250e778c462ba0f" data-char-count="1069"><h1><code>POST /streams/{stream_id}/events</code> — Append events to a stream</h1>
+<p>Publishes one or more events in a single atomic batch. The batch size is limited to 1,000 events or 4 MB of payload, whichever is smaller. Events within a batch are assigned contiguous offsets.</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>stream_id</code></td><td>string</td><td>path</td><td>Stream to publish to.</td></tr>
+<tr><td><code>events</code></td><td>array</td><td>body (required)</td><td>Array of event objects. Each must have <code>data</code> (base64 or JSON) and optionally <code>key</code>, <code>headers</code>.</td></tr>
+<tr><td><code>idempotency_key</code></td><td>string</td><td>header optional</td><td>If provided, duplicate requests with the same key within 60 s are deduplicated.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>202 Accepted with <code>{ first_offset: integer, count: integer }</code>; 400 on validation failure; 413 if batch too large.</p></section>
+
+<section id="method-read-events" data-witness="b6d1d2f68dad4c0020b7ec72f89466c3631c7a8a815ff83f434f8212ef0ae444" data-char-count="1217"><h1><code>GET /streams/{stream_id}/events</code> — Read a slice of the event log</h1>
+<p>Returns up to <code>limit</code> events starting at <code>from_offset</code>. If <code>from_offset</code> is not supplied, the consumer&#39;s current offset is used (requires <code>consumer_id</code>).</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>stream_id</code></td><td>string</td><td>path</td><td>Stream to read from.</td></tr>
+<tr><td><code>consumer_id</code></td><td>string</td><td>query optional</td><td>Consumer whose offset to use and advance.</td></tr>
+<tr><td><code>from_offset</code></td><td>integer</td><td>query optional</td><td>Explicit starting offset (overrides consumer offset).</td></tr>
+<tr><td><code>limit</code></td><td>integer</td><td>query optional (default 100, max 1000)</td><td>Maximum events to return.</td></tr>
+<tr><td><code>wait_ms</code></td><td>integer</td><td>query optional (default 0, max 30000)</td><td>Long-poll timeout if no new events are available.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>200 OK with <code>{ events: Event[], next_offset: integer, lag: integer }</code>.</p></section>
+
+<section id="method-set-checkpoint" data-witness="bea4b355f7efe33eab26fa83cbf1eedd496294573bcb3669d2fe149d14da7bfe" data-char-count="805"><h1><code>PUT /streams/{stream_id}/consumers/{consumer_id}/checkpoint</code> — Advance consumer offset</h1>
+<p>Explicitly advances the consumer&#39;s acknowledged offset without reading new events. Useful for resetting or fast-forwarding.</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>stream_id</code></td><td>string</td><td>path</td><td>Stream ID.</td></tr>
+<tr><td><code>consumer_id</code></td><td>string</td><td>path</td><td>Consumer ID.</td></tr>
+<tr><td><code>offset</code></td><td>integer</td><td>body (required)</td><td>New offset. Must be ≥ 0 and ≤ stream head offset.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>200 OK with the updated consumer object; 409 if offset is out of range.</p></section>
+
+<section id="method-get-checkpoint" data-witness="897ef5bf953e290071d905fef38083dbecab5c5b071613c00a7a2a97d98846b8" data-char-count="674"><h1><code>GET /streams/{stream_id}/consumers/{consumer_id}/checkpoint</code> — Read consumer checkpoint</h1>
+<p>Returns only the consumer&#39;s current offset, lag, and last-acknowledged timestamp without the full consumer object.</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>stream_id</code></td><td>string</td><td>path</td><td>Stream ID.</td></tr>
+<tr><td><code>consumer_id</code></td><td>string</td><td>path</td><td>Consumer ID.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>200 OK with <code>{ offset: integer, lag: integer, acknowledged_at: string }</code>.</p></section>
+
+<section id="method-register-schema" data-witness="2650539c6cc78d7b066dafec0b2644908ed88bec43bb5957e34a22368662426c" data-char-count="791"><h1><code>POST /schemas</code> — Register a schema</h1>
+<p>Registers a new Avro or JSON Schema definition. Returns a <code>schema_id</code> that can be associated with a stream.</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>type</code></td><td>string</td><td>body (required)</td><td><code>avro</code> or <code>json-schema</code>.</td></tr>
+<tr><td><code>definition</code></td><td>string</td><td>body (required)</td><td>The schema definition as a JSON string.</td></tr>
+<tr><td><code>label</code></td><td>string</td><td>optional</td><td>Human-readable label.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>201 Created with the schema object; 422 if the schema definition is invalid.</p></section>
+
+<section id="method-list-schemas" data-witness="ce37de6f1ddc7109e862ceb4cece8dca41d9bae32163678f113ed663095e6935" data-char-count="564"><h1><code>GET /schemas</code> — List all registered schemas</h1>
+<p>Returns all schemas registered in the account.</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>cursor</code></td><td>string</td><td>optional</td><td>Pagination cursor.</td></tr>
+<tr><td><code>limit</code></td><td>integer</td><td>optional (default 20)</td><td>Page size.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>200 OK with <code>{ items: Schema[], next_cursor: string|null }</code>.</p></section>
+
+<section id="method-get-schema" data-witness="47cc9ead642df9a65cc82a019840fa3c015fcbe45d9459eec686f52ad5fdd10e" data-char-count="443"><h1><code>GET /schemas/{schema_id}</code> — Get a schema by ID</h1>
+<p>Returns the full schema object including its definition.</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>schema_id</code></td><td>string</td><td>path</td><td>Schema ID.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>200 OK with the schema object; 404 if not found.</p></section>
+
+<section id="method-delete-schema" data-witness="a10dc2b6748ef110cff91f4dbcffc77643f96556af1106ea368b05bef8a8d4c7" data-char-count="483"><h1><code>DELETE /schemas/{schema_id}</code> — Delete a schema</h1>
+<p>Deletes the schema definition. Fails if any stream currently references this schema.</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>schema_id</code></td><td>string</td><td>path</td><td>Schema to delete.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>204 No Content; 409 Conflict if the schema is in use.</p></section>
+
+<section id="method-set-acl" data-witness="8f3a073a325740bf664434e5f82679565874caf248d22ed62e4c141af63340b9" data-char-count="818"><h1><code>PUT /streams/{stream_id}/acl</code> — Set ACL entry for a principal</h1>
+<p>Grants or updates permissions for a principal on the given stream. Supported operations: <code>read</code>, <code>write</code>, <code>admin</code>.</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>stream_id</code></td><td>string</td><td>path</td><td>Stream ID.</td></tr>
+<tr><td><code>principal_id</code></td><td>string</td><td>body (required)</td><td>User or service-account ID.</td></tr>
+<tr><td><code>operations</code></td><td>array</td><td>body (required)</td><td>Array of permitted operations.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>200 OK with the updated ACL entry; 403 if the caller lacks admin on the stream.</p></section>
+
+<section id="method-get-acl" data-witness="1f548955a3b96e97631721da0694714c792c9f16fd8f71c068548572820f0a29" data-char-count="450"><h1><code>GET /streams/{stream_id}/acl</code> — List ACL entries for a stream</h1>
+<p>Returns all principal-to-permission mappings for the stream.</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>stream_id</code></td><td>string</td><td>path</td><td>Stream ID.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>200 OK with an array of ACL entries.</p></section>
+
+<section id="method-delete-acl-entry" data-witness="bfed5884b80127f74c103f908fbce00cc6cdff92c267b2f2bbb1072667c6c8a7" data-char-count="611"><h1><code>DELETE /streams/{stream_id}/acl/{principal_id}</code> — Remove an ACL entry</h1>
+<p>Revokes all permissions for the principal on the stream. The principal loses all access immediately.</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>stream_id</code></td><td>string</td><td>path</td><td>Stream ID.</td></tr>
+<tr><td><code>principal_id</code></td><td>string</td><td>path</td><td>Principal to remove.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>204 No Content; 404 if the entry does not exist.</p></section>
+
+<section id="method-get-metrics" data-witness="0d6ff66ca68109873fa8710a27174e65017cfdb833d5e5054a71483176cb49c6" data-char-count="832"><h1><code>GET /streams/{stream_id}/metrics</code> — Get stream throughput metrics</h1>
+<p>Returns a time-series of ingest rate, consume rate, and error rate, sampled at 10-second intervals. The window covers the last hour by default.</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>stream_id</code></td><td>string</td><td>path</td><td>Stream ID.</td></tr>
+<tr><td><code>window_s</code></td><td>integer</td><td>optional (default 3600)</td><td>Look-back window in seconds (max 86400).</td></tr>
+<tr><td><code>resolution_s</code></td><td>integer</td><td>optional (default 10)</td><td>Sample interval. Must be a multiple of 10.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>200 OK with <code>{ samples: MetricSample[] }</code>.</p></section>
+
+<section id="method-get-lag-metrics" data-witness="8ddead0f3f84efecf5655cebce9440023b18ce5b52a81f470746415f43de90f6" data-char-count="522"><h1><code>GET /streams/{stream_id}/metrics/lag</code> — Get per-consumer lag metrics</h1>
+<p>Returns the current lag (events behind head) for every consumer registered on the stream.</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>stream_id</code></td><td>string</td><td>path</td><td>Stream ID.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>200 OK with an array of <code>{ consumer_id, lag, last_read_at }</code>.</p></section>
+
+<section id="method-get-replicas" data-witness="d8290c4fd29fcf2b82c03b14ac2aa21970931c911d3d6b9edf54a29ae286c61f" data-char-count="517"><h1><code>GET /streams/{stream_id}/replicas</code> — Inspect replica assignment</h1>
+<p>Returns the current partition-to-broker assignment for the stream, including replica health status.</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>stream_id</code></td><td>string</td><td>path</td><td>Stream ID.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>200 OK with an array of <code>PartitionReplica</code> objects.</p></section>
+
+<section id="method-rebalance-replicas" data-witness="425ccc92ffaa25a5c469cbdeefa1200537db79085ff2d1aaaba5d6f2eea51bcf" data-char-count="629"><h1><code>POST /streams/{stream_id}/replicas/rebalance</code> — Trigger replica rebalance</h1>
+<p>Initiates a background rebalance of partition replicas across brokers. Returns immediately; poll <code>GET /streams/{stream_id}/replicas</code> to observe progress.</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>stream_id</code></td><td>string</td><td>path</td><td>Stream ID.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>202 Accepted with <code>{ rebalance_id: string }</code>; 409 if a rebalance is already in progress.</p></section>
+
+<section id="method-create-snapshot" data-witness="dc958acc432e97cbced4deafdfc8de2ef19a16ec85a2ac0c88103547d2f79701" data-char-count="642"><h1><code>POST /streams/{stream_id}/snapshots</code> — Create a stream snapshot</h1>
+<p>Records the current head offset as a named snapshot. Snapshots do not preserve event data; they record a position for migration or backup bookmarking.</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>stream_id</code></td><td>string</td><td>path</td><td>Stream ID.</td></tr>
+<tr><td><code>label</code></td><td>string</td><td>optional</td><td>Human-readable label.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>201 Created with the snapshot object.</p></section>
+
+<section id="method-list-snapshots" data-witness="8846c99eebdb1ef64c1c174dc7290a50e1232c7c8faf8359c780a4014f528613" data-char-count="462"><h1><code>GET /streams/{stream_id}/snapshots</code> — List snapshots for a stream</h1>
+<p>Returns all snapshots for the stream, ordered by creation time.</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>stream_id</code></td><td>string</td><td>path</td><td>Stream ID.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>200 OK with an array of snapshot objects.</p></section>
+
+<section id="method-delete-snapshot" data-witness="edc6dfb735307ea3983352837b0e4d7a181fda345116c24231f7c71d3fdba5e9" data-char-count="552"><h1><code>DELETE /streams/{stream_id}/snapshots/{snapshot_id}</code> — Delete a snapshot</h1>
+<p>Removes the snapshot record. Stream data is unaffected.</p>
+<h2>Parameters</h2>
+<table>
+<thead><tr><th>Name</th><th>Type</th><th>Required/Location</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>stream_id</code></td><td>string</td><td>path</td><td>Stream ID.</td></tr>
+<tr><td><code>snapshot_id</code></td><td>string</td><td>path</td><td>Snapshot to delete.</td></tr>
+</tbody>
+</table>
+<h2>Returns</h2>
+<p>204 No Content; 404 if not found.</p></section>
+
+<section id="error-stream-not-found" data-witness="b1980789d2165f80d020625ae399ea913acda3d940df84655c1615cbb45f7a4d" data-char-count="365"><h1>Error code: <code>STREAM_NOT_FOUND</code></h1>
+<p><strong>HTTP status:</strong> 404</p>
+<p>The requested stream does not exist or has been deleted.</p>
+<p>All errors are returned as <code>application/json</code> with the shape:</p>
+<pre><code>{ "error": "STREAM_NOT_FOUND", "message": "&lt;human-readable string&gt;", "request_id": "&lt;uuid&gt;" }</code></pre></section>
+
+<section id="error-producer-not-found" data-witness="c8fd4911eb9e1cd7d77166fd29b11d05c37474a17feefc6b27eefae89df06bf7" data-char-count="359"><h1>Error code: <code>PRODUCER_NOT_FOUND</code></h1>
+<p><strong>HTTP status:</strong> 404</p>
+<p>The producer ID does not exist on this stream.</p>
+<p>All errors are returned as <code>application/json</code> with the shape:</p>
+<pre><code>{ "error": "PRODUCER_NOT_FOUND", "message": "&lt;human-readable string&gt;", "request_id": "&lt;uuid&gt;" }</code></pre></section>
+
+<section id="error-consumer-not-found" data-witness="c20dfc2b2f353f39465aeca3422e3e92a662314a6d6f266309b61da35a910d47" data-char-count="359"><h1>Error code: <code>CONSUMER_NOT_FOUND</code></h1>
+<p><strong>HTTP status:</strong> 404</p>
+<p>The consumer ID does not exist on this stream.</p>
+<p>All errors are returned as <code>application/json</code> with the shape:</p>
+<pre><code>{ "error": "CONSUMER_NOT_FOUND", "message": "&lt;human-readable string&gt;", "request_id": "&lt;uuid&gt;" }</code></pre></section>
+
+<section id="error-schema-not-found" data-witness="e1ae4ec2952f62c81215da9afb7bac68de3466e94844c56f58e43f331d8dc7e3" data-char-count="354"><h1>Error code: <code>SCHEMA_NOT_FOUND</code></h1>
+<p><strong>HTTP status:</strong> 404</p>
+<p>The schema ID does not exist in this account.</p>
+<p>All errors are returned as <code>application/json</code> with the shape:</p>
+<pre><code>{ "error": "SCHEMA_NOT_FOUND", "message": "&lt;human-readable string&gt;", "request_id": "&lt;uuid&gt;" }</code></pre></section>
+
+<section id="error-snapshot-not-found" data-witness="b5fbe0682c8397e2dec1a6f579ca2b8b68d8f4c5282524fdfebc8e73b423be71" data-char-count="359"><h1>Error code: <code>SNAPSHOT_NOT_FOUND</code></h1>
+<p><strong>HTTP status:</strong> 404</p>
+<p>The snapshot ID does not exist on this stream.</p>
+<p>All errors are returned as <code>application/json</code> with the shape:</p>
+<pre><code>{ "error": "SNAPSHOT_NOT_FOUND", "message": "&lt;human-readable string&gt;", "request_id": "&lt;uuid&gt;" }</code></pre></section>
+
+<section id="error-stream-name-conflict" data-witness="153a457802f380f018e80d2bcc7cb4ec7c71908558ddf40d241fc634f6e7ddea" data-char-count="371"><h1>Error code: <code>STREAM_NAME_CONFLICT</code></h1>
+<p><strong>HTTP status:</strong> 409</p>
+<p>A stream with this name already exists in the account.</p>
+<p>All errors are returned as <code>application/json</code> with the shape:</p>
+<pre><code>{ "error": "STREAM_NAME_CONFLICT", "message": "&lt;human-readable string&gt;", "request_id": "&lt;uuid&gt;" }</code></pre></section>
+
+<section id="error-schema-in-use" data-witness="68766bd93edbc18f6db8791c4adac8057f9200407a963f982b3d0a5cfcc4bf5d" data-char-count="373"><h1>Error code: <code>SCHEMA_IN_USE</code></h1>
+<p><strong>HTTP status:</strong> 409</p>
+<p>The schema is referenced by one or more streams and cannot be deleted.</p>
+<p>All errors are returned as <code>application/json</code> with the shape:</p>
+<pre><code>{ "error": "SCHEMA_IN_USE", "message": "&lt;human-readable string&gt;", "request_id": "&lt;uuid&gt;" }</code></pre></section>
+
+<section id="error-rebalance-in-progress" data-witness="0ea577414516c46ce558fa2bb0bea356ceb506d26b79ce8cf4f5aace0dfa67d2" data-char-count="425"><h1>Error code: <code>REBALANCE_IN_PROGRESS</code></h1>
+<p><strong>HTTP status:</strong> 409</p>
+<p>A replica rebalance is already running for this stream. Wait for it to complete before triggering another.</p>
+<p>All errors are returned as <code>application/json</code> with the shape:</p>
+<pre><code>{ "error": "REBALANCE_IN_PROGRESS", "message": "&lt;human-readable string&gt;", "request_id": "&lt;uuid&gt;" }</code></pre></section>
+
+<section id="error-snapshot-pending" data-witness="561551e6d98d322d63aeb3eea1e13bfb998d5a5d4fcb85f9d4f36829ae802cc8" data-char-count="408"><h1>Error code: <code>SNAPSHOT_PENDING</code></h1>
+<p><strong>HTTP status:</strong> 409</p>
+<p>A snapshot operation is in progress; stream deletion is blocked until it completes or is cancelled.</p>
+<p>All errors are returned as <code>application/json</code> with the shape:</p>
+<pre><code>{ "error": "SNAPSHOT_PENDING", "message": "&lt;human-readable string&gt;", "request_id": "&lt;uuid&gt;" }</code></pre></section>
+
+<section id="error-stream-deleted" data-witness="49daae65647effa6f9dcd868f52380ce5a46ec5479ebde9df074e15d40342947" data-char-count="409"><h1>Error code: <code>STREAM_DELETED</code></h1>
+<p><strong>HTTP status:</strong> 410</p>
+<p>The stream was deleted after the operation was initiated. Abort all producers and consumers bound to it.</p>
+<p>All errors are returned as <code>application/json</code> with the shape:</p>
+<pre><code>{ "error": "STREAM_DELETED", "message": "&lt;human-readable string&gt;", "request_id": "&lt;uuid&gt;" }</code></pre></section>
+
+<section id="error-credential-revoked" data-witness="cfbeb26b4d5263626e6f45ed9d0f052b3be3507e7e9313b39802e47fd156e07e" data-char-count="382"><h1>Error code: <code>CREDENTIAL_REVOKED</code></h1>
+<p><strong>HTTP status:</strong> 401</p>
+<p>The producer credential has been revoked. Re-register a new producer.</p>
+<p>All errors are returned as <code>application/json</code> with the shape:</p>
+<pre><code>{ "error": "CREDENTIAL_REVOKED", "message": "&lt;human-readable string&gt;", "request_id": "&lt;uuid&gt;" }</code></pre></section>
+
+<section id="error-batch-too-large" data-witness="1e7fa40300a04f1491d47bfe0eb92398451fd5fa7fc65765ef95a3b20bce6059" data-char-count="392"><h1>Error code: <code>BATCH_TOO_LARGE</code></h1>
+<p><strong>HTTP status:</strong> 413</p>
+<p>The event batch exceeds the 1,000-event or 4 MB limit. Split it into smaller batches.</p>
+<p>All errors are returned as <code>application/json</code> with the shape:</p>
+<pre><code>{ "error": "BATCH_TOO_LARGE", "message": "&lt;human-readable string&gt;", "request_id": "&lt;uuid&gt;" }</code></pre></section>
+
+<section id="error-offset-out-of-range" data-witness="63c606a9bef05be02d90c48e5b68d909fffa62bd76f17b01e20a4465ae3b8481" data-char-count="418"><h1>Error code: <code>OFFSET_OUT_OF_RANGE</code></h1>
+<p><strong>HTTP status:</strong> 409</p>
+<p>The requested offset is below the earliest retained offset or above the current head. Adjust and retry.</p>
+<p>All errors are returned as <code>application/json</code> with the shape:</p>
+<pre><code>{ "error": "OFFSET_OUT_OF_RANGE", "message": "&lt;human-readable string&gt;", "request_id": "&lt;uuid&gt;" }</code></pre></section>
+
+<section id="error-validation-failed" data-witness="074a475b67128921c506510386a6a965f298211db37a28a7ea6e2ce2c8e0d075" data-char-count="406"><h1>Error code: <code>VALIDATION_FAILED</code></h1>
+<p><strong>HTTP status:</strong> 422</p>
+<p>The event payload failed schema validation. The response body contains per-field error details.</p>
+<p>All errors are returned as <code>application/json</code> with the shape:</p>
+<pre><code>{ "error": "VALIDATION_FAILED", "message": "&lt;human-readable string&gt;", "request_id": "&lt;uuid&gt;" }</code></pre></section>
+
+<section id="error-rate-limit-exceeded" data-witness="6cb23483960e8d9081cfc877b5a136abbce8f852fbacbb8fa8e2097e4f0bf944" data-char-count="447"><h1>Error code: <code>RATE_LIMIT_EXCEEDED</code></h1>
+<p><strong>HTTP status:</strong> 429</p>
+<p>The producer or consumer has exceeded its configured rate limit. Back off and retry after the <code>Retry-After</code> header value.</p>
+<p>All errors are returned as <code>application/json</code> with the shape:</p>
+<pre><code>{ "error": "RATE_LIMIT_EXCEEDED", "message": "&lt;human-readable string&gt;", "request_id": "&lt;uuid&gt;" }</code></pre></section>
+
+<section id="error-stream-name-invalid" data-witness="b9194748beced4a1881d154bb6349fba84b90672a3b1c1c26be22eaadfac7bd0" data-char-count="380"><h1>Error code: <code>STREAM_NAME_INVALID</code></h1>
+<p><strong>HTTP status:</strong> 422</p>
+<p>The stream name does not match <code>[a-z][a-z0-9-]{0,62}</code>.</p>
+<p>All errors are returned as <code>application/json</code> with the shape:</p>
+<pre><code>{ "error": "STREAM_NAME_INVALID", "message": "&lt;human-readable string&gt;", "request_id": "&lt;uuid&gt;" }</code></pre></section>
+
+<section id="error-schema-invalid" data-witness="4be1d383564991eb9d1b68d6dc68ed77936b3bed9249063a9aa98b41a285e1a2" data-char-count="399"><h1>Error code: <code>SCHEMA_INVALID</code></h1>
+<p><strong>HTTP status:</strong> 422</p>
+<p>The schema definition is syntactically or semantically invalid. See response body for details.</p>
+<p>All errors are returned as <code>application/json</code> with the shape:</p>
+<pre><code>{ "error": "SCHEMA_INVALID", "message": "&lt;human-readable string&gt;", "request_id": "&lt;uuid&gt;" }</code></pre></section>
+
+<section id="error-partition-count-invalid" data-witness="76204e8b630244ae18e33592103d83a43bad27ce99943235e4a51aa3ec3f257f" data-char-count="364"><h1>Error code: <code>PARTITION_COUNT_INVALID</code></h1>
+<p><strong>HTTP status:</strong> 422</p>
+<p>Partition count must be between 1 and 64.</p>
+<p>All errors are returned as <code>application/json</code> with the shape:</p>
+<pre><code>{ "error": "PARTITION_COUNT_INVALID", "message": "&lt;human-readable string&gt;", "request_id": "&lt;uuid&gt;" }</code></pre></section>
+
+<section id="error-acl-forbidden" data-witness="4e24646b1750a828c01835675eabc97f98d7e0640972468afb34fc714db6c4ea" data-char-count="386"><h1>Error code: <code>ACL_FORBIDDEN</code></h1>
+<p><strong>HTTP status:</strong> 403</p>
+<p>The caller does not have admin permission on this stream and cannot modify its ACL.</p>
+<p>All errors are returned as <code>application/json</code> with the shape:</p>
+<pre><code>{ "error": "ACL_FORBIDDEN", "message": "&lt;human-readable string&gt;", "request_id": "&lt;uuid&gt;" }</code></pre></section>
+
+<section id="error-consumer-locked" data-witness="75f3ba2c16596e8c1dcde91a779525eec8fe9f025915f6a3870865c9ee02798d" data-char-count="413"><h1>Error code: <code>CONSUMER_LOCKED</code></h1>
+<p><strong>HTTP status:</strong> 409</p>
+<p>The consumer is in a locked state (e.g., mid-rebalance) and cannot be modified. Retry after a short delay.</p>
+<p>All errors are returned as <code>application/json</code> with the shape:</p>
+<pre><code>{ "error": "CONSUMER_LOCKED", "message": "&lt;human-readable string&gt;", "request_id": "&lt;uuid&gt;" }</code></pre></section>
+
+<section id="error-idempotency-conflict" data-witness="958b53840449e0fd04db2ddbbd5b01cd949a7473da8a5ddf65453c55c605af7a" data-char-count="432"><h1>Error code: <code>IDEMPOTENCY_CONFLICT</code></h1>
+<p><strong>HTTP status:</strong> 409</p>
+<p>The idempotency key was used by a different request body within the deduplication window. Use a new key or omit it.</p>
+<p>All errors are returned as <code>application/json</code> with the shape:</p>
+<pre><code>{ "error": "IDEMPOTENCY_CONFLICT", "message": "&lt;human-readable string&gt;", "request_id": "&lt;uuid&gt;" }</code></pre></section>
+
+<section id="error-internal-error" data-witness="d3bdddd096ae0dd091ef5180185f5fd6ba966ceda03521cd4daced91faadfbd7" data-char-count="418"><h1>Error code: <code>INTERNAL_ERROR</code></h1>
+<p><strong>HTTP status:</strong> 500</p>
+<p>An unexpected internal error occurred. The error is logged with a <code>request_id</code> for support escalation.</p>
+<p>All errors are returned as <code>application/json</code> with the shape:</p>
+<pre><code>{ "error": "INTERNAL_ERROR", "message": "&lt;human-readable string&gt;", "request_id": "&lt;uuid&gt;" }</code></pre></section>
+
+<section id="error-service-unavailable" data-witness="ef574e1d475a11370b8b53257bcfe38507ce81f94cb7baaa094c91150c3aea3b" data-char-count="417"><h1>Error code: <code>SERVICE_UNAVAILABLE</code></h1>
+<p><strong>HTTP status:</strong> 503</p>
+<p>The service is temporarily unavailable (e.g., during rolling upgrade). Retry with exponential backoff.</p>
+<p>All errors are returned as <code>application/json</code> with the shape:</p>
+<pre><code>{ "error": "SERVICE_UNAVAILABLE", "message": "&lt;human-readable string&gt;", "request_id": "&lt;uuid&gt;" }</code></pre></section>
+
+<section id="error-insufficient-capacity" data-witness="f6b7dc2669f98c038b4ace932723cd5c83523ffbcd8db8bec948049c3f884d73" data-char-count="421"><h1>Error code: <code>INSUFFICIENT_CAPACITY</code></h1>
+<p><strong>HTTP status:</strong> 507</p>
+<p>The account has reached its retained-bytes quota. Reduce retention or delete streams before appending.</p>
+<p>All errors are returned as <code>application/json</code> with the shape:</p>
+<pre><code>{ "error": "INSUFFICIENT_CAPACITY", "message": "&lt;human-readable string&gt;", "request_id": "&lt;uuid&gt;" }</code></pre></section>
+
+<section id="config-retention-ms" data-witness="904d3a67788c84ee292d10cf62bce2038fcf46bd2c50fdd742ec02d7b83ef58a" data-char-count="378"><h1>Configuration key: <code>retention_ms</code></h1>
+<table>
+<thead><tr><th>Property</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Type</td><td>integer</td></tr>
+<tr><td>Default</td><td><code>86400000</code></td></tr>
+</tbody>
+</table>
+<p>Log retention window in milliseconds. Events older than this may be evicted. Minimum 60000 (1 minute); maximum 2592000000 (30 days).</p></section>
+
+<section id="config-partition-count" data-witness="0a055c06b2776f9f8f8295594d7922f35b83134d46b47251a8b4de15e8dbd5b3" data-char-count="395"><h1>Configuration key: <code>partition_count</code></h1>
+<table>
+<thead><tr><th>Property</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Type</td><td>integer</td></tr>
+<tr><td>Default</td><td><code>1</code></td></tr>
+</tbody>
+</table>
+<p>Number of partitions for a stream. Set at creation; immutable thereafter. Higher partition counts increase parallelism but consume more broker resources.</p></section>
+
+<section id="config-max-batch-size-events" data-witness="745d7465f6f8467b16439ff2155adf57d65ba6350fd22ed2bc242bee6b45d761" data-char-count="353"><h1>Configuration key: <code>max_batch_size_events</code></h1>
+<table>
+<thead><tr><th>Property</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Type</td><td>integer</td></tr>
+<tr><td>Default</td><td><code>1000</code></td></tr>
+</tbody>
+</table>
+<p>Maximum number of events in a single append batch. Account-level setting; cannot be raised above 1000.</p></section>
+
+<section id="config-max-batch-size-bytes" data-witness="e319b46fca4ca14ac68bd82be43219b2147c28abc895f350997f347768abe0f1" data-char-count="362"><h1>Configuration key: <code>max_batch_size_bytes</code></h1>
+<table>
+<thead><tr><th>Property</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Type</td><td>integer</td></tr>
+<tr><td>Default</td><td><code>4194304</code></td></tr>
+</tbody>
+</table>
+<p>Maximum total payload bytes in a single append batch (4 MB). Requests exceeding this receive BATCH_TOO_LARGE.</p></section>
+
+<section id="config-consumer-long-poll-max-ms" data-witness="cfbaa638bdbc6a9215cca553557cc2fc7bba3cea66b5bd5045c348b464a40278" data-char-count="363"><h1>Configuration key: <code>consumer_long_poll_max_ms</code></h1>
+<table>
+<thead><tr><th>Property</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Type</td><td>integer</td></tr>
+<tr><td>Default</td><td><code>30000</code></td></tr>
+</tbody>
+</table>
+<p>Maximum long-poll wait time for event reads. Clients may request up to this value via <code>wait_ms</code>.</p></section>
+
+<section id="config-idempotency-window-s" data-witness="31eae6f5b265b5eac76a03a600dad68a982f8394a3c216877acffab5f1238f3c" data-char-count="335"><h1>Configuration key: <code>idempotency_window_s</code></h1>
+<table>
+<thead><tr><th>Property</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Type</td><td>integer</td></tr>
+<tr><td>Default</td><td><code>60</code></td></tr>
+</tbody>
+</table>
+<p>Duration in seconds for which an idempotency key deduplicate duplicate append requests.</p></section>
+
+<section id="config-metrics-resolution-min-s" data-witness="60113307fdcb14387d3065510956ab18c435e0bcb1acc6d4c6e816facc60127a" data-char-count="333"><h1>Configuration key: <code>metrics_resolution_min_s</code></h1>
+<table>
+<thead><tr><th>Property</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Type</td><td>integer</td></tr>
+<tr><td>Default</td><td><code>10</code></td></tr>
+</tbody>
+</table>
+<p>Minimum sampling resolution for metric queries. Must be a multiple of this value.</p></section>
+
+<section id="config-rebalance-timeout-s" data-witness="aa3a5f9435ae53e7bd0a2206a65886bf7213fc8754b6792c654e11c236167ad8" data-char-count="364"><h1>Configuration key: <code>rebalance_timeout_s</code></h1>
+<table>
+<thead><tr><th>Property</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Type</td><td>integer</td></tr>
+<tr><td>Default</td><td><code>120</code></td></tr>
+</tbody>
+</table>
+<p>Maximum time allowed for a replica rebalance before it is aborted and the stream is left in its pre-rebalance state.</p></section>
+
+<section id="config-snapshot-ttl-days" data-witness="fc75527c7e6a25687d0879cfaba69b0741495337353bbf053a3142e6060eb774" data-char-count="344"><h1>Configuration key: <code>snapshot_ttl_days</code></h1>
+<table>
+<thead><tr><th>Property</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Type</td><td>integer</td></tr>
+<tr><td>Default</td><td><code>30</code></td></tr>
+</tbody>
+</table>
+<p>Days after which unclaimed snapshots are automatically purged. Set to 0 to disable automatic purge.</p></section>
+
+<section id="config-acl-default-deny" data-witness="8039863e0a7362004b0d82f772621408cc148c9e7d1204b70250234f2636d2b5" data-char-count="386"><h1>Configuration key: <code>acl_default_deny</code></h1>
+<table>
+<thead><tr><th>Property</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Type</td><td>boolean</td></tr>
+<tr><td>Default</td><td><code>true</code></td></tr>
+</tbody>
+</table>
+<p>When true, principals not listed in a stream&#39;s ACL have no access. When false, all authenticated principals have read access by default.</p></section>
+
+<section id="config-schema-validation-mode" data-witness="56ddcd7e300cb8a72a7d507715ed580e06b040d315bed43c6742a89323abd046" data-char-count="472"><h1>Configuration key: <code>schema_validation_mode</code></h1>
+<table>
+<thead><tr><th>Property</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Type</td><td>string</td></tr>
+<tr><td>Default</td><td><code>strict</code></td></tr>
+</tbody>
+</table>
+<p>Validation behavior when a producer publishes an event against a stream with an associated schema. <code>strict</code>: reject invalid events. <code>warn</code>: admit but annotate. <code>off</code>: disable validation.</p></section>
+
+<section id="config-rate-limit-default-rps" data-witness="1b36d9976044a58d732a4f6455344a006aec7e41ed38b15aba77c6e5362b9f13" data-char-count="386"><h1>Configuration key: <code>rate_limit_default_rps</code></h1>
+<table>
+<thead><tr><th>Property</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Type</td><td>integer</td></tr>
+<tr><td>Default</td><td><code>1000</code></td></tr>
+</tbody>
+</table>
+<p>Default per-producer and per-consumer rate limit in requests per second. Can be overridden per-producer/consumer at registration time.</p></section>
+
+<section id="config-consumer-initial-offset" data-witness="bbad3d7c29cf0a50f33ab263d623ea0b3d42e260b773f5ef2225e09f63377467" data-char-count="474"><h1>Configuration key: <code>consumer_initial_offset</code></h1>
+<table>
+<thead><tr><th>Property</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Type</td><td>string</td></tr>
+<tr><td>Default</td><td><code>earliest</code></td></tr>
+</tbody>
+</table>
+<p>Default starting offset for newly registered consumers when <code>initial_offset</code> is not specified. <code>earliest</code> = start from the oldest retained event; <code>latest</code> = start from the current head.</p></section>
+
+<section id="config-max-consumers-per-stream" data-witness="6c45ab51e37a901c6e1d0e8e95a2d1482263223518cbcf4d10654b10c5479eec" data-char-count="387"><h1>Configuration key: <code>max_consumers_per_stream</code></h1>
+<table>
+<thead><tr><th>Property</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Type</td><td>integer</td></tr>
+<tr><td>Default</td><td><code>200</code></td></tr>
+</tbody>
+</table>
+<p>Maximum number of consumer registrations per stream. Exceeding this limit returns a 429 error. Raise at the account level via support.</p></section>
+
+<section id="config-max-producers-per-stream" data-witness="9cf2f603e19ef26980e3fa65b95b25a83efd32fc3a75a79da6ad858c237d821a" data-char-count="304"><h1>Configuration key: <code>max_producers_per_stream</code></h1>
+<table>
+<thead><tr><th>Property</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Type</td><td>integer</td></tr>
+<tr><td>Default</td><td><code>50</code></td></tr>
+</tbody>
+</table>
+<p>Maximum number of producer registrations per stream.</p></section>
+
+<section id="config-max-streams-per-account" data-witness="ccb707c1dab48173faf7146e97d43fd782792403e5307d24add929123cfdca3e" data-char-count="353"><h1>Configuration key: <code>max_streams_per_account</code></h1>
+<table>
+<thead><tr><th>Property</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Type</td><td>integer</td></tr>
+<tr><td>Default</td><td><code>100</code></td></tr>
+</tbody>
+</table>
+<p>Maximum number of streams an account may hold simultaneously. Contact support to request an increase.</p></section>
+
+<section id="config-snapshot-auto-purge-enabled" data-witness="416e7ef78df3078db71b24c05c484a380db1e3cb55e6649fde8804841d8ff899" data-char-count="419"><h1>Configuration key: <code>snapshot_auto_purge_enabled</code></h1>
+<table>
+<thead><tr><th>Property</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Type</td><td>boolean</td></tr>
+<tr><td>Default</td><td><code>true</code></td></tr>
+</tbody>
+</table>
+<p>When true, snapshots older than <code>snapshot_ttl_days</code> are automatically purged. Set to false to retain snapshots indefinitely (subject to account quota).</p></section>
+
+<section id="config-metrics-window-max-s" data-witness="c416e5d59f69e9108c76435fbcd06bb1f96a6e4dea97c0d3cd54d04cadf528f5" data-char-count="370"><h1>Configuration key: <code>metrics_window_max_s</code></h1>
+<table>
+<thead><tr><th>Property</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Type</td><td>integer</td></tr>
+<tr><td>Default</td><td><code>86400</code></td></tr>
+</tbody>
+</table>
+<p>Maximum look-back window clients may request from the metrics endpoint. Default is 24 hours; contact support to extend.</p></section>
+
+<section id="config-event-data-encoding" data-witness="069d2eee1161b21d0c27f9649bbc4a2e94313ed743ac33880a59b053ac49224a" data-char-count="476"><h1>Configuration key: <code>event_data_encoding</code></h1>
+<table>
+<thead><tr><th>Property</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Type</td><td>string</td></tr>
+<tr><td>Default</td><td><code>base64</code></td></tr>
+</tbody>
+</table>
+<p>Default encoding for the <code>data</code> field of events returned by <code>GET /events</code>. <code>base64</code> or <code>json</code>. Individual consumers may override per-request via an <code>Accept-Encoding</code> hint.</p></section>
+
+<section id="config-tls-min-version" data-witness="08b592a091d310371e09508f8ebe17c1e77ca5864069df9beba7f4caff73041d" data-char-count="390"><h1>Configuration key: <code>tls_min_version</code></h1>
+<table>
+<thead><tr><th>Property</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Type</td><td>string</td></tr>
+<tr><td>Default</td><td><code>TLS1.2</code></td></tr>
+</tbody>
+</table>
+<p>Minimum TLS version accepted by the API gateway. <code>TLS1.2</code> or <code>TLS1.3</code>. Enterprise accounts default to <code>TLS1.3</code>.</p></section>
+
+<section id="config-audit-log-enabled" data-witness="eac58a2b9a975a72b4563a9f0e736bb493f0ad71192dd7a4a4d9d7e9ae9e1f1a" data-char-count="425"><h1>Configuration key: <code>audit_log_enabled</code></h1>
+<table>
+<thead><tr><th>Property</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Type</td><td>boolean</td></tr>
+<tr><td>Default</td><td><code>false</code></td></tr>
+</tbody>
+</table>
+<p>When enabled, all control-plane operations (stream creation/deletion, ACL changes, schema registration) are written to the account&#39;s audit log, accessible via the dashboard.</p></section>
+
+<section id="config-cors-allowed-origins" data-witness="4662b0c6119cbd1c829bc2a03b7b1fb0af32caedebf6bbd83192b564bab13376" data-char-count="419"><h1>Configuration key: <code>cors_allowed_origins</code></h1>
+<table>
+<thead><tr><th>Property</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>Type</td><td>array of string</td></tr>
+<tr><td>Default</td><td><code>[]</code></td></tr>
+</tbody>
+</table>
+<p>Explicit list of origins permitted in CORS preflight responses. An empty list disables CORS headers. Wildcards are not supported; enumerate each origin explicitly.</p></section>
+
+<section id="glossary-stream" data-witness="c86b6643fd564945e4eadac7c393c4cea6abf31e485036f00bdfc15cb887d378" data-char-count="257"><h1>Glossary: Stream</h1>
+<p>The top-level container for an ordered, append-only sequence of events. A stream has a name, a partition count, a retention policy, and optionally an associated schema. Streams are identified by their <code>stream_id</code>.</p></section>
+
+<section id="glossary-event" data-witness="896398e826681d80f99e4f8f216d0fcc0a9690741f179e32e0409bed63f9bedb" data-char-count="306"><h1>Glossary: Event</h1>
+<p>The atomic unit of data in Zephyr. An event consists of a <code>data</code> payload (base64 binary or JSON), an optional <code>key</code> used for partition routing, optional <code>headers</code> (arbitrary string key-value pairs), and a server-assigned <code>offset</code>.</p></section>
+
+<section id="glossary-offset" data-witness="a77a3507cc93f6d9a3ea9b9c62b073ce5af8ad9cd00523b8238a7b2696bf5013" data-char-count="238"><h1>Glossary: Offset</h1>
+<p>A monotonically increasing integer that identifies an event&#39;s position within its stream. Offsets start at 0. They are assigned by the server at append time and never reused, even after event eviction.</p></section>
+
+<section id="glossary-partition" data-witness="99747d98f41fe55fe00b057db3781ef8d0e1623c3b32ac6d075c82083d56c96a" data-char-count="267"><h1>Glossary: Partition</h1>
+<p>A subdivision of a stream that allows parallel produce and consume. Events with the same <code>key</code> are routed to the same partition (consistent hashing). Consumers may be pinned to a partition or consume from all partitions.</p></section>
+
+<section id="glossary-producer" data-witness="dbed43a00e4398eedd2b8ab625ac3c40219f382210f29eebaf23eb51a40ad278" data-char-count="235"><h1>Glossary: Producer</h1>
+<p>A registered credential and rate-limit context for a publishing client. Each producer holds a <code>producer_secret</code> used to authenticate append requests. Producers are bound to a single stream.</p></section>
+
+<section id="glossary-consumer" data-witness="2805769a0096e609e7d22e18f342c1f30ff35457647afa5c477cc3f14a1d334f" data-char-count="211"><h1>Glossary: Consumer</h1>
+<p>A registered read context that tracks an independent offset into a stream. Multiple consumers can read the same stream at different offsets without interfering with each other.</p></section>
+
+<section id="glossary-lag" data-witness="ef4423695c57ebade927fc65554c394d0e8fc647dd161153c8a96cb0cfbb1a59" data-char-count="257"><h1>Glossary: Lag</h1>
+<p>The number of events between a consumer&#39;s current acknowledged offset and the stream&#39;s head (latest) offset. A lag of 0 means the consumer is caught up. High lag indicates the consumer is falling behind the ingest rate.</p></section>
+
+<section id="glossary-checkpoint" data-witness="9972ec83fb169735600386913e6a78e977ca5b0531c196093baa947a3816a3c4" data-char-count="306"><h1>Glossary: Checkpoint</h1>
+<p>An explicit record of the last offset a consumer has successfully processed. Checkpointing is the mechanism by which at-least-once delivery is implemented: a consumer that restarts from its last checkpoint will re-read events between the checkpoint and the crash point.</p></section>
+
+<section id="glossary-schema" data-witness="92df2df4b9f6b2eaf557e2f0f80be153311c9b275efe2fadc05abf341d090852" data-char-count="223"><h1>Glossary: Schema</h1>
+<p>An Avro or JSON Schema definition registered in the account and optionally associated with a stream. When a schema is associated, producer-side validation rejects events that do not conform.</p></section>
+
+<section id="glossary-idempotency-key" data-witness="6f47b72e6c081d6a8344d6a03ac31511fa3f2a99ed284c2ea3c0d6be1a31a64d" data-char-count="273"><h1>Glossary: Idempotency key</h1>
+<p>An optional string header (<code>Idempotency-Key</code>) on append requests. Within the <code>idempotency_window_s</code>, duplicate requests with the same key and the same request body are deduplicated — only the first is applied.</p></section>
+
+<section id="glossary-acl" data-witness="38bcdd8ee60270f98c7689c672dbcf34eaa03568cc1f407ad181411b4d5e800d" data-char-count="299"><h1>Glossary: Access-control list (ACL)</h1>
+<p>A set of principal-to-operation grants on a stream. Zephyr uses a default-deny model by default: only explicitly granted principals can perform the listed operations. Supported operations: <code>read</code>, <code>write</code>, <code>admin</code>.</p></section>
+
+<section id="glossary-principal" data-witness="59fb3ec95ed0b3125b0f0d0e62ab2e4e3aca7b5b2a0dd41e4d971c8d33d071f3" data-char-count="192"><h1>Glossary: Principal</h1>
+<p>An entity (user or service account) that authenticates to Zephyr and is subject to ACL checks. Principals are identified by their <code>principal_id</code>.</p></section>
+
+<section id="glossary-broker" data-witness="a9132f62f33db833a0bbabbe559d7987683423a651290a9ed8dd369e4930a0a0" data-char-count="216"><h1>Glossary: Broker</h1>
+<p>A Zephyr server node that holds partition replicas, handles ingest, and serves consume requests. Clients do not address brokers directly; the API gateway routes to the correct broker.</p></section>
+
+<section id="glossary-replica" data-witness="bfbe05542eb0f352eece6743feb221ffb36150a0eac4be545f6ca6b67c2bb178" data-char-count="215"><h1>Glossary: Replica</h1>
+<p>A copy of a partition held by a broker. Each partition has a leader replica (handles reads and writes) and zero or more follower replicas (replicate from the leader for durability).</p></section>
+
+<section id="glossary-rebalance" data-witness="32b43389f770c42f1bea9d71b4db7b1aeca2814f08c12b12dc118cc7ce602db9" data-char-count="256"><h1>Glossary: Rebalance</h1>
+<p>The process of redistributing partition leadership across brokers, typically triggered by adding capacity or recovering from a broker failure. During rebalance, affected partitions experience a brief leadership transfer.</p></section>
+
+<section id="glossary-snapshot" data-witness="ed21d3ecaf5e9a92cdb13ba36bff17d38d4134e2c0d1b5cf136a9fb3df210dfa" data-char-count="227"><h1>Glossary: Snapshot</h1>
+<p>A named record of a stream&#39;s head offset at a point in time. Snapshots do not freeze or copy event data; they provide a stable position reference for migration, backup, or diff operations.</p></section>
+
+<section id="glossary-retention" data-witness="e9bf190b27e8e5badd2830b85b7cb0fc9de61cc923a6a028f6abfb03b0341988" data-char-count="284"><h1>Glossary: Retention</h1>
+<p>The policy that governs how long events are kept in a stream before being eligible for eviction. Configured via <code>retention_ms</code>. Note: eviction is best-effort — events may persist slightly longer than the retention window under high load.</p></section>
+
+<section id="glossary-head" data-witness="1059a71e9295f87a0699b0bdb7d8d6c664b89df6661d29dc502d9c439d51121f" data-char-count="190"><h1>Glossary: Head</h1>
+<p>The latest offset in a stream — the position one past the last written event. Reading from the head with <code>wait_ms &gt; 0</code> long-polls for new events.</p></section>
+
+<section id="glossary-long-poll" data-witness="9782aaf2334fa93de65dd742bc52fbb3905acd25e286bc6d77a9ebd624f51787" data-char-count="275"><h1>Glossary: Long-poll</h1>
+<p>A read strategy where the server holds an open connection for up to <code>wait_ms</code> milliseconds, returning as soon as new events are available (or at timeout). Long-polling reduces unnecessary polling under low-throughput conditions.</p></section>
+
+<section id="glossary-at-least-once" data-witness="f9e0d393929249d67a539c74a60f3c7fadc3b3fbe8fc5714f10bb92752182ae9" data-char-count="317"><h1>Glossary: At-least-once delivery</h1>
+<p>The delivery guarantee Zephyr offers: every event written to a stream will be delivered to a consumer at least once. Consumers must be idempotent or use a deduplication layer, because a crash before checkpointing causes re-delivery of events since the last checkpoint.</p></section>
+
+<section id="glossary-exactly-once" data-witness="eb74e98cd3ae2fb6c332ed2220acb3bd0bbe6b50ce179a14023af275027e8f34" data-char-count="257"><h1>Glossary: Exactly-once delivery (not supported)</h1>
+<p>Zephyr does not natively provide exactly-once delivery. Producers can avoid duplicate ingest using idempotency keys, but consumer-side exactly-once requires an external transaction coordinator.</p></section>
+
+<section id="glossary-throughput" data-witness="a80cb33400319ef662e63b130f090919a3a1026c04218f941bdd27d593594465" data-char-count="239"><h1>Glossary: Throughput</h1>
+<p>The rate of data flowing through a stream, measured in events per second or bytes per second. Throughput is bounded by the rate limit of the producing credential and the broker&#39;s partition capacity.</p></section>
+
+<section id="glossary-cursor" data-witness="63430047030b3a1f3236cd63f28e0589bdd6be335574307f68d25a20963444d0" data-char-count="247"><h1>Glossary: Cursor</h1>
+<p>An opaque string returned in paginated list responses as <code>next_cursor</code>. Pass it back as the <code>cursor</code> query parameter to retrieve the next page. Cursors are valid for 10 minutes after issuance.</p></section>
+
+<section id="glossary-request-id" data-witness="6576f3dc6097389be55be732c96e439361506cb8080a919e5b6446c3fe4534f4" data-char-count="240"><h1>Glossary: Request ID</h1>
+<p>A UUID returned in all API responses as the <code>X-Request-Id</code> header and included in error response bodies as <code>request_id</code>. Include it in support escalations to enable log correlation.</p></section>
+
+<section id="glossary-account" data-witness="f2ec0fb2c3a67b05a535d413f0acc17ef832a302a1d0621363cb0145b14ef983" data-char-count="224"><h1>Glossary: Account</h1>
+<p>The top-level organizational unit in Zephyr. All streams, schemas, and principals belong to an account. Quotas (retained bytes, stream count, schema count) are enforced at the account level.</p></section>
+
+<section id="glossary-base64" data-witness="21f05779a2fd4eec03b8c661cfa6881cd60dc5571935cd8be78c6d07d5058f31" data-char-count="225"><h1>Glossary: Base64 encoding</h1>
+<p>The default encoding for event <code>data</code> payloads. Binary data is base64-encoded when appended and returned base64-encoded on read, unless the consumer requests JSON encoding.</p></section>
+
+<section id="glossary-header" data-witness="b4b0b69d6c4a6eed30bf860295141b10388cb2cb1f426d5c56bf789059fbb65c" data-char-count="222"><h1>Glossary: Event header</h1>
+<p>Arbitrary string key-value metadata attached to an individual event by the producer. Headers are not indexed and not searchable; they are carried opaquely alongside the event payload.</p></section>
+
+<section id="glossary-leader" data-witness="97aaf6e3b8ec9aa6382c0405ee9ea2735cbc58fc55850e576c69fbbce1c7895c" data-char-count="190"><h1>Glossary: Leader replica</h1>
+<p>The broker replica that handles all reads and writes for a partition. Each partition has exactly one leader at any time; followers replicate from it.</p></section>
+
+<section id="glossary-follower" data-witness="fde7a9a04d41399017b2128a0c0690163a6ac7ad8d56dfd26b87bf43acaf23e7" data-char-count="223"><h1>Glossary: Follower replica</h1>
+<p>A replica that copies events from the partition leader for durability. Followers do not serve client requests; they become eligible for leader election if the current leader fails.</p></section>
+
+<section id="glossary-election" data-witness="6ba632f17f995b3ca5aa9a38586b88a43523e9be64a0f35617a9b3e0831c1fe8" data-char-count="247"><h1>Glossary: Leader election</h1>
+<p>The process by which a follower replica is promoted to leader when the current leader is unavailable. During election, the affected partition is briefly unavailable; producers receive 503 and should retry.</p></section>
+
+<section id="glossary-gateway" data-witness="b68830478e7ad63ab89b41de1e9c26c95a3650f84f7ccf4a04e7bca88bf3130c" data-char-count="265"><h1>Glossary: API gateway</h1>
+<p>The public entry point for all Zephyr client requests. The gateway handles TLS termination, authentication, rate limiting, and routes requests to the correct broker. Clients always address the gateway, never individual brokers.</p></section>
+
+<section id="glossary-ttl" data-witness="09d5adcbc525b4b21ff799e8c1123a60f0c147d6ca78a063b3288be4f6a3736e" data-char-count="223"><h1>Glossary: Time-to-live (TTL)</h1>
+<p>The duration after which a resource is eligible for automatic purge. Used for snapshots (<code>snapshot_ttl_days</code>) and idempotency keys (<code>idempotency_window_s</code>).</p></section>
+
+<section id="glossary-quota" data-witness="fcfb4927d20e4109e375076bb367d899d8ada61c52c393a04c3c412252ba7671" data-char-count="236"><h1>Glossary: Quota</h1>
+<p>An account-level limit on resource consumption: stream count, schema count, retained bytes, producers per stream, consumers per stream. Exceeding a quota returns 429 or 507 depending on the resource type.</p></section>
+
+<section id="glossary-tenant" data-witness="9770cd622eae03d15dc6c6aa39d443a73b446f9bb80c647f419af372d1a4fac7" data-char-count="201"><h1>Glossary: Tenant</h1>
+<p>A synonym for account in Zephyr&#39;s multi-tenant architecture. Each account is isolated: its streams, schemas, principals, and data are not visible to other accounts.</p></section>
+
+<section id="glossary-partition-key" data-witness="1fd44234be8511bd2ae293301f253c236d07babb820d96a5594db976299b8b14" data-char-count="276"><h1>Glossary: Partition key</h1>
+<p>The <code>key</code> field of an event, used to route the event to a deterministic partition via consistent hashing. Events with the same key always land on the same partition, preserving ordering relative to other events with that key.</p></section>
+
+<section id="glossary-ordering" data-witness="29b9161b38e68f1487357c4af8d09329b5914852a87435861a2c99bf372a3044" data-char-count="271"><h1>Glossary: Event ordering</h1>
+<p>Within a single partition, events are strictly ordered by offset. Across partitions, there is no ordering guarantee. Consumers that require total order should use a single-partition stream or impose ordering via their event model.</p></section>
+
+<section id="glossary-durability" data-witness="cf75ca2e872d30af66e18a4a5936c209cf3d64242e08ea31d8fa63c7430e6b2c" data-char-count="217"><h1>Glossary: Durability</h1>
+<p>Zephyr replicates each event to at least two broker nodes before acknowledging a successful append. The replication factor is configurable (enterprise tier only); the default is 2.</p></section>
+
+<section id="glossary-replication-factor" data-witness="6c3073e72db7f216049ebbd3a95ac7c52016b2e66e5884d893b6a791f4ce2ecd" data-char-count="216"><h1>Glossary: Replication factor</h1>
+<p>The number of broker copies maintained for each partition. Higher replication factors increase durability at the cost of write latency. Default is 2 (leader + 1 follower).</p></section>
+
+<section id="glossary-ack" data-witness="262861bd7bdf007d6c03ad38e65107333ba1a6faf40f1c2fd383d594da936ff3" data-char-count="254"><h1>Glossary: Acknowledgement (ack)</h1>
+<p>Confirmation from the Zephyr API that an append batch has been durably written to the required number of replicas. A 202 response guarantees the data will not be lost under normal broker-failure conditions.</p></section>
+
+<section id="type-stream" data-witness="da25afedd1b8863116becb2b682d9b10090367b50bfb079b58359006ddf77ba1" data-char-count="1114"><h1>Type: <code>Stream</code></h1>
+<p>Top-level stream container returned by create, get, and list endpoints.</p>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>stream_id</code></td><td>string</td><td>Unique identifier, e.g. <code>stm_01hxyz</code>.</td></tr>
+<tr><td><code>name</code></td><td>string</td><td>The stream&#39;s human-readable name.</td></tr>
+<tr><td><code>partition_count</code></td><td>integer</td><td>Number of partitions.</td></tr>
+<tr><td><code>retention_ms</code></td><td>integer</td><td>Retention window in milliseconds.</td></tr>
+<tr><td><code>schema_id</code></td><td>string|null</td><td>Associated schema ID, or null if none.</td></tr>
+<tr><td><code>created_at</code></td><td>string</td><td>UTC timestamp of creation (format: <code>YYYY-MM-DDTHH:mm:ssZ</code>).</td></tr>
+<tr><td><code>head_offset</code></td><td>integer</td><td>The current head offset (one past the last event).</td></tr>
+<tr><td><code>status</code></td><td>string</td><td><code>active</code>, <code>deleting</code>, or <code>error</code>.</td></tr>
+</tbody>
+</table></section>
+
+<section id="type-producer" data-witness="9d0d351a420a82e4cac4790b6ad9b5c81c78b1836143becfdb9474271307a365" data-char-count="823"><h1>Type: <code>Producer</code></h1>
+<p>Registered producer credential bound to a stream.</p>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>producer_id</code></td><td>string</td><td>Unique identifier.</td></tr>
+<tr><td><code>stream_id</code></td><td>string</td><td>Stream this producer is bound to.</td></tr>
+<tr><td><code>label</code></td><td>string|null</td><td>Human-readable label.</td></tr>
+<tr><td><code>rate_limit_rps</code></td><td>integer</td><td>Per-producer rate limit in requests per second.</td></tr>
+<tr><td><code>created_at</code></td><td>string</td><td>UTC creation timestamp.</td></tr>
+<tr><td><code>producer_secret</code></td><td>string</td><td>Only present in the 201 response from POST /producers. Never returned again.</td></tr>
+</tbody>
+</table></section>
+
+<section id="type-consumer" data-witness="93f098f181cbde104941975e14654cd1ff9515f6913c189136ee57332e442afb" data-char-count="994"><h1>Type: <code>Consumer</code></h1>
+<p>Consumer registration tracking an offset into a stream.</p>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>consumer_id</code></td><td>string</td><td>Unique identifier.</td></tr>
+<tr><td><code>stream_id</code></td><td>string</td><td>Stream this consumer reads from.</td></tr>
+<tr><td><code>label</code></td><td>string|null</td><td>Human-readable label.</td></tr>
+<tr><td><code>offset</code></td><td>integer</td><td>Current acknowledged offset.</td></tr>
+<tr><td><code>lag</code></td><td>integer</td><td>Events between this offset and the stream head.</td></tr>
+<tr><td><code>rate_limit_rps</code></td><td>integer</td><td>Per-consumer read rate limit.</td></tr>
+<tr><td><code>last_read_at</code></td><td>string|null</td><td>UTC timestamp of last read operation, or null if never read.</td></tr>
+<tr><td><code>created_at</code></td><td>string</td><td>UTC creation timestamp.</td></tr>
+</tbody>
+</table></section>
+
+<section id="type-event" data-witness="06bac551f0b2b5e2642114898f8a8ea3fb84105718bc43f1667c9e82b16d1225" data-char-count="864"><h1>Type: <code>Event</code></h1>
+<p>Atomic data unit returned by GET /events.</p>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>offset</code></td><td>integer</td><td>Server-assigned position within the stream.</td></tr>
+<tr><td><code>partition</code></td><td>integer</td><td>Partition this event was written to.</td></tr>
+<tr><td><code>key</code></td><td>string|null</td><td>Partition routing key, or null if unkeyed.</td></tr>
+<tr><td><code>data</code></td><td>string</td><td>Base64-encoded binary payload or JSON string, depending on producer encoding.</td></tr>
+<tr><td><code>headers</code></td><td>object</td><td>Arbitrary string key-value pairs set by the producer.</td></tr>
+<tr><td><code>written_at</code></td><td>string</td><td>UTC timestamp when the event was committed.</td></tr>
+</tbody>
+</table></section>
+
+<section id="type-schema" data-witness="7b6410a7e035254bee24a7ede597bd0e10b94a0a623d8cf581a9c6635b5302ee" data-char-count="655"><h1>Type: <code>Schema</code></h1>
+<p>Registered schema definition.</p>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>schema_id</code></td><td>string</td><td>Unique identifier.</td></tr>
+<tr><td><code>type</code></td><td>string</td><td><code>avro</code> or <code>json-schema</code>.</td></tr>
+<tr><td><code>label</code></td><td>string|null</td><td>Human-readable label.</td></tr>
+<tr><td><code>definition</code></td><td>string</td><td>The schema definition as a JSON-encoded string.</td></tr>
+<tr><td><code>created_at</code></td><td>string</td><td>UTC creation timestamp.</td></tr>
+</tbody>
+</table></section>
+
+<section id="type-aclentry" data-witness="58360cb4a148a087e607dc93c2b9b8dbe8cfc8dd5a6f879b8d666f05dc36c237" data-char-count="560"><h1>Type: <code>AclEntry</code></h1>
+<p>Principal-to-operations mapping on a stream.</p>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>principal_id</code></td><td>string</td><td>The granted principal.</td></tr>
+<tr><td><code>operations</code></td><td>array of string</td><td>List of permitted operations: <code>read</code>, <code>write</code>, <code>admin</code>.</td></tr>
+<tr><td><code>granted_at</code></td><td>string</td><td>UTC timestamp when the grant was last modified.</td></tr>
+</tbody>
+</table></section>
+
+<section id="type-metricsample" data-witness="b5912e663d5639c757545a4467cb79305925008715e8c65e9c276b6f8468e6b4" data-char-count="656"><h1>Type: <code>MetricSample</code></h1>
+<p>Single time-series sample from GET /metrics.</p>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>ts</code></td><td>string</td><td>UTC timestamp of the sample start.</td></tr>
+<tr><td><code>ingest_rps</code></td><td>number</td><td>Events appended per second during this interval.</td></tr>
+<tr><td><code>consume_rps</code></td><td>number</td><td>Events read per second during this interval.</td></tr>
+<tr><td><code>error_rate</code></td><td>number</td><td>Fraction of requests that returned an error during this interval (0.0–1.0).</td></tr>
+</tbody>
+</table></section>
+
+<section id="type-partitionreplica" data-witness="407c9e56c9bc61b8c32a8a6faefc98de7c0b178fa93986cc931e0eedb69fecde" data-char-count="677"><h1>Type: <code>PartitionReplica</code></h1>
+<p>Per-partition replica assignment from GET /replicas.</p>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>partition</code></td><td>integer</td><td>Partition index (0-based).</td></tr>
+<tr><td><code>leader_broker</code></td><td>string</td><td>Broker hostname holding the leader replica.</td></tr>
+<tr><td><code>follower_brokers</code></td><td>array of string</td><td>Broker hostnames holding follower replicas.</td></tr>
+<tr><td><code>status</code></td><td>string</td><td><code>healthy</code>, <code>under-replicated</code>, or <code>offline</code>.</td></tr>
+</tbody>
+</table></section>
+
+<section id="type-snapshot" data-witness="57a41d22007969bc488817b88182d415ed844f2558d57c72231288c1a4c6408e" data-char-count="798"><h1>Type: <code>Snapshot</code></h1>
+<p>Point-in-time offset record.</p>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>snapshot_id</code></td><td>string</td><td>Unique identifier.</td></tr>
+<tr><td><code>stream_id</code></td><td>string</td><td>Stream this snapshot was taken from.</td></tr>
+<tr><td><code>head_offset</code></td><td>integer</td><td>Head offset at snapshot creation time.</td></tr>
+<tr><td><code>label</code></td><td>string|null</td><td>Human-readable label.</td></tr>
+<tr><td><code>created_at</code></td><td>string</td><td>UTC creation timestamp.</td></tr>
+<tr><td><code>expires_at</code></td><td>string|null</td><td>UTC timestamp after which the snapshot may be auto-purged, or null if indefinite.</td></tr>
+</tbody>
+</table></section>
+
+<section id="type-errorresponse" data-witness="5a19f61c0a2bc1c94c3ec21b528551158aa759ffcde06943fd04a9cc77be426a" data-char-count="653"><h1>Type: <code>ErrorResponse</code></h1>
+<p>Returned by all endpoints on error.</p>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>error</code></td><td>string</td><td>Machine-readable error code (see error-code sections).</td></tr>
+<tr><td><code>message</code></td><td>string</td><td>Human-readable description of the error.</td></tr>
+<tr><td><code>request_id</code></td><td>string</td><td>UUID for log correlation and support escalation.</td></tr>
+<tr><td><code>details</code></td><td>object|null</td><td>Optional structured detail, e.g. per-field validation failures.</td></tr>
+</tbody>
+</table></section>
+
+<section id="guide-authentication" data-witness="8df20a511a0083e48df9df5030a3f030b84356758ab100384fa17ffc7e0c3ff2" data-char-count="833"><h1>Authentication</h1>
+<p>All Zephyr API requests require authentication. Two credential types are supported:</p>
+<h2>API keys (account-level)</h2>
+<p>Account-level API keys are generated in the Zephyr dashboard. Pass the key in the <code>Authorization</code> header:</p>
+<pre><code>Authorization: Bearer zph_live_&lt;key&gt;</code></pre>
+<p>Account-level keys have access to all resources in the account and are subject to the account&#39;s ACL configuration.</p>
+<h2>Producer secrets (stream-level)</h2>
+<p>Producer secrets are issued by <code>POST /streams/{stream_id}/producers</code> and are valid only for appending events to the bound stream. Pass the secret the same way:</p>
+<pre><code>Authorization: Bearer zph_prod_&lt;secret&gt;</code></pre>
+<p>Producer secrets cannot list streams, manage consumers, or modify ACLs.</p></section>
+
+<section id="guide-pagination" data-witness="178c65e526de5743f516f13b4de489b3ce5983daf2d9b34dd1a523c07348f51f" data-char-count="701"><h1>Pagination</h1>
+<p>All list endpoints (<code>GET /streams</code>, <code>GET /schemas</code>, etc.) return paginated results. Pagination uses opaque cursor tokens, not page numbers.</p>
+<h2>Request</h2>
+<p>Supply <code>?limit=N</code> to control page size (default 20, max 100). On subsequent pages, supply <code>?cursor=&lt;next_cursor&gt;</code> from the previous response.</p>
+<h2>Response</h2>
+<pre><code>{
+  "items": [...],
+  "next_cursor": "c_01hxyz..." // null when no more pages
+}</code></pre>
+<p>A <code>null</code> <code>next_cursor</code> means you have seen all results. Cursors are valid for 10 minutes; a stale cursor returns a 400 error. Re-fetch from the beginning in that case.</p></section>
+
+<section id="guide-rate-limiting" data-witness="c6cc435c70a8af4d0d50650cf7cc5fde8c5ebb529d1f00b23ebfcf03583bda25" data-char-count="750"><h1>Rate limiting</h1>
+<p>Zephyr enforces rate limits at the producer and consumer level. The default is <code>rate_limit_default_rps</code> (1,000 req/s), overridable at registration time.</p>
+<h2>Response headers</h2>
+<p>Every response includes:</p>
+<ul>
+<li><code>X-RateLimit-Limit</code> — the current limit in requests per second.</li>
+<li><code>X-RateLimit-Remaining</code> — requests remaining in the current second.</li>
+<li><code>Retry-After</code> — seconds until the limit resets (present only on 429 responses).</li>
+</ul>
+<h2>Handling 429</h2>
+<p>When you receive <code>RATE_LIMIT_EXCEEDED</code>, wait for the <code>Retry-After</code> interval, then retry with exponential backoff (initial interval 1 s, multiplier 2, jitter ±10 %).</p></section>
+
+<section id="guide-idempotency" data-witness="4ec42e3f5221d7d84cdb805c7c87556678c4ea9c08c1300ce5e11ddeb31b63fe" data-char-count="674"><h1>Idempotent appends</h1>
+<p>To prevent duplicate events caused by network retries, supply an <code>Idempotency-Key</code> header on <code>POST /streams/{stream_id}/events</code>:</p>
+<pre><code>Idempotency-Key: &lt;your-uuid&gt;</code></pre>
+<p>Within the <code>idempotency_window_s</code> (default 60 s), any second request with the same key <em>and the same request body</em> returns the original response without writing a duplicate. If the body differs, you receive <code>IDEMPOTENCY_CONFLICT</code> (409).</p>
+<p>Choose keys that are tied to the logical operation, not a random UUID per HTTP call. UUIDs derived from a business transaction ID are a good pattern.</p></section>
+
+<section id="guide-long-polling" data-witness="d4178546df9752ea6f5c1b45886fff0511bdf98903f6b0780a4079258e7d09cd" data-char-count="767"><h1>Long-polling for new events</h1>
+<p>Rather than polling <code>GET /streams/{stream_id}/events</code> in a tight loop, set <code>wait_ms</code> to have the server hold the connection open until new events are available:</p>
+<pre><code>GET /streams/{stream_id}/events?consumer_id=&lt;id&gt;&amp;wait_ms=5000</code></pre>
+<p>The server returns as soon as at least one new event is available, or after <code>wait_ms</code> milliseconds (whichever comes first). On timeout, it returns an empty <code>items</code> array — resume polling immediately.</p>
+<p>Maximum <code>wait_ms</code> is capped at <code>consumer_long_poll_max_ms</code> (default 30,000). Set your HTTP client timeout to at least <code>wait_ms + 5000</code> to avoid premature client-side timeouts.</p></section>
+
+<section id="guide-at-least-once" data-witness="c50eefdbc495a667c26bf33b2ec6297b98f965ced4d8b60334eaec8a7e7cff29" data-char-count="675"><h1>At-least-once delivery pattern</h1>
+<p>Zephyr guarantees at-least-once delivery. To ensure no events are lost on consumer failure:</p>
+<ol>
+<li>Read a batch of events.</li>
+<li>Process each event (apply to your downstream system).</li>
+<li>Only after successful processing, advance the checkpoint via <code>PUT /checkpoint</code>.</li>
+<li>If the consumer restarts before step 3, it will re-read and re-process events since the last checkpoint.</li>
+</ol>
+<p>Your downstream processing must be idempotent, or you must deduplicate by event offset. Storing the last-seen offset in your database — updated atomically with the event application — is the standard pattern.</p></section>
+
+<section id="guide-schema-validation" data-witness="8a48cad25fa8f100ab78f80fd668568bf11f6a48af49d4e3017f7614a1da1c8a" data-char-count="850"><h1>Schema validation workflow</h1>
+<p>Schema validation enforces that producers publish conformant events, catching integration errors early.</p>
+<h2>Steps</h2>
+<ol>
+<li>Register your Avro or JSON Schema via <code>POST /schemas</code>. Record the returned <code>schema_id</code>.</li>
+<li>Create a stream with <code>"schema_id": "&lt;id&gt;"</code>, or update an existing stream&#39;s schema association.</li>
+<li>Configure <code>schema_validation_mode</code>: <code>strict</code> (default) rejects invalid events; <code>warn</code> admits them with an annotation in the event header.</li>
+</ol>
+<h2>Validation errors</h2>
+<p>On a <code>VALIDATION_FAILED</code> (422) response, the <code>details</code> field contains an array of per-field error objects:</p>
+<pre><code>{ "field": "/data/price", "error": "Expected number, got string" }</code></pre></section>
+
+<section id="guide-acl-workflow" data-witness="ad8cdf2ff4e14746887b7880d5616c50cb712e3706fd52161dfa3c6ac51c0c71" data-char-count="720"><h1>ACL management workflow</h1>
+<p>By default (<code>acl_default_deny: true</code>), only principals explicitly granted access can read or write a stream.</p>
+<h2>Granting access</h2>
+<pre><code>PUT /streams/{stream_id}/acl
+{ "principal_id": "usr_alice", "operations": ["read", "write"] }</code></pre>
+<h2>Granting admin</h2>
+<p>The <code>admin</code> operation is required to modify the ACL itself. Grant it only to trusted principals. The account owner always has implicit admin on all streams.</p>
+<h2>Revoking access</h2>
+<pre><code>DELETE /streams/{stream_id}/acl/usr_alice</code></pre>
+<p>Revocation is immediate. In-flight requests from the principal complete normally; all subsequent requests fail with 403.</p></section>
+
+<section id="guide-migration" data-witness="25e14d6ef2a1a8bec23da49b4e517e3c32eff124c74f96daf8c6faacb6f9c1f1" data-char-count="866"><h1>Stream migration using snapshots</h1>
+<p>Snapshots provide a stable offset bookmark useful for coordinating a migration without stopping producers.</p>
+<h2>Procedure</h2>
+<ol>
+<li>Create a snapshot on the source stream: <code>POST /streams/{source_id}/snapshots</code>. Record <code>head_offset</code>.</li>
+<li>Create the destination stream with the same configuration.</li>
+<li>Replay events from the source from offset 0 to <code>head_offset</code> into the destination.</li>
+<li>Cut over producers to the destination stream.</li>
+<li>Drain any remaining events from source (above <code>head_offset</code>) into the destination.</li>
+<li>Delete the source stream once all consumers confirm they have caught up on the destination.</li>
+</ol>
+<p>Migration tooling that automates this procedure is available as a separate CLI (not covered in this reference).</p></section>
+
+<section id="guide-error-handling" data-witness="3ed0756c66f118a34addb1d3d3d5628157a36cc0456bc643058f75b7328532a4" data-char-count="676"><h1>Error handling best practices</h1>
+<h2>Parse the error code, not the message</h2>
+<p>The <code>error</code> field is the machine-readable code; the <code>message</code> is for humans and may change. Build retry logic against error codes, not message strings.</p>
+<h2>Retryable vs non-retryable</h2>
+<ul>
+<li><strong>Retryable (with backoff):</strong> 429, 500, 503, 504.</li>
+<li><strong>Not retryable without change:</strong> 400, 401, 403, 404, 409, 410, 413, 422.</li>
+</ul>
+<h2>Escalating to support</h2>
+<p>For unexpected 500 errors, include the <code>request_id</code> from the error body when contacting support. This enables log correlation on the Zephyr side.</p></section>
+
+<section id="guide-metrics-walkthrough" data-witness="828ef1cde8b0040d3bab1a71a1850293002153d70b617e446974862bd654ad23" data-char-count="946"><h1>Reading metrics effectively</h1>
+<h2>Throughput monitoring</h2>
+<p>Poll <code>GET /streams/{stream_id}/metrics?window_s=300</code> every minute to track the last 5-minute ingest and consume rates. Alert when <code>ingest_rps</code> drops below your expected baseline (producer health) or when <code>consume_rps</code> drops significantly below <code>ingest_rps</code> (consumer falling behind).</p>
+<h2>Lag monitoring</h2>
+<p><code>GET /streams/{stream_id}/metrics/lag</code> returns instantaneous lag per consumer. Integrate this into your SLO dashboard. A sustained lag increase indicates the consumer cannot keep up — scale horizontally or reduce processing time per event.</p>
+<h2>Error rate</h2>
+<p>The <code>error_rate</code> field in each <code>MetricSample</code> covers all error classes. A spike typically indicates a client-side misconfiguration (schema validation failures, rate limit bursts) rather than platform instability.</p></section>
+
+<section id="guide-versioning" data-witness="8069c6f29f7ab4b04949fea3d823d95c5f648d01e5a1d09f1956a88e85cae972" data-char-count="723"><h1>API versioning policy</h1>
+<p>The current API version is <strong>v1</strong>. The version appears in the base URL: <code>https://api.zephyrstream.io/v1/</code>.</p>
+<h2>Non-breaking changes (no notice required)</h2>
+<ul>
+<li>Adding new optional request fields.</li>
+<li>Adding new response fields.</li>
+<li>Adding new error codes.</li>
+<li>Adding new endpoints.</li>
+</ul>
+<h2>Breaking changes (90-day deprecation notice)</h2>
+<ul>
+<li>Removing or renaming existing fields.</li>
+<li>Changing field types.</li>
+<li>Removing endpoints.</li>
+<li>Changing error code semantics.</li>
+</ul>
+<p>Breaking changes are introduced in a new API version (e.g. <code>/v2/</code>) and the prior version is supported for 12 months.</p></section>
+
+<section id="guide-quotas" data-witness="d56d011aa32cde56aea986da1b21e55e543aceb81c937ed4b9ac62f9be23e7d8" data-char-count="908"><h1>Account quotas and limits</h1>
+<table>
+<thead><tr><th>Quota</th><th>Default limit</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Streams per account</td><td>100</td><td>Contact support to raise.</td></tr>
+<tr><td>Partitions per stream</td><td>64</td><td>Set at creation; immutable.</td></tr>
+<tr><td>Schemas per account</td><td>500</td><td></td></tr>
+<tr><td>Retained bytes per account</td><td>100 GB</td><td>Across all streams combined.</td></tr>
+<tr><td>Producers per stream</td><td>50</td><td></td></tr>
+<tr><td>Consumers per stream</td><td>200</td><td></td></tr>
+<tr><td>Events per append batch</td><td>1,000</td><td>Hard limit; not raisable.</td></tr>
+<tr><td>Batch payload size</td><td>4 MB</td><td>Hard limit; not raisable.</td></tr>
+</tbody>
+</table>
+<p>Exceeding a quota returns <code>INSUFFICIENT_CAPACITY</code> (507). Quotas are evaluated per account, not per stream, except where noted.</p></section>
+
+<section id="guide-sdks" data-witness="ec89703b31468b9f26d457730387ec1d47c9c8cc9faaf9242015d951c9900bbf" data-char-count="987"><h1>Client SDKs</h1>
+<p>Zephyr provides officially maintained client libraries for the following languages. All SDK packages are published under the <code>@zephyrstream</code> namespace.</p>
+<table>
+<thead><tr><th>Language</th><th>Package</th><th>Minimum version</th></tr></thead>
+<tbody>
+<tr><td>Node.js</td><td><code>@zephyrstream/node</code></td><td>Node 18</td></tr>
+<tr><td>Python</td><td><code>zephyrstream</code></td><td>Python 3.9</td></tr>
+<tr><td>Go</td><td><code>github.com/zephyrstream/go-client</code></td><td>Go 1.21</td></tr>
+<tr><td>Java</td><td><code>io.zephyrstream:client</code></td><td>JDK 11</td></tr>
+<tr><td>Rust</td><td><code>zephyrstream</code> (crates.io)</td><td>Rust 1.70</td></tr>
+</tbody>
+</table>
+<p>All SDKs expose the same conceptual interface: a <code>ZephyrClient</code> that wraps authentication, pagination, retries, and rate-limit backoff. Community-maintained libraries for other languages are listed in the project registry (not covered here).</p></section>
+
+<section id="guide-openapi" data-witness="3ffed65fb5de1b64d8408130a2e2e334883d838d7fc86d4b6e1c49eace209de7" data-char-count="785"><h1>OpenAPI specification</h1>
+<p>The Zephyr API is described by a machine-readable <strong>OpenAPI 3.1</strong> specification available at:</p>
+<pre><code>https://api.zephyrstream.io/v1/openapi.json</code></pre>
+<p>The spec includes all endpoints, request/response schemas, error codes, and security schemes.</p>
+<h2>Generating client code</h2>
+<p>Use <a href="#sdks">official SDKs</a> when available. For unsupported languages, generate from the spec with <code>openapi-generator-cli</code>:</p>
+<pre><code>npx openapi-generator-cli generate   -i https://api.zephyrstream.io/v1/openapi.json   -g &lt;language&gt;   -o ./zephyr-client</code></pre>
+<p>The generated client will not include Zephyr-specific retry or rate-limit logic — add that layer manually or use an official SDK.</p></section>
+
+<section id="guide-changelog" data-witness="f51cdb428e3e6faf33ea5d05217cac466dd77f3d361b25e1b58a725a149a262d" data-char-count="1149"><h1>API changelog</h1>
+<h2>v1.4.0 (2025-11-01)</h2>
+<ul>
+<li>Added <code>wait_ms</code> long-poll parameter to <code>GET /events</code>.</li>
+<li>Added per-consumer rate limiting (<code>rate_limit_rps</code> on consumer registration).</li>
+<li>Added <code>GET /streams/{stream_id}/metrics/lag</code> endpoint.</li>
+</ul>
+<h2>v1.3.0 (2025-07-15)</h2>
+<ul>
+<li>Added schema validation support (<code>POST /schemas</code> and <code>schema_id</code> on stream creation).</li>
+<li>Added <code>schema_validation_mode</code> configuration key.</li>
+<li>Fixed: <code>next_cursor</code> was incorrectly null on the penultimate page for streams with exactly <code>limit</code> items.</li>
+</ul>
+<h2>v1.2.0 (2025-04-02)</h2>
+<ul>
+<li>Added ACL management endpoints (<code>PUT</code>/<code>GET</code>/<code>DELETE /acl</code>).</li>
+<li>Added <code>acl_default_deny</code> configuration key.</li>
+</ul>
+<h2>v1.1.0 (2025-01-10)</h2>
+<ul>
+<li>Added snapshot endpoints.</li>
+<li>Added replica inspection and rebalance trigger.</li>
+</ul>
+<h2>v1.0.0 (2024-09-01)</h2>
+<ul>
+<li>Initial release: streams, producers, consumers, events, checkpoints, metrics.</li>
+</ul></section>
+
+<section id="guide-support" data-witness="3304d8966ac27f35fe71bafb19a0f7b2a53776e3e1ade0353501cb8871ce91b4" data-char-count="818"><h1>Support and SLAs</h1>
+<h2>Contacting support</h2>
+<p>Open a ticket at <code>support.zephyrstream.io</code>. For urgent incidents, use the in-dashboard &quot;P1 Escalation&quot; button to reach an on-call engineer.</p>
+<p>Always include: account ID, stream ID (if relevant), affected time window, and the <code>request_id</code> from any error responses.</p>
+<h2>Published SLAs (fictional)</h2>
+<table>
+<thead><tr><th>Tier</th><th>API uptime</th><th>P1 response time</th></tr></thead>
+<tbody>
+<tr><td>Developer</td><td>99.5 %</td><td>Next business day</td></tr>
+<tr><td>Standard</td><td>99.9 %</td><td>4 hours</td></tr>
+<tr><td>Enterprise</td><td>99.99 %</td><td>30 minutes</td></tr>
+</tbody>
+</table>
+<p>SLA credits are applied as account balance. Consult your service agreement for credit calculation details.</p></section>
+
+</body>
+</html>

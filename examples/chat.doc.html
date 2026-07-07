@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chat body — doc.html v0.3 writing-room-tail exhibit</title>
+<style>
+  :root { --fg:#1a1a1a; --bg:#fafaf7; --muted:#666; --accent:#2a4d6e; --rule:#ddd; --code-bg:#f0ede5; --user-bg:#eef4fb; --asst-bg:#f0ede5; }
+  @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e3; --bg:#1a1a1a; --muted:#999; --accent:#8ab4d4; --rule:#333; --code-bg:#252523; --user-bg:#1c2a38; --asst-bg:#252523; } }
+  body { font: 16px/1.6 -apple-system, "Segoe UI", Roboto, sans-serif; max-width: 780px; margin: 2rem auto; padding: 0 1.5rem; color: var(--fg); background: var(--bg); }
+  h1, h2, h3 { line-height: 1.25; margin: 0 0 0.6rem; }
+  h1 { font-size: 1.5rem; }
+  h2 { font-size: 1.25rem; }
+  h3 { font-size: 1.1rem; }
+  p, ul, ol, dl, pre { margin: 0.8rem 0; }
+  dt { font-weight: 600; margin-top: 0.6rem; }
+  dd { margin-left: 1.5rem; }
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid currentColor; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 3px; font: 0.92em "SF Mono", Consolas, monospace; }
+  pre { background: var(--code-bg); padding: 1rem; border-radius: 6px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  header.doc-header { border-bottom: 1px solid var(--rule); padding-bottom: 1rem; margin-bottom: 1.5rem; }
+  .header-meta { color: var(--muted); font-size: 0.9em; margin: 0.3rem 0 0; }
+  article.turn { margin: 1.5rem 0; border-radius: 8px; padding: 1.2rem 1.5rem; }
+  article.turn.user { background: var(--user-bg); }
+  article.turn.assistant { background: var(--asst-bg); }
+  article.turn header { margin-bottom: 0.5rem; }
+  article.turn header h3 { margin: 0; font-size: 1rem; }
+  .meta { color: var(--muted); font-size: 0.85em; margin: 0.1rem 0 0; }
+  .turn-content p:first-child { margin-top: 0; }
+  .turn-content p:last-child { margin-bottom: 0; }
+  .note { font-size: 0.92em; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header class="doc-header">
+  <h1>Chat body — doc.html v0.3 writing-room-tail exhibit</h1>
+  <p class="header-meta">doc.html v0.3 · 8 turns · writing-room-tail shape · all witnesses consecrated</p>
+  <div>
+    <h2>About this document</h2>
+    <p>This is a <strong>writing-room-tail</strong> doc.html: a chat exchange stored as an ordered sequence of witnessed <code>&lt;article&gt;</code> elements. No <code>&lt;nav id="manifest"&gt;</code> — shape detection finds the tail by the presence of <code>&lt;article data-witness&gt;</code> elements with valid witnesses.</p>
+    <p>Two witness <strong>epochs</strong>: a <strong>writing-room</strong> timestamp (<code>YYYY-MM-DDTHH:MM:SSZ</code>) records live entries in order; a <strong>consecrated</strong> SHA-256 hex digest seals a unit&#39;s bytes for all time. This file carries only consecrated witnesses.</p>
+    <p>To verify: detect tail shape, walk articles in document order, recompute SHA-256 over each article&#39;s raw inner UTF-8 bytes (untrimmed, §6.2), confirm each digest equals the stored <code>data-witness</code>. Single carrier per unit — no manifest link to cross-check (§6.3).</p>
+  </div>
+</header>
+
+<article id="turn-000001" class="turn user" data-role="user" data-turn="1" data-kind="transcription" data-char-count="195" data-witness="f4f2f5db437a1156c1ec65185646e1bb8dda27118e3230d348b87e7acb865368">
+  <header><h3>Turn 1 — User</h3>
+    <p class="meta">kind: transcription</p></header>
+  <div class="turn-content">
+    <p>What is a doc.html file and how does it store information?</p>
+  </div>
+</article>
+
+<article id="turn-000002" class="turn assistant" data-role="assistant" data-turn="2" data-kind="synthesis" data-char-count="997" data-witness="20d6b7a5080d8c259fbd950e2eec8dada50c21b7b1916a11b5cca43ef0d1bc5c">
+  <header><h3>Turn 2 — Assistant</h3>
+    <p class="meta">kind: synthesis</p></header>
+  <div class="turn-content">
+    <p>A <code>doc.html</code> is a single, self-verifying HTML file. It stores information as <strong>addressable units</strong> — either <code>&lt;section&gt;</code> elements (manifest-first shape) or <code>&lt;article&gt;</code> elements (writing-room-tail shape) — each carrying a <code>data-witness</code>: a SHA-256 digest over the unit&#39;s raw inner bytes.</p>
+    <ul>
+      <li><strong>Self-contained</strong> — no server, no JavaScript, no sidecar files required.</li>
+      <li><strong>Addressable</strong> — every unit has a unique <code>id</code>; a reader fetches only <code>#the-id</code> it needs.</li>
+      <li><strong>Verifiable</strong> — a reader recomputes SHA-256 and compares byte-exact; a one-byte change causes a mismatch.</li>
+      <li><strong>Append-only</strong> — memory grows by adding units, never by editing prior ones.</li>
+    </ul>
+  </div>
+</article>
+
+<article id="turn-000003" class="turn user" data-role="user" data-turn="3" data-kind="transcription" data-char-count="225" data-witness="974580b2cbe3859821acd009ba7018a0d403e1ed78ef5199a49e9610c3223b88">
+  <header><h3>Turn 3 — User</h3>
+    <p class="meta">kind: transcription</p></header>
+  <div class="turn-content">
+    <p>You mentioned two shapes — manifest-first and writing-room-tail. What is the difference?</p>
+  </div>
+</article>
+
+<article id="turn-000004" class="turn assistant" data-role="assistant" data-turn="4" data-kind="synthesis" data-char-count="1154" data-witness="2709fd288f0fc457a0e05df650b1d92f8727b3d8b31e012a0b0574206b8d8059">
+  <header><h3>Turn 4 — Assistant</h3>
+    <p class="meta">kind: synthesis</p></header>
+  <div class="turn-content">
+    <p>The two shapes differ in how a reader discovers addressable units:</p>
+    <dl>
+      <dt><strong>Manifest-first</strong></dt>
+      <dd>Carries a <code>&lt;nav id="manifest"&gt;</code> listing every <code>&lt;section data-witness&gt;</code>. A reader reads the manifest first, decides which sections it needs, and fetches only those by <code>#id</code>.</dd>
+      <dt><strong>Writing-room-tail</strong></dt>
+      <dd>No manifest. Addressable units are <code>&lt;article data-witness&gt;</code> elements read in document order. Suits a chat log or append-only body.</dd>
+    </dl>
+    <p>The shapes are mutually exclusive: a document MUST be exactly one shape. A reader detects the shape first, then follows the appropriate discovery path.</p>
+    <!-- </article> -->
+    <p class="note"><em>Note:</em> the comment above is part of this turn&#39;s witnessed bytes — it exercises the §6.2 rule that an <code>&lt;/article&gt;</code> token inside an HTML comment MUST NOT be treated as this article&#39;s closing tag.</p>
+  </div>
+</article>
+
+<article id="turn-000005" class="turn user" data-role="user" data-turn="5" data-kind="transcription" data-char-count="202" data-witness="6f8fc9ac79aca8c875d937f89e427774958fec7734f83c52ba61ff9cf95dfcc7">
+  <header><h3>Turn 5 — User</h3>
+    <p class="meta">kind: transcription</p></header>
+  <div class="turn-content">
+    <p>How does the witness work exactly? What bytes does SHA-256 cover?</p>
+  </div>
+</article>
+
+<article id="turn-000006" class="turn assistant" data-role="assistant" data-turn="6" data-kind="synthesis" data-char-count="899" data-witness="8e4cb94fe477c4edb359951ccf88554dd2f8d34a7fdeacbf816c2c93b1271122">
+  <header><h3>Turn 6 — Assistant</h3>
+    <p class="meta">kind: synthesis</p></header>
+  <div class="turn-content">
+    <p>The witnessed bytes are the bytes between the <code>&gt;</code> that ends the opening tag and the <code>&lt;</code> that begins the element&#39;s own closing tag — the <strong>raw inner span, UTF-8, untrimmed</strong>. No normalization, no trimming.</p>
+    <p>For a tail document the addressable element is <code>&lt;article&gt;</code>. The closing tag is found by a depth-walk that counts nested <code>article</code> tokens and skips any inside HTML comments. SHA-256 is then computed over those exact bytes.</p>
+    <p><code>data-char-count</code> is the Unicode code-point count of the same slice — <code>Array.from(inner).length</code> in JavaScript. A reader that trims, re-encodes as UTF-16, or normalizes whitespace will get a different digest and fail.</p>
+  </div>
+</article>
+
+<article id="turn-000007" class="turn user" data-role="user" data-turn="7" data-kind="transcription" data-char-count="246" data-witness="9a87dd3fdf1d9c63597714beb201aa67964a776c7c369ded16fe40ea5040ff8b">
+  <header><h3>Turn 7 — User</h3>
+    <p class="meta">kind: transcription</p></header>
+  <div class="turn-content">
+    <p>What are the two witness epochs? What is the difference between a writing-room witness and a consecrated one?</p>
+  </div>
+</article>
+
+<article id="turn-000008" class="turn assistant" data-role="assistant" data-turn="8" data-kind="synthesis" data-char-count="1112" data-witness="8bd10d9e13231b7a51ec417f498a72c4f0918894d9503bd3fe8bde1eeaa85e90">
+  <header><h3>Turn 8 — Assistant</h3>
+    <p class="meta">kind: synthesis</p></header>
+  <div class="turn-content">
+    <p>The <code>data-witness</code> slot carries one of two formally disjoint grammars:</p>
+    <dl>
+      <dt><strong>Writing-room epoch</strong></dt>
+      <dd>A UTC timestamp (<code>YYYY-MM-DDTHH:MM:SSZ</code>, exactly 20 chars). Used while the document is live: timestamps must be strictly increasing in document order. An <em>ordinal</em> witness — fixes sequence, not bytes.</dd>
+      <dt><strong>Consecrated epoch</strong></dt>
+      <dd>A 64-char lowercase SHA-256 hex digest. Used once content is sealed. A <em>identity</em> witness — fixes bytes for all time. A reader recomputes and compares byte-exact.</dd>
+    </dl>
+    <p>The grammars are disjoint by length (20 vs 64) and alphabet (<code>-T:Z</code> never appear in hex). A reader recovers the epoch from the form alone — no separate kind attribute is needed. Consecration replaces a timestamp with the SHA-256 of the bytes it was witnessing. This file carries only consecrated witnesses — it is a sealed example.</p>
+  </div>
+</article>
+
+</body>
+</html>
