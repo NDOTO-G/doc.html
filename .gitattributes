@@ -15,11 +15,12 @@ LICENSE       text eol=lf
 *.jsonl       text eol=lf
 
 # --- export-ignore: restrict `git archive` to the public share bundle ---
-# The bundle ships: SPEC.md README.md LICENSE EVIDENCE.md doc.html verify.mjs
-# verify.py build-doc.mjs .gitattributes examples/* tools/conformance.mjs.
+# The bundle ships: SPEC.md README.md LICENSE EVIDENCE.md doc.html agents.html
+# verify.mjs verify.py build-doc.mjs .gitattributes examples/*
+# tools/conformance.mjs .agents/skills/doc-html-reader/* (the reading skill the
+# README names for agents.html, the repo's memory organ).
 # Everything below is internal source/research and is excluded from archives.
 # (Derived from `git ls-files`; the ship set is everything NOT listed here.)
-.agents/                  export-ignore
 .claude/                  export-ignore
 .gitignore                export-ignore
 MISSION.md                export-ignore
@@ -32,10 +33,13 @@ canon/                    export-ignore
 count_loc.py              export-ignore
 experiments/              export-ignore
 plans/                    export-ignore
+# promotion/ = public-positioning claim corpus; website-phase, not in the bundle yet
+promotion/                export-ignore
 research/                 export-ignore
 runs/                     export-ignore
 scriptorium/              export-ignore
-scripts/                  export-ignore
+# anchored: the repo-root scripts/ only — NOT the reader skill's scripts/ subdir
+/scripts/                 export-ignore
 test_case_sensitivity.py  export-ignore
 tests/                    export-ignore
 trials/                   export-ignore

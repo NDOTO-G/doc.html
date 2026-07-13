@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>agents.html — this repository's memory organ</title>
+<style>
+  body { font-family: Georgia, 'Times New Roman', serif; max-width: 52rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.55; color: #222; background: #fdfcf8; }
+  header { border-bottom: 2px solid #8a7a5c; margin-bottom: 1.5rem; padding-bottom: .75rem; }
+  h1 { font-size: 1.5rem; margin: 0 0 .25rem; }
+  h2 { font-size: 1.2rem; border-bottom: 1px solid #d8d0bd; padding-bottom: .2rem; margin-top: 0; }
+  h3 { font-size: 1.02rem; margin-bottom: .3rem; }
+  .header-meta { color: #6b5f47; font-size: .9rem; margin: 0; }
+  nav#manifest { background: #f4efe3; border: 1px solid #d8d0bd; padding: 1rem 1.25rem; margin: 1.5rem 0; }
+  nav#manifest ol { margin: 0; padding-left: 1.2rem; }
+  nav#manifest li { margin: .4rem 0; }
+  nav#manifest .title { font-weight: bold; }
+  nav#manifest .summary { color: #555; font-size: .92rem; }
+  section { margin: 2rem 0; }
+  code { background: #f0ebdd; padding: 0 .25em; font-size: .92em; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 style="border:none; margin-top:0;">agents.html — this repository's memory organ</h1>
+  <p class="header-meta">built 2026-07-11 · 8 sections · 12191 chars witnessed · a conformant doc.html holding this repo's own memory</p>
+  <p>Point any agent at this file. The steer core applies to every task in this repository; everything after the manifest is hydrate-on-demand. This file is the meta-example: the format keeping the memory of its own repository.</p>
+</header>
+
+<section id="steer-core" data-kind="steer" data-char-count="5648" data-witness="930f592ddaa9cd0f0f7fe76c357b2298dee35704efdc8b608dd99d448c1e8384"><h2>Steer core — read this first; it binds any agent working in this repository</h2>
+<p>This file is this repository's <strong>memory organ</strong> — the repo's own knowledge, kept in the format the repo specifies. It is a normal <code>doc.html</code>: read this section in full, then hydrate the rest <em>selectively</em> through the <code>&lt;nav id="manifest"&gt;</code> below — pick sections by summary, pull them by <code>#id</code>, verify <code>data-witness</code> (SHA-256 of the raw inner bytes) when integrity matters. Do not read the whole file. This organ confers no identity and carries no instructions beyond how to work with this repository.</p>
+
+<h3>1 · Reading discipline</h3>
+<ul>
+<li>Manifest first. Each entry carries a title, a summary, <code>data-witness</code> (64 bare hex chars, SHA-256 of the section's raw inner bytes — UTF-8, LF, untrimmed) and <code>data-char-count</code> (Unicode code points).</li>
+<li>To verify a file: <code>python verify.py &lt;file&gt;</code> or <code>node verify.mjs &lt;file&gt;</code> (both at repo root, self-contained). The reader skill at <code>.agents/skills/doc-html-reader/</code> is the efficient agent path — its <code>manifest.py</code> synthesizes a compact JSON index, and <code>manifest.py --verify</code> recomputes every witness.</li>
+<li>Verification is documentary, not spontaneous: in the drift-defense tracer, models recomputed hashes unprompted in 0/27 cells and reached 27/27 only with a deterministic helper script. <strong>Invoke the verifier; do not assume it ran.</strong></li>
+</ul>
+
+<h3>2 · The vows, one line each</h3>
+<p>The canonical vow text lives in <code>VOWS.md</code> (Recension III — ten vows live, two slots open). Note: the research corpus in <code>doc.html</code>'s own <code>#vows</code> section was built before the V10 recension and lists nine.</p>
+<ul>
+<li><strong>V1</strong> — the artifact is one document (single file; a sibling asset folder does not extend that identity).</li>
+<li><strong>V2</strong> — the document is the spec (an in-band format-spec section; the file alone suffices to understand it).</li>
+<li><strong>V3</strong> — the substrate is HTML, and only HTML.</li>
+<li><strong>V4</strong> — the manifest does not lie about the body (claimed sections exist; claimed hashes are correct).</li>
+<li><strong>V5</strong> — the human can read it without the manifest (the manifest is additive, never substitutive).</li>
+<li><strong>V6</strong> — no tool is required to consume (any reader that knows HTML + SHA-256 can read, verify, cite).</li>
+<li><strong>V7</strong> — the maker is named, and so is the responsibility.</li>
+<li><strong>V8</strong> — the format belongs to no one (public domain).</li>
+<li><strong>V9</strong> — any point is readable on its own (every section independently addressable and verifiable).</li>
+<li><strong>V10</strong> — memory is eternal; it is not the authority (sections never move; correction is a new section bearing <code>data-supersedes</code>; the fold adjudicates — no document declares itself true).</li>
+</ul>
+
+<h3>3 · Evidence discipline — what may be claimed</h3>
+<ul>
+<li>Every public claim about this format traces to <code>EVIDENCE.md</code>; honor its SHARE / QUALIFIED / not-demonstrated labels verbatim (digests in this organ's evidence sections).</li>
+<li><strong>Never claim "cheaper than RAG"</strong> — refuted: selective hydration spent 20–50× MORE tokens than vanilla vector RAG (it won recall 0.875 vs 0.25). The honest frame: doc.html trades tokens for recall + no external index.</li>
+<li>The cost win vs in-context loading is size- and harness-conditional: it inverts on small documents (+60.3% tokens at 3&nbsp;KB) and on harnesses that surface the manifest free in the first chunk (+135.7%). Pick the tool by document size.</li>
+<li>Claim A only: the document is all-HTML inheritable memory. Claim B (the live loop is all-HTML) is out of scope and not claimed — the run leg is delegated to mature infrastructure via a stateless shim (see README, "Two claims").</li>
+</ul>
+
+<h3>4 · Append protocol (growing this organ, or any doc.html)</h3>
+<ul>
+<li>Append-only: never mutate a witnessed section. Correct by appending a new section that supersedes the old by <code>data-supersedes="#old-id"</code>; the old bytes stay addressable at their witness (V10).</li>
+<li>New sections go above the append-anchor comment at the end of the body, with a matching manifest entry in document order.</li>
+<li>Write LF-only bytes (CRLF silently breaks witnesses); recompute the new section's <code>data-witness</code> + <code>data-char-count</code>; re-run a verifier (exit 0) before committing.</li>
+</ul>
+
+<h3>5 · Route map</h3>
+<ul>
+<li><code>SPEC.md</code> — the complete, self-contained format specification. The source of truth.</li>
+<li><code>doc.html</code> — the self-demonstrating root: the v0.2 spec + the full research corpus that motivated the format, in one conformant file.</li>
+<li><code>EVIDENCE.md</code> — the publication evidence: what was measured, sealed, refuted, and deliberately not claimed.</li>
+<li><code>examples/</code> — minimal, memory, selective-context, chat, and reference bodies, plus their emitter scripts.</li>
+<li><code>verify.py</code> / <code>verify.mjs</code> — the two reference readers; <code>tools/conformance.mjs</code> — the harness that runs both over every example.</li>
+<li><code>build-doc.mjs</code> — the generalized builder (JSON or fragment-directory input → conformant doc.html).</li>
+<li><code>.agents/skills/doc-html-reader/</code> — the agent reading skill (manifest-first selective hydration; opt-in <code>--verify</code>).</li>
+</ul>
+
+</section>
+
+<nav id="manifest" aria-label="Document manifest">
+  <ol>
+    <li><a href="#steer-core" data-witness="930f592ddaa9cd0f0f7fe76c357b2298dee35704efdc8b608dd99d448c1e8384" data-char-count="5648"><span class="title">Steer core — read this first; it binds any agent working in this repository</span> <span class="summary">How to read this organ (manifest-first, hydrate by id, verify witnesses), the ten vows in one line each, the evidence discipline (what may and may not be claimed), the append protocol, and the repository route map.</span></a></li>
+    <li><a href="#about-this-organ" data-witness="8af2bafacb28d0339ab2fb3e6fa3f9ff1eda8f3420766ab763a5ef49099fb471" data-char-count="970"><span class="title">About this organ — the format keeping its own repository's memory</span> <span class="summary">agents.html is the meta-example: the repo's memory kept in the repo's own format. Point any agent at this file; it hydrates selectively through the manifest and verifies what it reads.</span></a></li>
+    <li><a href="#what-this-repo-is" data-witness="36be754e7ba669deb8cbd8731e6a381a68be6b06ac97dc084ed888dccc7c2827" data-char-count="1052"><span class="title">What this repository is</span> <span class="summary">A single self-verifying HTML file as its own selective-context memory: manifest, per-section witnesses, no server, no JavaScript, no tooling required to read. Claim A specified; Claim B out of scope.</span></a></li>
+    <li><a href="#evidence-scale" data-witness="9091e64fb0f903240cf0582ef5d56a081a09854ac5b7af1e789ce769867bd96b" data-char-count="530"><span class="title">Evidence — scale</span> <span class="summary">Navigation proven at 74 MB / 17,627 sections and 72.5 MB / 480 turns. Latency is bounded but not instant: 8–34 s typical per navigation turn, 209 s worst-case tail on a flat 72 MB manifest.</span></a></li>
+    <li><a href="#evidence-cost" data-witness="625644501ec4c5a5b7481feaf025d0aaddc4f2b760b89d54d2d2d2c2661bcacc" data-char-count="988"><span class="title">Evidence — cost (qualified)</span> <span class="summary">−52.9% tokens / −65.5% bytes / +1.19 quality vs in-context loading on a 759 KB corpus; −78% adversarial. Size- and harness-conditional: inverts at small sizes (+60.3% at 3 KB) and on manifest-free-first-chunk harnesses (+135.7%).</span></a></li>
+    <li><a href="#evidence-recall" data-witness="d8367750e8e776cfec9540af399e050a16e819a37aaf584a1819db5f9d7d7360" data-char-count="1089"><span class="title">Evidence — recall fidelity (the strongest leg)</span> <span class="summary">Skill arm 100% pass / 0 failures vs naive 71.4% / 6 failures; hydration precision 1.00/0.98; the format teaches selective reading unprompted (80% citation-correct with no system prompt); 120/120 canary + 240/240 byte-verified self-citations at XL.</span></a></li>
+    <li><a href="#evidence-integrity" data-witness="7ef74bf8088b562c7e9796819a87b7a85b3191a38b54572906e244dbcb3628f9" data-char-count="792"><span class="title">Evidence — integrity</span> <span class="summary">The verify path is pure arithmetic (SHA-256 over raw inner bytes), runnable in any language, no server or JS required; browser-verifier reproduces NIST vectors. But it is documentary: 0/27 spontaneous recomputation — invoke the verifier.</span></a></li>
+    <li><a href="#honest-limits" data-witness="65c7f2776698fa677bece429f80e31af9da6deb1a665d9745fbeb1332828bd27" data-char-count="1122"><span class="title">Honest limits — not demonstrated, or refuted</span> <span class="summary">Chat long-context savings unmeasured; flat manifests overflow at 619 sections (hierarchical manifest is undesigned future work); cross-reader convergence never run; the naive-vs-selective crossover threshold unmeasured; cheaper-than-RAG refuted.</span></a></li>
+  </ol>
+</nav>
+
+<section id="about-this-organ" data-kind="meta" data-char-count="970" data-witness="8af2bafacb28d0339ab2fb3e6fa3f9ff1eda8f3420766ab763a5ef49099fb471"><h2>About this organ — the format keeping its own repository's memory</h2>
+<p>Most repositories keep their agent-facing memory in markdown that nothing can verify. This repository keeps it in the format it specifies: a single HTML file with an in-band manifest, per-section SHA-256 witnesses, and append-only correction. That makes this file the working demonstration of the format's central use case — <strong>indexable, selectively-hydrated, tamper-evident memory for agents</strong> — and it is not a mock: it is the memory this repository actually uses.</p>
+<p>To use the pattern in your own project: start from <code>examples/memory.doc.html</code> or emit one with <code>build-doc.mjs</code>; put the rules every session must know in an always-load section like this organ's steer core; keep everything else behind the manifest, pulled on demand. Steering must be pushed (always loaded); memory can be pulled. Grow it by the append protocol in the steer core.</p>
+</section>
+
+<section id="what-this-repo-is" data-kind="context" data-char-count="1052" data-witness="36be754e7ba669deb8cbd8731e6a381a68be6b06ac97dc084ed888dccc7c2827"><h2>What this repository is</h2>
+<p><code>doc.html</code> is a document format for readers who cannot read everything: a single HTML file carrying a machine-readable manifest of its own addressable sections, each pinned by a SHA-256 witness. An agent reads the manifest, hydrates only the sections a task needs, and verifies every byte it read — with no server, no JavaScript, and no tool beyond the file itself (SHA-256 excepted).</p>
+<p>The slogan "HTML is all you need" splits into two claims and this format makes only the first. <strong>Claim A</strong> — the document is all-HTML inheritable memory (read, address, verify, hydrate selectively) — is what v0.3 specifies and what <code>EVIDENCE.md</code> measures. <strong>Claim B</strong> — the live loop is all-HTML — is out of scope: the run leg (model call, key, disk write) is a platform action a scriptless page cannot perform and is delegated to mature infrastructure via a stateless shim. The format owns the verb's <em>result</em> (a witnessed, appended section), never its execution.</p>
+</section>
+
+<section id="evidence-scale" data-kind="evidence" data-char-count="530" data-witness="9091e64fb0f903240cf0582ef5d56a081a09854ac5b7af1e789ce769867bd96b"><h2>Evidence — scale</h2>
+<p>A single self-verifying file can hold a corpus several times a model's context window and stay navigable (EVIDENCE.md §1): demonstrated at <strong>74&nbsp;MB / 17,627 sections</strong>, and at <strong>72.5&nbsp;MB across 480 navigation turns</strong>, all OK, in a sealed pre-registered run. Latency at that scale is bounded but not instant — 8–34&nbsp;s typical per turn, with a 209&nbsp;s worst-case tail over a flat 72&nbsp;MB manifest. Plan for the tail; do not imply interactive speed at XL.</p>
+</section>
+
+<section id="evidence-cost" data-kind="evidence" data-char-count="988" data-witness="625644501ec4c5a5b7481feaf025d0aaddc4f2b760b89d54d2d2d2c2661bcacc"><h2>Evidence — cost (qualified)</h2>
+<p>Against naive in-context loading of a 759&nbsp;KB corpus (63 graded trials, EVIDENCE.md §2): <strong>−52.9% effective tokens, −65.5% bytes, +1.19 quality</strong> (3.29→4.48/5). The adversarial "read everything" condition saved −78.0% tokens (best seed −91.6%) at quality 5/4/4 vs 1/1/1. The skill arm had 0 failures; naive had 6.</p>
+<p><strong>Qualifications that ride the number:</strong> savings compress on uniformly-structured text (−16.9% at 1&nbsp;MB verse corpus); they <em>invert</em> when the document is small (+60.3% effective tokens at a 3&nbsp;KB corpus — bytes loaded still −53.7%, but protocol overhead dominates) and on harnesses that surface the manifest free in the first chunk (+135.7% / +169.8%). Selective hydration is an economy of scale: the right tool for the 72&nbsp;MB body, not the 3&nbsp;KB note. And per §6: authored manifest summaries are load-bearing for the efficiency win — structure alone does not carry it.</p>
+</section>
+
+<section id="evidence-recall" data-kind="evidence" data-char-count="1089" data-witness="d8367750e8e776cfec9540af399e050a16e819a37aaf584a1819db5f9d7d7360"><h2>Evidence — recall fidelity (the strongest leg)</h2>
+<p>EVIDENCE.md §3: the skill arm passed <strong>100%</strong> of graded responses (13/21 perfect, 0 failures) vs naive 71.4% with 6 failures; hydration precision <strong>1.00 (Claude) / 0.98 (GPT-mini)</strong> across 178 sealed cells. The format teaches selective reading <em>without instruction</em>: with no system prompt at all, a model discovered the manifest by exploration and was 80% citation-correct; the HTML-alone arm reached for structure 100% of the time unprompted (32/33 perfect).</p>
+<p>At XL scale (72.5&nbsp;MB, 480 turns, sealed): fabricated-perturbation canary <strong>120/120</strong>, Latin gloss 120/120, strict folio reference 116/120, <strong>240/240 self-citations verified byte-for-byte</strong>. The fold catches real grounding failures: 0/40 waves-through against validated gold; 8/206 attested-citation failures caught, fail-closed. Known limitation: a model may trust its training data over a stale document (drift-defense: 2/6 stale-summary cells) — the fold, not the model's memory, adjudicates.</p>
+</section>
+
+<section id="evidence-integrity" data-kind="evidence" data-char-count="792" data-witness="7ef74bf8088b562c7e9796819a87b7a85b3191a38b54572906e244dbcb3628f9"><h2>Evidence — integrity</h2>
+<p>EVIDENCE.md §4: every section's witness is re-derivable by pure arithmetic — SHA-256 over the raw inner bytes — in any language, with no server and no JavaScript required to read; a pure-JS in-browser verifier reproduces the NIST <code>"abc"</code> vector. The append/fold motion is proven: 15/15 green across the fold battery, append-only supersession, a two-epoch cycle, and a verify-before-append 409 gate.</p>
+<p>The honest boundary: integrity is a <strong>documentary property, not a spontaneous model behavior</strong> — 0/27 unprompted recomputations; 59% accuracy when merely prompted; 27/27 only with a deterministic script. Run <code>verify.py</code> / <code>verify.mjs</code> / <code>manifest.py --verify</code>; never assume a reader checked.</p>
+</section>
+
+<section id="honest-limits" data-kind="evidence" data-char-count="1122" data-witness="65c7f2776698fa677bece429f80e31af9da6deb1a665d9745fbeb1332828bd27"><h2>Honest limits — not demonstrated, or refuted</h2>
+<p>EVIDENCE.md §5–§6, verbatim in spirit — these are not part of the publication:</p>
+<ul>
+<li><strong>Chat long-context savings — architected, unmeasured.</strong> The live chat loop ran stub-only; no token-per-turn measurement over a growing transcript exists.</li>
+<li><strong>Manifest scales arbitrarily — false.</strong> At 619 sections a flat manifest hit 74k tokens against a 12k budget (6× over). A hierarchical manifest is future work, not designed or measured.</li>
+<li><strong>Cross-reader convergence — never run.</strong> The "independently implementable spec" proof is incomplete; language-neutral conformance vectors do not yet exist.</li>
+<li><strong>The crossover threshold — unmeasured.</strong> At ≤1&nbsp;MB on some harnesses naive wins on tokens; at L+ selective wins decisively; the breakeven is unknown.</li>
+<li><strong>"Cheaper than RAG" — refuted.</strong> 20–50× more tokens than vanilla vector RAG (421k–969k vs 19k–21k); recall won 0.875 vs 0.25. Trade tokens for recall + no external index; never claim token-cheapness vs RAG.</li>
+</ul>
+</section>
+
+<!-- append-anchor: append new witnessed <section> elements ABOVE this line and add a matching manifest <li>; see #steer-core §4 for the protocol -->
+
+</body>
+</html>

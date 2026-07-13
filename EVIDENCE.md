@@ -223,11 +223,16 @@ a flat thin-mirror manifest hit 74k tokens against a 12k budget — 6x over, fai
 staging. Flat manifests are navigable but slow at XL (209 s/turn worst case). A
 hierarchical manifest is future work and has not been designed or measured.
 
-**Cross-reader convergence — never run.** The Python / Node / browser readers share an
-algorithm and no disagreement has been observed, but the formal cross-reader convergence
-trial against a shared vector set (charter P3.2/P3.3) was never run. The "independently
-implementable spec" proof is incomplete. The language-neutral conformance vectors do not
-yet exist.
+**Cross-reader convergence — base fixtures only; the formal trial is not yet run.** An
+initial convergence *has* been observed — `reader-convergence` [sealed, pre-registered]: a
+reader written blind from this specification alone (a PowerShell stranger-proxy) agrees
+byte-for-byte with the reference Python / Node readers on the clean, corrupted, and CRLF
+**base fixtures**. But this is short of the full "independently implementable" proof on two
+counts: the reader's independence was instruction-enforced / self-attested (a stranger-proxy,
+not a true stranger), and the **formal** convergence trial against a shared, language-neutral
+vector set (charter P3.2/P3.3) — the extended battery of nested boundaries, comment masking,
+and raw-text / multibyte edges — was never run; those conformance vectors do not yet exist.
+Substantiated on the base fixtures, not yet complete.
 
 **The crossover threshold — unmeasured.** At what document size and harness configuration
 does selective hydration beat naive in-context loading? At ≤1 MB on some harnesses, naive

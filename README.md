@@ -1,10 +1,16 @@
 # doc.html
 
-**Status:** prototype · v0.3.0 · solo-operator personal use · first public release 2026-07-07
+**Status:** prototype · v0.3.1 · solo-operator personal use · first public release 2026-07-07 · updated 2026-07-12
 
 A single self-verifying HTML file that is its own selective-context memory: carry a manifest, address sections by id, verify every byte you read against a per-unit cryptographic witness, hydrate only what you need — no server, no JavaScript, no tooling required to read.
 
 The nearest familiar thing: a table of contents whose every entry carries a checksum, rendered as ordinary HTML.
+
+---
+
+## Point your agent at this repo's own memory
+
+This repository keeps its own knowledge in the format it specifies: [`agents.html`](agents.html) is the repo's live memory organ — a conformant doc.html with an always-load steer section, a manifest, and witnessed hydrate-on-demand sections. Tell any agent to read `agents.html` first; it hydrates selectively through the manifest and can verify every byte it reads. The reading skill at [`.agents/skills/doc-html-reader/`](.agents/skills/doc-html-reader/) is the efficient path (compact JSON manifest, per-section extraction, opt-in `--verify` witness recompute) — but no skill is required: the file teaches its own reading protocol in-band.
 
 ---
 
@@ -30,6 +36,8 @@ The agent needs only `SPEC.md`. No other context is required.
 | [`SPEC.md`](SPEC.md) | The complete, self-contained format specification. This is the source of truth. |
 | [`MISSION.md`](MISSION.md) | Why the format exists — the two testimonies (human and AI) it answers to. |
 | [`VOWS.md`](VOWS.md) | The ten public promises: what the format will never do, what it will always do, and how each is kept. |
+| [`agents.html`](agents.html) | This repository's own memory organ — the live meta-example: the format keeping the memory of its own repo. |
+| [`.agents/skills/doc-html-reader/`](.agents/skills/doc-html-reader/) | The agent reading skill: manifest-first selective hydration + opt-in `--verify`. |
 | [`examples/minimal.doc.html`](examples/minimal.doc.html) | Smallest conforming document: one section, one manifest entry. |
 | [`examples/memory.doc.html`](examples/memory.doc.html) | Memory body example: multi-section manifest-first document. |
 | [`examples/selective-context-demo.doc.html`](examples/selective-context-demo.doc.html) | Selective-context reading demonstration. |

@@ -29,13 +29,13 @@
 
 <header>
   <h1 style="border:none;">Lantern Service Memory</h1>
-  <p class="header-meta">doc.html v0.3 · 2026-06-15 · 12 sections · 13,315 chars · self-verifying (node verify.mjs &lt;this file&gt;)</p>
+  <p class="header-meta">doc.html v0.3 · 2026-06-15 · 12 sections · 13,316 chars · self-verifying (node verify.mjs &lt;this file&gt;)</p>
   <p>A memory-as-document exhibit: a fictional AI coding-assistant&#39;s project memory for the made-up Lantern notification-dispatch service, in conformant doc.html v0.3 format.</p>
 </header>
 
 <nav id="manifest" aria-label="Document manifest">
   <ol>
-    <li><a href="#about" data-witness="15e6304254e319f65d136aab6de09de5857de32c03740bcc6ae53a39e8b459fc" data-char-count="1519"><span class="title">About this memory document</span> <span class="summary">How to use this file: read the manifest to find the section you need, fetch only that #id, verify its witness, and never load the whole file into context.</span></a></li>
+    <li><a href="#about" data-witness="45bd7e6085f5ace9cc2baaee3d1eaf147744e8054f56aa513f1e8efd87f48fa1" data-char-count="1520"><span class="title">About this memory document</span> <span class="summary">How to use this file: read the manifest to find the section you need, fetch only that #id, verify its witness, and never load the whole file into context.</span></a></li>
     <li><a href="#project-overview" data-witness="997b89a3d35c46b397c245b840d24ea4ffb1a7d42462dcbf187fae1792caf4f1" data-char-count="915"><span class="title">Lantern service — what it is</span> <span class="summary">Lantern is a fictional notification-dispatch service that fans out alerts to multiple channels (email, webhook, SMS) from a single internal API.</span></a></li>
     <li><a href="#conventions" data-witness="c77e96e40d4e2e59f009d120ce589c1cf455a9bce0bc56ee6a2945e4db1bdf0b" data-char-count="1224"><span class="title">Code conventions</span> <span class="summary">Naming, error-handling, and logging conventions agreed by the Lantern team as of the project&#39;s founding.</span></a></li>
     <li><a href="#datastore" data-witness="bea2a3f3b6c25c46c837a1b5cc0eb1c3275e293b9ff13e5f968df1afb9454163" data-char-count="977"><span class="title">Job-queue datastore (original)</span> <span class="summary">SUPERSEDED by #datastore-revised. Original decision: SQLite for the job queue, chosen for zero-dependency local dev. Retained for audit trail.</span></a></li>
@@ -50,11 +50,11 @@
   </ol>
 </nav>
 
-<section id="about" data-witness="15e6304254e319f65d136aab6de09de5857de32c03740bcc6ae53a39e8b459fc" data-char-count="1519"><h1>About this memory document</h1>
+<section id="about" data-witness="45bd7e6085f5ace9cc2baaee3d1eaf147744e8054f56aa513f1e8efd87f48fa1" data-char-count="1520"><h1>About this memory document</h1>
 <p>This file is a <strong>memory-as-document</strong> exhibit — a worked example in the <code>doc.html</code> v0.3 format showing how an AI coding-assistant might store project knowledge as a witnessed, addressable document rather than a prose blob or a database.</p>
 <p>It holds the fictional <strong>Lantern</strong> service's conventions, architecture decisions, preferences, and gotchas. Every fact is a <code>&lt;section&gt;</code> with a <code>data-witness</code> (SHA-256 over its raw inner bytes) and a <code>data-char-count</code>. A reader can verify any single section in isolation: fetch <code>#the-id</code>, recompute the hash over what sits between the opening tag's <code>&gt;</code> and <code>&lt;/section&gt;</code>, and compare.</p>
 <p><strong>How to hydrate efficiently:</strong> read the manifest below to find the section you need, load only that anchor (<code>#id</code>), verify the witness, and inject it into your context. You do not need the whole file. This is the point.</p>
-<p><strong>Supersession:</strong> this document follows append-and-supersede discipline. When a fact changes, the original section remains (permanently addressable) and a new section carries <code>data-supersedes="old-id"</code>. Both are readable; the newer one is authoritative. See <code>#datastore</code> and <code>#datastore-revised</code> for a live example.</p>
+<p><strong>Supersession:</strong> this document follows append-and-supersede discipline. When a fact changes, the original section remains (permanently addressable) and a new section carries <code>data-supersedes="#old-id"</code>. Both are readable; the newer one is authoritative. See <code>#datastore</code> and <code>#datastore-revised</code> for a live example.</p>
 <p>All content is obviously fictional and illustrative. No real service, person, or decision is described.</p></section>
 
 <section id="project-overview" data-witness="997b89a3d35c46b397c245b840d24ea4ffb1a7d42462dcbf187fae1792caf4f1" data-char-count="915"><h1>Lantern service — what it is</h1>
@@ -83,7 +83,7 @@
 <p>Rationale at the time: zero external dependencies, trivial local dev setup, acceptable throughput for the projected load (&lt;500 jobs/min at peak). The file is placed on a local SSD mount; no replication.</p>
 <p>Known limitation noted at decision time: SQLite write serialisation will become a bottleneck if concurrent dispatch volume exceeds ~1000 writes/s. That threshold was believed to be years away.</p></section>
 
-<section id="datastore-revised" data-witness="21945df83381930be94f6a2d86405001238cab4e0ded75375fb7e13cdba07957" data-char-count="1099" data-supersedes="datastore"><h1>Job-queue datastore (current decision)</h1>
+<section id="datastore-revised" data-witness="21945df83381930be94f6a2d86405001238cab4e0ded75375fb7e13cdba07957" data-char-count="1099" data-supersedes="#datastore"><h1>Job-queue datastore (current decision)</h1>
 <p>We migrated the job queue from SQLite to <strong>PostgreSQL 15</strong> (managed instance, <code>pg.lantern.example.internal</code>) following the Q3 billing-alerts spike that hit 1,200 jobs/min and caused SQLite write-serialisation stalls of up to 800 ms.</p>
 <p>The schema is unchanged in structure; the migration added <code>SKIP LOCKED</code> on the polling query so that multiple worker goroutines can dequeue concurrently without stepping on each other. Connection pooling via <code>pgxpool</code> (max 20 conns per instance).</p>
 <ul>

@@ -40,7 +40,7 @@ hydrates the manifest, then drills only the `#id` it needs — it never loads th
 
 It also demonstrates the **fold** (append-and-supersede): the section `#datastore` records an
 early decision ("SQLite for the job queue"); a later section `#datastore-revised` carries
-`data-supersedes="datastore"` and records the migration to PostgreSQL. The original is **not
+`data-supersedes="#datastore"` and records the migration to PostgreSQL. The original is **not
 deleted** — it stays permanently addressable at its id; the newer section is authoritative.
 Memory grows by appending and superseding, never by erasing.
 

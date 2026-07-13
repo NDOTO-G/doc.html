@@ -673,8 +673,11 @@ An implementation is done when, at its declared profile, all REQUIRED boxes chec
 A spec is only as unambiguous as the implementations it produces. To harden this spec, build it
 from these words in **several languages with independent agents**, run all of them against §10
 and §13, and treat **every divergence as a spec defect to fix** — not an implementation bug.
-Identical bytes in, identical witnesses out, across every reader, is the target. This
-cross-reader convergence is the format's design aim; it is not yet a measured result.
+Identical bytes in, identical witnesses out, across every reader, is the target. An **initial
+cross-reader convergence has been observed** — independent readers, including one built blind from
+this specification, agree byte-for-byte on clean, corrupted, and CRLF-variant fixtures — but the
+full multi-corner battery (nested boundaries, comment masking, raw-text and multibyte edges) is
+the standing target, not yet a closed result.
 
 ## 12. What is NOT in v0.3
 
