@@ -31,7 +31,7 @@ and it should not be inferred from Claim A.
 
 ## 1. Scale — reading past the context window
 
-**A single self-verifying HTML file can hold a corpus several times larger than a model's
+**A single integrity-witnessed HTML file can hold a corpus several times larger than a model's
 context window, and an LLM reads it manifest-then-drill without loading the whole file.**
 
 `tracer-memory-at-scale` demonstrated this at 74 MB / 17,627 sections (~3x a typical context
@@ -147,7 +147,10 @@ unprompted; mean score 1.000 vs naive 0.955; 32/33 perfect.
 
 These were pre-registered tests designed to prove the model actually read the section, not
 parametric-recalled it. The canary and gloss results mean a model cannot pass these tests
-without hydrating the actual bytes.
+without hydrating the actual bytes. The run executed 40 graded cells each on Claude
+(sonnet), GPT (codex, GPT-5.4-mini), and Kimi (k2.5) subjects, with committed per-vendor
+trial rows — the same artifact read across three model families (a tool-surface asymmetry
+between harnesses is disclosed in the probe's SUMMARY).
 
 ### 3d. Three-body fold at L tier [SHARE (QUALIFIED)]
 
@@ -221,7 +224,21 @@ demonstrated.
 **Manifest scales arbitrarily — false.** `doc-html-as-memory` [sealed]: at 619 sections,
 a flat thin-mirror manifest hit 74k tokens against a 12k budget — 6x over, failed at
 staging. Flat manifests are navigable but slow at XL (209 s/turn worst case). A
-hierarchical manifest is future work and has not been designed or measured.
+hierarchical manifest was subsequently designed and measured across two sealed runs
+(`bounded-return`; artifacts on the lab `dev` branch). **Run-01 (seal-05)** supplied the
+deterministic existence proof: in the scripted (D4) leg the hierarchy held a flat working
+surface — peak ~2,612 tokens across 64× document growth, cumulative ~7.9k, 72/72 recall —
+and an oracle navigated it perfectly (72/72); but naive live selection failed the
+pre-registered 0.80 floor (0.361, failing closed: refusals, zero fabrications), and the
+run's context envelope was left undischarged. **Run-02** discharged that debt: a
+multi-round envelope sealed *before* any subject call was met at every tier across 1,344
+live cells (peaks 4,343–5,715, all under caps) — while its own pre-registered completion
+gate failed (85.98% vs 90%, driven by absent-class tasks exhausting a zero-slack route
+cap) and live selection improved but still missed the floor (0.50 vs 0.80, zero wrong
+answers: every miss a refusal or budget exhaustion). Net, in both records' own words:
+the capacity walls hold and the structure bounds the working surface; deep *live*
+selection is the open research problem — and it fails conservatively, declining rather
+than fabricating.
 
 **Cross-reader convergence — base fixtures only; the formal trial is not yet run.** An
 initial convergence *has* been observed — `reader-convergence` [sealed, pre-registered]: a
