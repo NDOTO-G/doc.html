@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<!-- P0.3 linter fixture: two TOP-LEVEL <section> elements share id="intro" (V5/V30, SPEC.md §6.1). -->
+<html lang="en">
+<head><meta charset="UTF-8"><title>dup-id-toplevel fixture</title></head>
+<body>
+<nav id="manifest">
+<a href="#intro" data-witness="b4829dd95b9f5e4e0525b72eb78ab5c4568169d2a5bc46a762dd2348785b9977">intro</a>
+<a href="#intro" data-witness="647bbc46b101995c36a879ae92b1448272984ed2909bbbe30c8774029467d406">intro (dup)</a>
+</nav>
+<section id="intro" data-witness="b4829dd95b9f5e4e0525b72eb78ab5c4568169d2a5bc46a762dd2348785b9977"><p>Intro control section.</p></section>
+<section id="intro" data-witness="647bbc46b101995c36a879ae92b1448272984ed2909bbbe30c8774029467d406"><p>Second section reusing intro id (dup-id).</p></section>
+</body>
+</html>

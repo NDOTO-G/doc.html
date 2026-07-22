@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Out-of-order tail — doc.html v0.3 negative exhibit (V15)</title>
+</head>
+<body>
+
+<header class="doc-header">
+  <h1>Out-of-order tail — doc.html v0.3 negative exhibit (V15)</h1>
+  <p class="header-meta">doc.html v0.3 &middot; 2 turns &middot; writing-room-tail shape &middot; writing-room, deliberately out of order</p>
+  <div>
+    <h2>About this document</h2>
+    <p>This is a <strong>writing-room-tail</strong> doc.html where turn 2&#39;s writing-room witness (<code>2026-07-01T12:00:02Z</code>) is NOT strictly later than turn 1&#39;s (<code>2026-07-01T12:00:05Z</code>) &mdash; a &sect;6.7/V15 ordering violation.</p>
+    <p>This is an <strong>Append-profile</strong> vector only: a Core reader (verify.py, verify.mjs) validates writing-room witnesses by grammar alone and does not enforce ordering, so a Core reader PASSES/ORDINAL-ONLYs this document per its epoch scope. Only an Append-profile reader (<code>tools/chat_runtime.py verify</code>) refuses it, citing &#39;not strictly later than&#39;.</p>
+  </div>
+</header>
+
+<article id="turn-000001" class="turn user" data-role="user" data-turn="1" data-kind="transcription" data-char-count="166" data-witness="2026-07-01T12:00:05Z">
+  <header><h3>Turn 1 — User</h3>
+    <p class="meta">kind: transcription</p></header>
+  <div class="turn-content">
+    <p>First turn, timestamp at t=5.</p>
+  </div>
+</article>
+
+<article id="turn-000002" class="turn assistant" data-role="assistant" data-turn="2" data-kind="synthesis" data-char-count="210" data-witness="2026-07-01T12:00:02Z">
+  <header><h3>Turn 2 — Assistant</h3>
+    <p class="meta">kind: synthesis</p></header>
+  <div class="turn-content">
+    <p>Second turn, timestamp at t=2 — EARLIER than turn 1's t=5. Out of order.</p>
+  </div>
+</article>
+
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>doc.html v0.3</title>
+<title>doc.html v0.4</title>
 <style>
   :root { --fg:#1a1a1a; --bg:#fafaf7; --muted:#666; --accent:#2a4d6e; --rule:#ddd; --code-bg:#f0ede5; }
   @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e3; --bg:#1a1a1a; --muted:#999; --accent:#8ab4d4; --rule:#333; --code-bg:#252523; } }
@@ -15,6 +15,9 @@
   code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 3px; font: 0.92em "SF Mono", Consolas, monospace; }
   pre { background: var(--code-bg); padding: 1rem; border-radius: 6px; overflow-x: auto; }
   pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; margin: 0.8rem 0; font-size: 0.92em; }
+  th, td { border: 1px solid var(--rule); padding: 0.35em 0.6em; text-align: left; vertical-align: top; }
+  blockquote { border-left: 3px solid var(--rule); margin: 0.8rem 0; padding: 0.1rem 0 0.1rem 1rem; color: var(--muted); }
   section { margin: 2.5rem 0; padding: 1.5rem; background: var(--code-bg); border-radius: 8px; }
   #manifest { background: var(--code-bg); padding: 1.5rem; border-radius: 8px; margin: 2rem 0; }
   #manifest ol { list-style: decimal; padding-left: 1.5rem; }
@@ -27,43 +30,49 @@
 
 <nav id="manifest" aria-label="Document manifest">
   <ol>
-    <li><a href="#what-it-is" data-witness="8c1afa1b52033bb6dfc8cb0ae2dc103f94a5c7338a7419c3993085fc3f2fec36" data-char-count="1366"><span class="title">1. What it is</span> <span class="summary">A doc.html is a single, self-verifying HTML file larger than a reader&#39;s working memory. Shape detection, selective hydration, and per-unit witnesses allow reading without loading the whole file. The three offices: Vessel, Witness, Fold.</span></a></li>
-    <li><a href="#normative-language" data-witness="aa0e5421648f7679276e1504c64037b33f715f6292fd8d129a09dd27912385d3" data-char-count="1148"><span class="title">2. Normative language</span> <span class="summary">RFC 2119 key words (MUST, SHOULD, MAY, etc.). Conformance is a predicate: every unmet MUST is non-conformance. Three roles: conforming document, conforming reader, conforming producer.</span></a></li>
-    <li><a href="#readers-role" data-witness="065e156292a6ef263eb0c12a6a3c190c0eff2970013945f10d314e594089bc27" data-char-count="580"><span class="title">3. The reader&#39;s role</span> <span class="summary">A reader knows HTML, computes SHA-256, detects document shape, and cites where it stood. No resolver, server, JavaScript, or installed tooling is required. Verification is something the reader can do, not something the document performs.</span></a></li>
-    <li><a href="#goals-and-non-goals" data-witness="f2e841d774d7e839b49bdf06c95ab9380d8a7176a4031831bcb7346072e84989" data-char-count="1531"><span class="title">4. Goals and non-goals</span> <span class="summary">Goals: large-yet-navigable documents, byte-level integrity, inheritance with no infrastructure, append-only memory. Non-goals: the two-claims split — Claim A (all-HTML memory, v0.3 scope) vs Claim B (live loop, out of scope and false by platform law).</span></a></li>
-    <li><a href="#vessel" data-witness="69846e2f2ddc7670b286425a1a30e4876fa3021bee4fc3e42c65a54a36b291ae" data-char-count="12291"><span class="title">5. The Vessel — the data model</span> <span class="summary">Two document shapes (manifest-first and tail). Shape detection rule. The section element (manifest-first). The manifest (manifest-first). The writing-room-tail unit (tail). The manifest link. Vessel and image addressing. Degradation tiers.</span></a></li>
-    <li><a href="#witness" data-witness="ee6e655231ad7a87bceb4532cd8d9e7bac84927c94644255f4b4845c60e41518" data-char-count="8918"><span class="title">6. The Witness — the integrity contract</span> <span class="summary">The id production, witnessed bytes (depth-walk + comment masking, parameterized on the addressable element&#39;s tag), the witness is computed not trusted, quote-aware attribute reading, pinned comparison, char-count, and the two witness epochs (consecrated hash vs writing-room timestamp).</span></a></li>
-    <li><a href="#fold" data-witness="406187afb66e46d42e00fd5c3c311aeac51174e47c4cae73673b79b4d39360f2" data-char-count="3687"><span class="title">7. The Fold — keeping the word honest</span> <span class="summary">Selective hydration (shape-conditional: manifest-first skim-layer vs tail document-order scan). Fold-confirmation checks after any append. Fail-closed, non-vacuity, and point-don&#39;t-declare disciplines.</span></a></li>
-    <li><a href="#appending" data-witness="8b0683fe9455cc4be932f0e11fe7ce607ca1cef9f3b9588ca465779e606625e0" data-char-count="2622"><span class="title">8. Appending and supersession</span> <span class="summary">Immutability: inner bytes, id, and witness never change. Correction is supersession via data-supersedes. Typed sections via data-kind (descriptive, not a control surface): four disciplines — prose-authoritative, immutable, not a status, off the manifest.</span></a></li>
-    <li><a href="#reference-algorithms" data-witness="e5ff1d0f85ec0b4aa280146969452553c6425d7191f402690640fd86c280a9fa" data-char-count="6969"><span class="title">9. Reference algorithms (language-agnostic)</span> <span class="summary">Pseudocode for verify() (shape-detection fork → verify_manifest_first / verify_tail) and build() (manifest-first). Normative for behavior, not syntax. Implements every MUST from §5–§8.</span></a></li>
-    <li><a href="#validation-matrix" data-witness="91cf2c801eb02075c77301044b5c63e4895cdce68b6befbda80186c6a8108998" data-char-count="4409"><span class="title">10. Validation matrix</span> <span class="summary">21 rows (V1–V21, V1T) covering Core and Append profiles for both shapes. Every conforming implementation must satisfy all Core rows. Shape-scoped: manifest-first-only (V4), tail-only (V1T, V20, V21), both shapes, both profiles.</span></a></li>
-    <li><a href="#conformance-profiles" data-witness="1cee76f51356c297e32a3125c8ce56c04d08f7fd750dd1bc398155ad3a92506d" data-char-count="4113"><span class="title">11. Conformance profiles and Definition of Done</span> <span class="summary">Three profiles: Core (required of all), Append (extension), Producer (extension). The Definition of Done checklist with REQUIRED and RECOMMENDED boxes. §11.3: hardening the spec by building independent implementations in multiple languages and treating every divergence as a spec defect.</span></a></li>
-    <li><a href="#what-is-not" data-witness="1d36fe4e1cfe23bfd4c9128045c1a73a8c447585754cb3cabcadf85f90dd7e53" data-char-count="2197"><span class="title">12. What is NOT in v0.3</span> <span class="summary">Explicit out-of-scope list: live loop (Claim B), resolver tier, selector grammar, web-app machinery, cross-document addressing, hierarchical manifests at scale, tail-document selective skim, typed-section authority discipline, substrate-shaped build metadata, helper-script requirement.</span></a></li>
-    <li><a href="#test-vectors" data-witness="373059db2b3b486f7f49bc2c6eeccf17adcc2be69baa1fb00db98d74fa3cd362" data-char-count="7011"><span class="title">13. Appendix A — test vectors</span> <span class="summary">NIST SHA-256 sanity vector. Vector set 1: two manifest-first sections (intro + fold) with exact inner bytes, byte lengths, code-point counts, and data-witness values. Vector set 2: eight consecrated tail articles from examples/chat.doc.html, exercising shape detection, comment-masking, and the single-carrier path.</span></a></li>
-    <li><a href="#versioning-policy" data-witness="1824005ae0bc451bfa2e3d34cf6a89c44f5a74294e0bc2076d5f6b770d27569e" data-char-count="536"><span class="title">14. Versioning policy</span> <span class="summary">This document specifies v0.3. Version is in prose, not machine-readable attributes. Hard version boundary: fail loudly on non-conforming manifest shapes (e.g. v0.1 JSON-island). Future versions in their own document.</span></a></li>
+    <li><a href="#what-it-is" data-witness="438eaf839eb3463c08086d8269dc963b129d9c5a4820bc8dcfd883540603764b" data-char-count="1577"><span class="title">1. What it is</span> <span class="summary">A doc.html is a single, self-verifying HTML file larger than a reader&#39;s working memory. Shape detection, selective hydration, and per-unit witnesses allow reading without loading the whole file. The three offices: Vessel, Witness, Fold.</span></a></li>
+    <li><a href="#normative-language" data-witness="8893ef8fff58f4738626c2b4c5dd082aa06563f2be3d169cfc9995fffcac3455" data-char-count="1148"><span class="title">2. Normative language</span> <span class="summary">RFC 2119 key words (MUST, SHOULD, MAY, etc.). Conformance is a predicate: every unmet MUST is non-conformance. Three roles: conforming document, conforming reader, conforming producer.</span></a></li>
+    <li><a href="#readers-role" data-witness="4b4bd642f69c8398b74d857adb69100073d1b3ad9445dc9019b94857b7096651" data-char-count="580"><span class="title">3. The reader&#39;s role</span> <span class="summary">A reader knows HTML, computes SHA-256, detects document shape, and cites where it stood. No resolver, server, JavaScript, or installed tooling is required. Verification is something the reader can do, not something the document performs.</span></a></li>
+    <li><a href="#goals-and-non-goals" data-witness="0b0184d5d32f121c52ea0a583b3f474def7bfde01f5a66aa5a040d4c1517932b" data-char-count="1760"><span class="title">4. Goals and non-goals</span> <span class="summary">Goals: large-yet-navigable documents, byte-level integrity, inheritance with no infrastructure, append-only memory. Non-goals: the two-claims split — Claim A (all-HTML memory, in scope) vs Claim B (the live loop, delegated out).</span></a></li>
+    <li><a href="#vessel" data-witness="b575a02ba1bbc36a4a2adfee7e72b7f12ecd3c906328bc19379f22badd31bc8d" data-char-count="16832"><span class="title">5. The Vessel — the data model</span> <span class="summary">Two document shapes (manifest-first and tail) — and the two shapes as two epochs of one lifecycle, joined by the fold (§8.4). The section element, the manifest, the writing-room-tail unit, the manifest link with its two conforming link-text forms (title/summary spans, or a folded record&#39;s gist) and the §5.4 disclosure. Vessel and image addressing; degradation tiers.</span></a></li>
+    <li><a href="#witness" data-witness="656e05e625ce24540e515f0349b12bca993a5b6885b8c6bac5e1c1dad247c780" data-char-count="19122"><span class="title">6. The Witness — the integrity contract</span> <span class="summary">The id production, witnessed bytes (depth-walk + comment masking, parameterized on the addressable element&#39;s tag), the witness is computed not trusted, quote-aware attribute reading, pinned comparison with zero equivalence classes, the character count, and the two epochs of the witness.</span></a></li>
+    <li><a href="#fold" data-witness="79487fcef0c4494ec61700ca84c6e45cc3bdca20478bf716d912cae506f0bdca" data-char-count="9933"><span class="title">7. The Fold — keeping the word honest</span> <span class="summary">Selective hydration (shape-conditional): the manifest-first skim-layer, the tail document-order scan, and — for folded records — the recency-window reading posture with the safe-reader rule (currency is routing, not testimony). Fold-confirmation checks after any append. Fail-closed, non-vacuity, point-don&#39;t-declare, and the ORDINAL-ONLY verdict.</span></a></li>
+    <li><a href="#appending" data-witness="096cd32b3c188f3c535c5ca9e6d0f573e4320cc3217b11c594adadc2a215eec8" data-char-count="9802"><span class="title">8. Appending and supersession — memory is append-only</span> <span class="summary">Immutability: inner bytes, id, and witness never change. Correction is supersession via data-supersedes. Typed sections via data-kind (descriptive, not a control surface). The fold motion (§8.4): totality, unit grammar, unit projection, the gist&#39;s decoded-text law, chrome re-tagging, and the tooling note.</span></a></li>
+    <li><a href="#reference-algorithms" data-witness="98dab04cf64a28ee97a5aece2f819e5013c5857fe0c16aa68580d14c881cfde8" data-char-count="14349"><span class="title">9. Reference algorithms (language-agnostic)</span> <span class="summary">Pseudocode for verify() (shape-detection fork → verify_manifest_first / verify_tail) and build() (manifest-first), plus the §9.2a Producer canonical-serialization restriction. Normative for behavior, not syntax. Implements every MUST from §5–§8.</span></a></li>
+    <li><a href="#validation-matrix" data-witness="271927e8c6cd9984d35fcd20887ff84b759eff29ba84adf44c8d142da1adbce3" data-char-count="8764"><span class="title">10. Validation matrix</span> <span class="summary">32 rows (V1–V32, V1T) covering Core, Append, and Producer profiles for both shapes — V32 is the fold&#39;s totality row (Producer). Every conforming implementation must satisfy all Core rows; v0.4 adds no Core row.</span></a></li>
+    <li><a href="#conformance-profiles" data-witness="9ef6760da4549dc409d79a3dc694ca1bae0581aa111a2e519fcfb24885f4bbd7" data-char-count="6683"><span class="title">11. Conformance profiles and Definition of Done</span> <span class="summary">Three profiles: Core (required of all, unchanged by v0.4), Append (extension; gains the RECOMMENDED recency-window posture), Producer (extension; gains the fold motion, V32). The Definition of Done checklist with REQUIRED and RECOMMENDED boxes. §11.3: hardening the spec via independent implementations.</span></a></li>
+    <li><a href="#what-is-not" data-witness="3734a93286d88ec242211e095a5c7809d8a3840c741c85f5a16f535b59de17fd" data-char-count="6836"><span class="title">12. What is NOT in v0.4</span> <span class="summary">Explicit out-of-scope list: live loop (Claim B), resolver tier, selector grammar, web-app machinery, cross-document addressing, no binding root (with the split-view ceiling), hierarchical manifests at scale, selective skim for unfolded tails, typed-section authority discipline, substrate-shaped build metadata, helper-script requirement — and the un-witnessed control plane disclosed as a class.</span></a></li>
+    <li><a href="#test-vectors" data-witness="028a235ecbc441750bf0ef16598a52bb8e0f308afe6065e472e31c84ee1cdcd0" data-char-count="22461"><span class="title">13. Appendix A — test vectors</span> <span class="summary">NIST SHA-256 sanity vector. Vector set 1: manifest-first sections with exact bytes and witnesses. Vector set 2: consecrated tail articles. Vector set 3: NON-CANONICAL refusals. Vector set 4: epoch-scoped tail verdicts. Vector set 5: the folded record and its three companion vectors teaching the un-witnessed-control-plane disclosure.</span></a></li>
+    <li><a href="#versioning-policy" data-witness="206f764035271794b7adc0de8ac49e1e558ea4fe655439b6aed125ebb085b01e" data-char-count="1187"><span class="title">14. Versioning policy</span> <span class="summary">This document specifies v0.4 — additive over v0.3, adding no Core conformance requirement. Version is in prose, not machine-readable attributes. Hard version boundary: fail loudly on non-conforming manifest shapes. Future versions in their own document.</span></a></li>
   </ol>
 </nav>
 
-<section id="what-it-is" data-witness="8c1afa1b52033bb6dfc8cb0ae2dc103f94a5c7338a7419c3993085fc3f2fec36" data-char-count="1366"><h2>1. What it is</h2>
-<p>A <code>doc.html</code> is a single, self-describing, self-verifying HTML file that can be <strong>larger than a reader&#39;s working memory</strong>. A reader detects the document&#39;s shape (§5.0), then — for manifest-first documents — hydrates only the file&#39;s <strong>manifest</strong> plus the <strong>sections</strong> it needs; for tail documents, reads article units in document order. In both shapes, a reader can verify every byte it reads against a per-unit cryptographic <strong>witness</strong> and never needs the whole file in memory at once.</p>
-<p>It is inheritable memory you read, address, verify, and hydrate selectively. The nearest familiar thing: a table of contents whose every entry carries a checksum, rendered as ordinary HTML, requiring no server, no JavaScript, and no tooling to read.</p>
+<section id="what-it-is" data-witness="438eaf839eb3463c08086d8269dc963b129d9c5a4820bc8dcfd883540603764b" data-char-count="1577"><h2>1. What it is</h2>
+<p>A <code>doc.html</code> is a single, self-describing, self-verifying HTML file that can be <strong>larger than
+a reader&#39;s working memory</strong>. A reader detects the document&#39;s shape (§5.0), then — for
+manifest-first documents — hydrates only the file&#39;s <strong>manifest</strong> plus the <strong>sections</strong> it
+needs; for tail documents, reads article units in document order. In both shapes, a reader reads
+each unit against its per-unit <strong>witness</strong> and never needs the whole file in memory at once: a
+<strong>consecrated</strong> unit&#39;s bytes are verified byte-for-byte against its cryptographic (SHA-256)
+witness, while a live <strong>writing-room</strong> unit carries a UTC-timestamp witness that records its place
+in sequence but does not byte-verify until consecration (§6.7).</p>
+<p>It is inheritable memory you read, address, verify, and hydrate selectively. The nearest
+familiar thing: a table of contents whose every entry carries a checksum, rendered as ordinary
+HTML, requiring no server, no JavaScript, and no tooling to read.</p>
 <p>The format is organized around <strong>three offices</strong>:</p>
 <ul>
-<li><strong>The Vessel</strong> — what carries the word: the file, the section, the manifest, the in-band</li>
-</ul>
-<p>  spec (§5).</p>
-<ul>
-<li><strong>The Witness</strong> — what fixes the word: the integrity attributes and the rule for comparing</li>
-</ul>
-<p>  them (§6).</p>
-<ul>
-<li><strong>The Fold</strong> — what keeps the word honest as it grows: selective reading, appending, and the</li>
-</ul>
-<p>  trust discipline (§7, §8).</p></section>
+<li><strong>The Vessel</strong> — what carries the word: the file, the section, the manifest, the in-band spec (§5).</li>
+<li><strong>The Witness</strong> — what fixes the word: the integrity attributes and the rule for comparing them (§6).</li>
+<li><strong>The Fold</strong> — what keeps the word honest as it grows: selective reading, appending, and the trust discipline (§7, §8).</li>
+</ul></section>
 
-<section id="normative-language" data-witness="aa0e5421648f7679276e1504c64037b33f715f6292fd8d129a09dd27912385d3" data-char-count="1148"><h2>2. Normative language</h2>
-<p>The key words <strong>MUST</strong>, <strong>MUST NOT</strong>, <strong>REQUIRED</strong>, <strong>SHALL</strong>, <strong>SHALL NOT</strong>, <strong>SHOULD</strong>, <strong>SHOULD NOT</strong>, <strong>MAY</strong>, and <strong>OPTIONAL</strong> are to be interpreted as described in RFC 2119.</p>
-<p><strong>Conformance is a predicate.</strong> An artifact or implementation <em>conforms</em> when it satisfies every <strong>MUST</strong> and <strong>REQUIRED</strong> directive in this specification at its declared profile (§11). A single unmet MUST means non-conformance. There is no partial pass and no normalization under which a failing check is waived (§6.5).</p>
+<section id="normative-language" data-witness="8893ef8fff58f4738626c2b4c5dd082aa06563f2be3d169cfc9995fffcac3455" data-char-count="1148"><h2>2. Normative language</h2>
+<p>The key words <strong>MUST</strong>, <strong>MUST NOT</strong>, <strong>REQUIRED</strong>, <strong>SHALL</strong>, <strong>SHALL NOT</strong>, <strong>SHOULD</strong>,
+<strong>SHOULD NOT</strong>, <strong>MAY</strong>, and <strong>OPTIONAL</strong> are to be interpreted as described in RFC 2119.</p>
+<p><strong>Conformance is a predicate.</strong> An artifact or implementation <em>conforms</em> when it satisfies
+every <strong>MUST</strong> and <strong>REQUIRED</strong> directive in this specification at its declared profile (§11).
+A single unmet MUST means non-conformance. There is no partial pass and no normalization under
+which a failing check is waived (§6.5).</p>
 <p>Two roles are specified, and &quot;conforming&quot; is always relative to one of them:</p>
 <ul>
 <li>A <strong>conforming document</strong> is a byte stream that satisfies the document MUSTs (§5, §6, §8).</li>
@@ -71,447 +80,570 @@
 <li>A <strong>conforming producer</strong> is an implementation that emits conforming documents (§9.2).</li>
 </ul></section>
 
-<section id="readers-role" data-witness="065e156292a6ef263eb0c12a6a3c190c0eff2970013945f10d314e594089bc27" data-char-count="580"><h2>3. The reader&#39;s role</h2>
-<p>To read a doc.html, a reader knows HTML, can compute SHA-256, detects the document&#39;s shape (§5.0), and — for manifest-first documents — reads the manifest before the body; for tail documents, discovers articles in document order. The reader cites where it stood. The format requires <strong>no other capacity</strong> — no resolver, no server, no JavaScript, no installed tooling. Verification is something a reader <em>can do</em> with the included arithmetic; it is not something the document performs on its own behalf (§6.3, §7.3).</p></section>
+<section id="readers-role" data-witness="4b4bd642f69c8398b74d857adb69100073d1b3ad9445dc9019b94857b7096651" data-char-count="580"><h2>3. The reader&#39;s role</h2>
+<p>To read a doc.html, a reader knows HTML, can compute SHA-256, detects the document&#39;s shape
+(§5.0), and — for manifest-first documents — reads the manifest before the body; for tail
+documents, discovers articles in document order. The reader cites where it stood. The format
+requires <strong>no other capacity</strong> — no resolver, no server, no JavaScript, no installed tooling.
+Verification is something a reader <em>can do</em> with the included arithmetic; it is not something
+the document performs on its own behalf (§6.3, §7.3).</p></section>
 
-<section id="goals-and-non-goals" data-witness="f2e841d774d7e839b49bdf06c95ab9380d8a7176a4031831bcb7346072e84989" data-char-count="1531"><h2>4. Goals and non-goals</h2>
+<section id="goals-and-non-goals" data-witness="0b0184d5d32f121c52ea0a583b3f474def7bfde01f5a66aa5a040d4c1517932b" data-char-count="1760"><h2>4. Goals and non-goals</h2>
 <h3>4.1 Goals</h3>
 <ul>
-<li>A document that is <strong>larger than the context window</strong> yet navigable by reading a small</li>
-</ul>
-<p>  manifest and drilling only the sections that bear on the task.</p>
-<ul>
-<li><strong>Byte-level integrity</strong>: every hydrated section is verifiable against a witness, with no</li>
-</ul>
-<p>  equivalence class to negotiate.</p>
-<ul>
-<li><strong>Inheritance with no infrastructure</strong>: the file alone, in any browser, is the whole format</li>
-</ul>
-<p>  (Tier 0, §5.6).</p>
-<ul>
+<li>A document that is <strong>larger than the context window</strong> yet navigable by reading a small manifest and drilling only the sections that bear on the task.</li>
+<li><strong>Byte-level integrity</strong>: every hydrated section is verifiable against a witness, with no equivalence class to negotiate.</li>
+<li><strong>Inheritance with no infrastructure</strong>: the file alone, in any browser, is the whole format (Tier 0, §5.6).</li>
 <li><strong>Append-only memory</strong> that grows by adding and superseding, never by erasing (§8).</li>
 </ul>
 <h3>4.2 Non-goals (the two-claims split)</h3>
-<p>The slogan &quot;HTML is all you need&quot; splits into two claims. This specification makes <strong>only the first</strong>:</p>
+<p>The slogan &quot;HTML is all you need&quot; splits into two claims. This specification makes <strong>only the
+first</strong>:</p>
 <ul>
-<li><strong>Claim A — the document is all-HTML inheritable memory</strong> (read / address / verify / hydrate</li>
+<li><strong>Claim A — the document is all-HTML inheritable memory</strong> (read / address / verify / hydrate selectively, no server, no JS). <strong>This is what v0.3 specifies.</strong></li>
+<li>**Claim B — the live <em>loop</em> is all-HTML<strong> (write + model-call + append in a bare browser). </strong>Out of scope.** The <em>read</em> loop is all-HTML and needs no server; the <em>run</em> leg — call a model, hold a key, write the bytes back — is a platform action a scriptless <code>file://</code> page cannot perform. That leg is not impossible, only un-HTML: it is delegated to mature, general infrastructure (an OS mail path, a stateless model-completion command) — a shim over existing tools, never a bespoke doc.html server. The format owns the verb&#39;s <em>result</em> (a witnessed, appended section), not its <em>execution</em>. A conforming reader MUST NOT require a write/append runtime.</li>
 </ul>
-<p>  selectively, no server, no JS). <strong>This is what v0.3 specifies.</strong></p>
-<ul>
-<li>**Claim B — the live <em>loop</em> is all-HTML** (write + model-call + append in a bare browser).</li>
-</ul>
-<p>  <strong>Out of scope and false by platform law.</strong> A scriptless <code>file://</code> page cannot speak a model   protocol, hold a key, or write to disk. The hands that <em>grow</em> a document are apparatus,   outside the format. A conforming reader MUST NOT require a write/append runtime.</p>
 <p>The full out-of-scope list is §12.</p></section>
 
-<section id="vessel" data-witness="69846e2f2ddc7670b286425a1a30e4876fa3021bee4fc3e42c65a54a36b291ae" data-char-count="12291"><h2>5. The Vessel — the data model</h2>
-<p>A reader MUST be able to identify each artifact below from the HTML alone. If a structure is not expressed in the HTML, it is not part of the format.</p>
+<section id="vessel" data-witness="b575a02ba1bbc36a4a2adfee7e72b7f12ecd3c906328bc19379f22badd31bc8d" data-char-count="16832"><h2>5. The Vessel — the data model</h2>
+<p>A reader MUST be able to identify each artifact below from the HTML alone. If a structure is
+not expressed in the HTML, it is not part of the format.</p>
 <h3>5.0 Two document shapes</h3>
-<p>A doc.html file is one of two <strong>shapes</strong>. Shape is a format property of the file; it determines which structures carry addressable units and how a reader discovers them.</p>
-<p><strong>Manifest-first (default).</strong> The document carries a <code>&lt;nav id=&quot;manifest&quot;&gt;</code> and uses <code>&lt;section&gt;</code> elements as its addressable units. This is the default shape and the one used by the memory and selective-context examples.</p>
-<p><strong>Writing-room-tail (tail).</strong> The document carries no <code>&lt;nav id=&quot;manifest&quot;&gt;</code> and uses <code>&lt;article&gt;</code> elements (described in §5.3b) as its addressable units. This is the shape produced by an append-oriented chat body.</p>
-<p><strong>Homogeneity.</strong> Each document is <strong>exactly one shape</strong>. The off-shape witnessed element MUST NOT appear:</p>
+<p>A doc.html file is one of two <strong>shapes</strong>. Shape is a format property of the file; it determines
+which structures carry addressable units and how a reader discovers them.</p>
+<p><strong>Manifest-first (default).</strong> The document carries a <code>&lt;nav id=&quot;manifest&quot;&gt;</code> and uses
+<code>&lt;section&gt;</code> elements as its addressable units. This is the default shape and the one used by
+the memory and selective-context examples.</p>
+<p><strong>Writing-room-tail (tail).</strong> The document carries no <code>&lt;nav id=&quot;manifest&quot;&gt;</code> and uses
+<code>&lt;article&gt;</code> elements (described in §5.3b) as its addressable units. This is the shape produced
+by an append-oriented chat body.</p>
+<p><strong>Homogeneity.</strong> Each document is <strong>exactly one shape</strong>. The off-shape witnessed element MUST
+NOT appear:</p>
 <ul>
-<li>A manifest-first document MUST NOT contain any <code>&lt;article&gt;</code> element bearing a <code>data-witness</code></li>
-</ul>
-<p>  attribute.</p>
-<ul>
+<li>A manifest-first document MUST NOT contain any <code>&lt;article&gt;</code> element bearing a <code>data-witness</code> attribute.</li>
 <li>A tail document MUST NOT contain any <code>&lt;section&gt;</code> element bearing a <code>data-witness</code> attribute.</li>
 </ul>
-<p>Mixing shapes is a conformance failure; a reader MUST refuse a document where both <code>&lt;section data-witness&gt;</code> and <code>&lt;article data-witness&gt;</code> elements are present.</p>
+<p>Mixing shapes is a conformance failure; a reader MUST refuse a document where both
+<code>&lt;section data-witness&gt;</code> and <code>&lt;article data-witness&gt;</code> elements are present.</p>
 <p><strong>Shape detection.</strong> A conforming reader MUST detect shape as follows, in this order:</p>
 <ol>
 <li>If the document contains a <code>&lt;nav id=&quot;manifest&quot;&gt;</code>, the shape is <strong>manifest-first</strong>.</li>
-<li>Else if the document contains at least one <code>&lt;article data-witness&gt;</code> whose <code>data-witness</code></li>
-</ol>
-<p>   matches a valid-grammar witness (§6.7) and whose <code>id</code> is a valid id production (§6.1), the    shape is <strong>tail</strong>.</p>
-<ol>
+<li>Else if the document contains at least one <code>&lt;article data-witness&gt;</code> whose <code>data-witness</code> matches a valid-grammar witness (§6.7) and whose <code>id</code> is a valid id production (§6.1), the shape is <strong>tail</strong>.</li>
 <li>Otherwise, shape detection MUST FAIL.</li>
 </ol>
-<p>Shape detection is a Core operation (§11). A reader MUST NOT proceed to verification if shape detection fails.</p>
+<p>Shape detection is a Core operation (§11). A reader MUST NOT proceed to verification if shape
+detection fails.</p>
+<p><strong>Shape detection is a byte-scan, not a DOM query</strong> (§10 row V27). Both tests above MUST be satisfiable by a
+single forward pass over the document&#39;s UTF-8 bytes, using the same quote-aware attribute
+tokenizer as §6.4 and the same boundary-token grammar as §6.2: test 1 is satisfied by locating an
+opening tag whose exact tag name is <code>nav</code> and whose quote-aware <code>id</code> attribute value is the
+literal string <code>manifest</code> (§5.3); test 2 is satisfied by locating an opening tag whose exact tag
+name is <code>article</code> and which carries a quote-aware <code>data-witness</code> attribute matching a valid-grammar
+witness (§6.7) and a quote-aware <code>id</code> attribute matching the id production (§6.1). A reader MUST
+NOT require a full HTML parse or a constructed DOM tree to perform shape detection; the byte-scan
+that locates the <code>&lt;nav id=&quot;manifest&quot;&gt;</code> or <code>&lt;article data-witness&gt;</code> opening tag is the same
+class of operation as the boundary-token matching in §6.2 — an exact-tag-name, quote-aware token
+scan, never a substring search.</p>
+<p><strong>The two shapes can be two epochs of one lifecycle.</strong> For a document that folds (the
+conversation-record lifecycle this section&#39;s tail shape was built for), the tail is the
+<strong>live epoch</strong> and the manifest-first record is the <strong>record epoch</strong>: the fold (§8.4) is
+the one-way, whole-document transition between them. Neither shape <em>requires</em> the
+lifecycle: a tail MAY live and end as a tail (nothing obliges it to fold), and a document
+that has never lived as a tail (e.g. a memory body maintained manifest-first from birth)
+simply has no tail epoch. Shape detection (above) is unchanged: a reader detects the shape
+the file has <em>now</em>, never the shape it once had or might later take.</p>
 <h3>5.1 The document</h3>
-<table><thead><tr>
-<th>Property</th>
-<th>Rule</th>
-</tr></thead><tbody>
-<tr>
-<td>Form</td>
-<td>MUST be a single, valid HTML file.</td>
-</tr>
-<tr>
-<td>Encoding</td>
-<td>MUST be UTF-8, declared in-band with <code>&lt;meta charset=&quot;utf-8&quot;&gt;</code> in <code>&lt;head&gt;</code>.</td>
-</tr>
-<tr>
-<td>Sidecars</td>
-<td>MUST NOT require companion manifests, schema URIs, or sidecar files. A sibling folder for what HTML itself calls for (<code>&lt;img src&gt;</code>, <code>&lt;a href&gt;</code>) is permitted but is not part of the single-file identity.</td>
-</tr>
-<tr>
-<td>Embedded data islands</td>
-<td>MUST NOT carry a JSON island in <code>&lt;head&gt;</code>, a <code>&lt;script type=&quot;application/ld+json&quot;&gt;</code> mirror, or a parallel binding file.</td>
-</tr>
+<table>
+<thead><tr><th>Property</th><th>Rule</th></tr></thead>
+<tbody>
+<tr><td>Form</td><td>MUST be a single, valid HTML file.</td></tr>
+<tr><td>Encoding</td><td>MUST be UTF-8, declared in-band with <code>&lt;meta charset=&quot;utf-8&quot;&gt;</code> in <code>&lt;head&gt;</code>.</td></tr>
+<tr><td>Sidecars</td><td>MUST NOT require companion manifests, schema URIs, or sidecar files. A sibling folder for what HTML itself calls for (<code>&lt;img src&gt;</code>, <code>&lt;a href&gt;</code>) is permitted but is not part of the single-file identity.</td></tr>
+<tr><td>Embedded data islands</td><td>MUST NOT carry a JSON island in <code>&lt;head&gt;</code>, a <code>&lt;script type=&quot;application/ld+json&quot;&gt;</code> mirror, or a parallel binding file.</td></tr>
 </tbody></table>
-<p>All byte-level operations in §6 are defined over the document&#39;s UTF-8 bytes <strong>as stored and served</strong>.</p>
+<p>All byte-level operations in §6 are defined over the document&#39;s UTF-8 bytes <strong>as stored and
+served</strong>.</p>
 <h3>5.2 The section <em>(manifest-first shape only)</em></h3>
 <p>An addressable unit of a manifest-first document.</p>
-<table><thead><tr>
-<th>Attribute</th>
-<th>Type</th>
-<th>Required</th>
-<th>Rule</th>
-</tr></thead><tbody>
-<tr>
-<td>element</td>
-<td>—</td>
-<td>REQUIRED</td>
-<td>MUST be a <code>&lt;section&gt;</code> element.</td>
-</tr>
-<tr>
-<td><code>id</code></td>
-<td>id production (§6.1)</td>
-<td>REQUIRED</td>
-<td>Names the section for fragment addressing. MUST be unique among live elements (§6.1).</td>
-</tr>
-<tr>
-<td><code>data-witness</code></td>
-<td>witness (§6.4)</td>
-<td>REQUIRED</td>
-<td>Fixes the section to its inner bytes.</td>
-</tr>
-<tr>
-<td><code>data-char-count</code></td>
-<td>integer</td>
-<td>OPTIONAL</td>
-<td>Unicode code-point count of the inner bytes (§6.6). Descriptive.</td>
-</tr>
-<tr>
-<td><code>data-kind</code></td>
-<td>token</td>
-<td>OPTIONAL</td>
-<td>Names the section&#39;s role from an in-band vocabulary (§8.3). Descriptive, never a control surface.</td>
-</tr>
+<table>
+<thead><tr><th>Attribute</th><th>Type</th><th>Required</th><th>Rule</th></tr></thead>
+<tbody>
+<tr><td>element</td><td>—</td><td>REQUIRED</td><td>MUST be a <code>&lt;section&gt;</code> element.</td></tr>
+<tr><td><code>id</code></td><td>id production (§6.1)</td><td>REQUIRED</td><td>Names the section for fragment addressing. MUST be unique among live elements (§6.1).</td></tr>
+<tr><td><code>data-witness</code></td><td>witness (§6.4)</td><td>REQUIRED</td><td>Fixes the section to its inner bytes.</td></tr>
+<tr><td><code>data-char-count</code></td><td>integer</td><td>OPTIONAL</td><td>Unicode code-point count of the inner bytes (§6.6). Descriptive.</td></tr>
+<tr><td><code>data-kind</code></td><td>token</td><td>OPTIONAL</td><td>Names the section&#39;s role from an in-band vocabulary (§8.3). Descriptive, never a control surface.</td></tr>
 </tbody></table>
-<p>Sections MAY nest. The manifest (§5.3) links to <strong>top-level sections only</strong>; a nested section&#39;s own boundaries are found by the depth-walk in §6.2. Non-addressable structural elements (headers, footers, asides) need not be <code>&lt;section&gt;</code> and carry no integrity attributes.</p>
+<p>Sections MAY nest. The manifest (§5.3) links to <strong>top-level sections only</strong>; a nested
+section&#39;s own boundaries are found by the depth-walk in §6.2. Non-addressable structural
+elements (headers, footers, asides) need not be <code>&lt;section&gt;</code> and carry no integrity attributes.</p>
 <h3>5.3 The manifest <em>(manifest-first shape only)</em></h3>
-<p>The following rules apply <strong>only when the document shape is manifest-first</strong> (§5.0). A tail document (§5.3b) carries no manifest; none of these rules apply to it.</p>
-<table><thead><tr>
-<th>Property</th>
-<th>Rule</th>
-</tr></thead><tbody>
-<tr>
-<td>Element</td>
-<td>MUST be a <code>&lt;nav id=&quot;manifest&quot;&gt;</code>, placed at the top of <code>&lt;body&gt;</code>, before any <code>&lt;section data-witness&gt;</code>.</td>
-</tr>
-<tr>
-<td><code>id</code> value</td>
-<td>MUST be the literal string <code>manifest</code>. No other value conforms.</td>
-</tr>
-<tr>
-<td>Cardinality</td>
-<td>In a manifest-first document, there MUST be exactly one <code>&lt;nav id=&quot;manifest&quot;&gt;</code>.</td>
-</tr>
-<tr>
-<td>Discovery</td>
-<td>A conforming reader MUST discover it by querying for <code>&lt;nav id=&quot;manifest&quot;&gt;</code>. No other discovery mechanism is defined. A styled, human-facing table of contents elsewhere is <strong>not</strong> the manifest unless it is this element.</td>
-</tr>
-<tr>
-<td>Contents</td>
-<td>MUST hold a single <code>&lt;ol&gt;</code>; each <code>&lt;li&gt;</code> contains exactly one <code>&lt;a&gt;</code> link, one per addressable top-level section, in document order.</td>
-</tr>
-<tr>
-<td>Link collection</td>
-<td>A reader MUST collect the links as the <code>&lt;a&gt;</code> <strong>descendants</strong> of the manifest nav, not as its direct children.</td>
-</tr>
+<p>The following rules apply <strong>only when the document shape is manifest-first</strong> (§5.0). A tail
+document (§5.3b) carries no manifest; none of these rules apply to it.</p>
+<table>
+<thead><tr><th>Property</th><th>Rule</th></tr></thead>
+<tbody>
+<tr><td>Element</td><td>MUST be a <code>&lt;nav id=&quot;manifest&quot;&gt;</code>, placed at the top of <code>&lt;body&gt;</code>, before any <code>&lt;section data-witness&gt;</code>.</td></tr>
+<tr><td><code>id</code> value</td><td>MUST be the literal string <code>manifest</code>. No other value conforms.</td></tr>
+<tr><td>Cardinality</td><td>In a manifest-first document, there MUST be exactly one <code>&lt;nav id=&quot;manifest&quot;&gt;</code>.</td></tr>
+<tr><td>Discovery</td><td>A conforming reader MUST discover it by querying for <code>&lt;nav id=&quot;manifest&quot;&gt;</code>. No other discovery mechanism is defined. A styled, human-facing table of contents elsewhere is <strong>not</strong> the manifest unless it is this element.</td></tr>
+<tr><td>Contents</td><td>MUST hold a single <code>&lt;ol&gt;</code>; each <code>&lt;li&gt;</code> contains exactly one <code>&lt;a&gt;</code> link, one per addressable top-level section, in document order.</td></tr>
+<tr><td>Link collection</td><td>A reader MUST collect the links as the <code>&lt;a&gt;</code> <strong>descendants</strong> of the manifest nav, not as its direct children.</td></tr>
 </tbody></table>
-<p><strong>Document order</strong> means the order in which elements&#39; opening tags appear in the serialized HTML byte stream (a depth-first pre-order walk of the parsed tree).</p>
+<p><strong>Document order</strong> means the order in which elements&#39; opening tags appear in the serialized
+HTML byte stream (a depth-first pre-order walk of the parsed tree).</p>
 <h3>5.3b The writing-room-tail unit <em>(tail shape only)</em></h3>
-<p>The following rules apply <strong>only when the document shape is tail</strong> (§5.0). A manifest-first document uses <code>&lt;section&gt;</code> units and a <code>&lt;nav id=&quot;manifest&quot;&gt;</code>; none of these rules apply to it.</p>
+<p>The following rules apply <strong>only when the document shape is tail</strong> (§5.0). A manifest-first
+document uses <code>&lt;section&gt;</code> units and a <code>&lt;nav id=&quot;manifest&quot;&gt;</code>; none of these rules apply to it.</p>
 <p>An addressable unit in a tail document is an <strong>article element</strong> with the following shape:</p>
-<pre><code class="lang-html">&lt;article id=&quot;turn-NNNNNN&quot; class=&quot;turn {role}&quot; data-role=&quot;{role}&quot; data-turn=&quot;{NNNNNN}&quot;
+<pre><code>&lt;article id=&quot;turn-NNNNNN&quot; class=&quot;turn {role}&quot; data-role=&quot;{role}&quot; data-turn=&quot;{NNNNNN}&quot;
          [data-kind=&quot;{kind}&quot;] [data-char-count=&quot;{integer}&quot;] data-witness=&quot;{witness}&quot;&gt;
   ...
 &lt;/article&gt;</code></pre>
-<table><thead><tr>
-<th>Attribute</th>
-<th>Required</th>
-<th>Rule</th>
-</tr></thead><tbody>
-<tr>
-<td><code>id</code></td>
-<td>REQUIRED</td>
-<td>MUST follow the id production (§6.1). The conventional form is <code>turn-NNNNNN</code> (zero-padded six-digit turn number), but any valid id is conforming.</td>
-</tr>
-<tr>
-<td><code>class</code></td>
-<td>RECOMMENDED</td>
-<td>Human-readable classification (e.g. <code>turn user</code>, <code>turn assistant</code>). Not normative for reading.</td>
-</tr>
-<tr>
-<td><code>data-role</code></td>
-<td>RECOMMENDED</td>
-<td>Machine-readable role token (e.g. <code>user</code>, <code>assistant</code>). Not normative for verification.</td>
-</tr>
-<tr>
-<td><code>data-turn</code></td>
-<td>RECOMMENDED</td>
-<td>The turn sequence number as a decimal integer. Not normative for verification.</td>
-</tr>
-<tr>
-<td><code>data-kind</code></td>
-<td>OPTIONAL</td>
-<td>Names the article&#39;s role from an in-band vocabulary (§8.3). Descriptive.</td>
-</tr>
-<tr>
-<td><code>data-char-count</code></td>
-<td>OPTIONAL</td>
-<td>Unicode code-point count of the inner bytes (§6.6). Descriptive.</td>
-</tr>
-<tr>
-<td><code>data-witness</code></td>
-<td>REQUIRED</td>
-<td>Fixes the article to its inner bytes, using the same two-epoch grammar as a section witness (§6.7).</td>
-</tr>
+<table>
+<thead><tr><th>Attribute</th><th>Required</th><th>Rule</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>REQUIRED</td><td>MUST follow the id production (§6.1). The conventional form is <code>turn-NNNNNN</code> (zero-padded six-digit turn number), but any valid id is conforming.</td></tr>
+<tr><td><code>class</code></td><td>RECOMMENDED</td><td>Human-readable classification (e.g. <code>turn user</code>, <code>turn assistant</code>). Not normative for reading.</td></tr>
+<tr><td><code>data-role</code></td><td>RECOMMENDED</td><td>Machine-readable role token (e.g. <code>user</code>, <code>assistant</code>). Not normative for verification.</td></tr>
+<tr><td><code>data-turn</code></td><td>RECOMMENDED</td><td>The turn sequence number as a decimal integer. Not normative for verification.</td></tr>
+<tr><td><code>data-kind</code></td><td>OPTIONAL</td><td>Names the article&#39;s role from an in-band vocabulary (§8.3). Descriptive.</td></tr>
+<tr><td><code>data-char-count</code></td><td>OPTIONAL</td><td>Unicode code-point count of the inner bytes (§6.6). Descriptive.</td></tr>
+<tr><td><code>data-witness</code></td><td>REQUIRED</td><td>Fixes the article to its inner bytes, using the same two-epoch grammar as a section witness (§6.7).</td></tr>
 </tbody></table>
-<p><strong>Articles MUST NOT nest.</strong> An <code>&lt;article data-witness&gt;</code> element MUST NOT contain another <code>&lt;article data-witness&gt;</code> element.</p>
-<p><strong>Non-witnessed chrome.</strong> A tail document MAY contain <code>&lt;header&gt;</code>, <code>&lt;div&gt;</code>, <code>&lt;footer&gt;</code>, or other block elements that do not carry <code>data-witness</code>. These are non-addressable chrome and are not part of the verified content. In particular, an introductory explanation block MUST be placed in non-witnessed chrome, not in a witnessed article.</p>
-<p><strong>The <code>append-anchor</code>.</strong> A tail document MAY carry an <code>&lt;div id=&quot;append-anchor&quot;&gt;</code> (or similar) as a write-path marker for live-append tooling. The <code>append-anchor</code> is:</p>
+<p><strong>Articles MUST NOT nest.</strong> An <code>&lt;article data-witness&gt;</code> element MUST NOT contain another
+<code>&lt;article data-witness&gt;</code> element.</p>
+<p><strong>Non-witnessed chrome.</strong> A tail document MAY contain <code>&lt;header&gt;</code>, <code>&lt;div&gt;</code>, <code>&lt;footer&gt;</code>, or
+other block elements that do not carry <code>data-witness</code>. These are non-addressable chrome and are
+not part of the verified content. In particular, an introductory explanation block MUST be
+placed in non-witnessed chrome, not in a witnessed article.</p>
+<p><strong>The <code>append-anchor</code>.</strong> A tail document MAY carry an <code>&lt;div id=&quot;append-anchor&quot;&gt;</code> (or similar)
+as a write-path marker for live-append tooling. The <code>append-anchor</code> is:</p>
 <ul>
 <li><strong>OPTIONAL</strong> — a consecrated tail need not carry it; its absence is not a conformance failure.</li>
 <li><strong>Un-witnessed</strong> — it MUST NOT carry a <code>data-witness</code> attribute.</li>
-<li><strong>Not required to read</strong> — a conforming reader MUST NOT require its presence to discover,</li>
-</ul>
-<p>  verify, or hydrate a tail document.</p>
-<ul>
+<li><strong>Not required to read</strong> — a conforming reader MUST NOT require its presence to discover, verify, or hydrate a tail document.</li>
 <li><strong>Subject to §6.1 dup-id</strong> — if present, its <code>id</code> MUST be unique among live elements.</li>
 </ul>
+<p><strong>The Core/Append profile seam, named explicitly.</strong> A <code>data-witness</code> on a tail article (like a
+section witness) may be either epoch (§6.7). A <strong>Core</strong>-profile reader MUST classify the witness
+by grammar and, for a consecrated (SHA-256) witness, recompute and compare it (§6.3); a Core
+reader is under no obligation to validate a writing-room (timestamp) witness beyond its grammar —
+in particular it MUST NOT enforce strictly-increasing document order. Enforcing that ordering,
+resolving <code>data-supersedes</code>, and re-confirming append-only growth (§7.2) are <strong>Append</strong>-profile
+(§11.1) obligations layered on top of Core, not Core obligations themselves. A tail document
+composed entirely of writing-room witnesses is therefore fully readable and addressable by a
+Core-only reader (which reports the distinct state named in §11.1&#39;s Append seam, never a bare
+PASS on zero recomputed bytes); a reader that additionally enforces ordering and supersession is
+claiming the Append extension. This is the same Core/Append boundary §11.1 states in the
+profile roster below, restated here at its point of first relevance.</p>
 <h3>5.4 The manifest link <em>(manifest-first shape only)</em></h3>
 <p>Shape:</p>
-<pre><code class="lang-html">&lt;a href=&quot;#id&quot; data-witness=&quot;&lt;witness&gt;&quot; data-char-count=&quot;&lt;integer&gt;&quot;&gt;&lt;span class=&quot;title&quot;&gt;Title&lt;/span&gt; &lt;span class=&quot;summary&quot;&gt;summary&lt;/span&gt;&lt;/a&gt;</code></pre>
-<table><thead><tr>
-<th>Attribute / child</th>
-<th>Required</th>
-<th>Rule</th>
-</tr></thead><tbody>
-<tr>
-<td><code>href</code></td>
-<td>REQUIRED</td>
-<td>A fragment reference (<code>#id</code>) whose value matches the target section&#39;s <code>id</code>.</td>
-</tr>
-<tr>
-<td><code>data-witness</code></td>
-<td>REQUIRED</td>
-<td>MUST exactly equal the <code>data-witness</code> on the target <code>&lt;section&gt;</code>.</td>
-</tr>
-<tr>
-<td><code>data-char-count</code></td>
-<td>OPTIONAL</td>
-<td>Independent per carrier. Where present on both link and section, the two MUST agree; absence on either is permitted and is not a failure.</td>
-</tr>
-<tr>
-<td><code>&lt;span class=&quot;title&quot;&gt;</code></td>
-<td>SHOULD</td>
-<td>Human-readable title.</td>
-</tr>
-<tr>
-<td><code>&lt;span class=&quot;summary&quot;&gt;</code></td>
-<td>SHOULD</td>
-<td>One-to-three-sentence summary; lets a reader decide whether to hydrate without loading.</td>
-</tr>
-<tr>
-<td><code>data-kind</code></td>
-<td>MUST NOT</td>
-<td>A section&#39;s <code>data-kind</code> lives on the section, not the link (avoids a manifest-vs-section disagreement).</td>
-</tr>
+<pre><code>&lt;a href=&quot;#id&quot; data-witness=&quot;&lt;witness&gt;&quot; data-char-count=&quot;&lt;integer&gt;&quot;&gt;&lt;span class=&quot;title&quot;&gt;Title&lt;/span&gt; &lt;span class=&quot;summary&quot;&gt;summary&lt;/span&gt;&lt;/a&gt;</code></pre>
+<table>
+<thead><tr><th>Attribute / child</th><th>Required</th><th>Rule</th></tr></thead>
+<tbody>
+<tr><td><code>href</code></td><td>REQUIRED</td><td>A fragment reference (<code>#id</code>) whose value matches the target section&#39;s <code>id</code>.</td></tr>
+<tr><td><code>data-witness</code></td><td>REQUIRED</td><td>MUST exactly equal the <code>data-witness</code> on the target <code>&lt;section&gt;</code>.</td></tr>
+<tr><td><code>data-char-count</code></td><td>OPTIONAL</td><td>Independent per carrier. Where present on both link and section, the two MUST agree; absence on either is permitted and is not a failure.</td></tr>
+<tr><td><code>&lt;span class=&quot;title&quot;&gt;</code></td><td>SHOULD</td><td>Human-readable title.</td></tr>
+<tr><td><code>&lt;span class=&quot;summary&quot;&gt;</code></td><td>SHOULD</td><td>One-to-three-sentence summary; lets a reader decide whether to hydrate without loading.</td></tr>
+<tr><td><code>data-kind</code></td><td>MUST NOT</td><td>A section&#39;s <code>data-kind</code> lives on the section, not the link (avoids a manifest-vs-section disagreement).</td></tr>
 </tbody></table>
 <p>Additional attributes on the link are permitted but carry no normative weight.</p>
+<p><strong>Two conforming link-text forms.</strong> The <code>&lt;span class=&quot;title&quot;&gt;</code>/<code>&lt;span class=&quot;summary&quot;&gt;</code>
+children above are SHOULD-level. A <strong>folded record</strong> (§8.4) instead carries the unit&#39;s
+<strong>gist</strong> as the link&#39;s plain text content — a human-readable routing line minted at
+append time or derived from the unit&#39;s inner text. The format bounds neither its length
+nor its form (the reference tooling&#39;s own <em>minted</em> defaults are single short lines — a
+documented tool bound, §8.4, never a conformance surface; an authored gist may be any
+text its carrier encodes). Both forms are conforming; in both, the
+link text exists to let a reader decide whether to hydrate without loading (§7.1).</p>
+<p><strong>The disclosure.</strong> The manifest&#39;s link text is <strong>authored routing</strong>; positive authority
+about content begins after hydrating and verifying the witnessed record. This sentence is
+normative prose, not mechanism: nothing in Core verification certifies that link text
+corresponds to the unit it routes to — the correspondence is a producer discipline (the
+reference tooling derives gists from unit content and lints divergence; §8.4), and a
+reader&#39;s trust in it is trust in the producer, not in a checked property of the file. Link
+text remains subject to §7.3&#39;s existing law, unchanged: &quot;point, don&#39;t declare&quot; already
+forbids every routing surface — manifest entries included — from declaring a verdict on
+the document&#39;s own truth, completeness, or verification status. This recension adds
+nothing to that law, and no v0.3 document&#39;s conformance changes.</p>
 <h3>5.5 Vessel and image addressing</h3>
-<p>Images MAY carry stable <code>id</code> attributes, making them addressable by fragment. Binary data is referenced via standard HTML <code>src</code>; the format places no requirement on the <code>src</code> value, file path, folder layout, or naming. Folder layout is a deployment concern, not a format concern.</p>
+<p>Images MAY carry stable <code>id</code> attributes, making them addressable by fragment. Binary data is
+referenced via standard HTML <code>src</code>; the format places no requirement on the <code>src</code> value, file
+path, folder layout, or naming. Folder layout is a deployment concern, not a format concern.</p>
 <h3>5.6 Degradation tiers</h3>
 <p>The format degrades without corrupting the artifact.</p>
 <ul>
-<li><strong>Tier 0 — the file alone — IS the format.</strong> Opened in any browser with no server and no</li>
-</ul>
-<p>  scripts, the document is fully readable, addressable by <code>#id</code>, and verifiable by hand.</p>
-<ul>
+<li><strong>Tier 0 — the file alone — IS the format.</strong> Opened in any browser with no server and no scripts, the document is fully readable, addressable by <code>#id</code>, and verifiable by hand.</li>
 <li><strong>Tier 1 — a reader skill or helper script</strong> makes hydration and verification ergonomic.</li>
 <li><strong>Tier 2 — a serving runtime</strong> is an OPTIONAL pair of hands that can grow the file.</li>
 </ul>
 <p>Every tier above 0 is apparatus, not format. A conforming reader MUST NOT require one.</p></section>
 
-<section id="witness" data-witness="ee6e655231ad7a87bceb4532cd8d9e7bac84927c94644255f4b4845c60e41518" data-char-count="8918"><h2>6. The Witness — the integrity contract</h2>
-<p>This is the most precision-critical office. Two independent implementations that follow §6 MUST compute identical witnesses for identical bytes.</p>
+<section id="witness" data-witness="656e05e625ce24540e515f0349b12bca993a5b6885b8c6bac5e1c1dad247c780" data-char-count="19122"><h2>6. The Witness — the integrity contract</h2>
+<p>This is the most precision-critical office. Two independent implementations that follow §6
+MUST compute identical witnesses for identical bytes.</p>
 <h3>6.1 The id production</h3>
 <p>A section <code>id</code> is <strong>normative</strong>:</p>
 <ul>
 <li>MUST begin with a letter (Unicode category L) or an underscore.</li>
-<li>MUST continue with zero or more letters, digits (category Nd), hyphens, underscores,</li>
+<li>MUST continue with zero or more letters, digits (category Nd), hyphens, underscores, periods, or colons.</li>
+<li>Numeric-only ids, ids beginning with a digit, and ids containing whitespace or any character outside this set are <strong>non-conforming</strong>.</li>
 </ul>
-<p>  periods, or colons.</p>
-<ul>
-<li>Numeric-only ids, ids beginning with a digit, and ids containing whitespace or any character</li>
-</ul>
-<p>  outside this set are <strong>non-conforming</strong>.</p>
-<p>(This is close to, but deliberately not identical to, XML&#39;s NCName: this production permits the colon, which NCName forbids.)</p>
-<p><strong>One id names one live element.</strong> If two live elements share an id, a conforming reader MUST fail closed (§7.3) — it MUST NOT silently resolve to one twin and bless the document.</p>
+<p>(This is close to, but deliberately not identical to, XML&#39;s NCName: this production permits the
+colon, which NCName forbids.)</p>
+<p><strong>One id names one live element.</strong> If two live elements share an id, a conforming reader MUST
+fail closed (§7.3) — it MUST NOT silently resolve to one twin and bless the document.</p>
+<p><strong>Scope of &quot;live element&quot; (normative, pinned here before §9.1 names the check).</strong> The
+uniqueness rule is not scoped to witnessed units alone. A <strong>live element</strong> is any element in the
+document&#39;s rendered surface that carries an <code>id</code> attribute — this includes, without limitation:
+top-level <code>&lt;section data-witness&gt;</code> or <code>&lt;article data-witness&gt;</code> units, <strong>nested</strong> <code>&lt;section&gt;</code>
+elements (witnessed or not — §5.2 permits section nesting, and a nested element&#39;s <code>id</code> still
+occupies the same document-wide id space a fragment reference <code>#id</code> resolves against), manifest
+<code>&lt;a href=&quot;#id&quot;&gt;</code> link targets, and any <code>id</code>-bearing <code>&lt;img&gt;</code> or other addressable element under
+§5.5 (Vessel and image addressing — images MAY carry stable <code>id</code> attributes, making them
+addressable by fragment on the same terms as a section). The rule is a <strong>property of the whole
+document&#39;s id space</strong>, not a per-tag-name or per-witnessed-unit rule: a <code>&lt;section id=&quot;x&quot;&gt;</code> and an
+<code>&lt;img id=&quot;x&quot;&gt;</code> collide exactly as two <code>&lt;section id=&quot;x&quot;&gt;</code> elements would, because both attempt to
+name the <em>same</em> live element for fragment addressing (§6.1&#39;s opening sentence: &quot;one id names one
+live element&quot; — it does not say &quot;one id names one section&quot;). A conforming reader&#39;s dup-id check
+(§9.1) MUST therefore walk every opening tag in the document (outside inert regions, §12), not
+only the addressable-unit opening tags its shape-specific unit-discovery scan visits.</p>
 <h3>6.2 The witnessed bytes</h3>
-<p>The witnessed bytes of an addressable unit (a <code>&lt;section&gt;</code> in manifest-first shape, an <code>&lt;article&gt;</code> in tail shape — collectively &quot;the addressable element&quot;) are <strong>exactly</strong> the literal bytes between the <code>&gt;</code> that ends the addressable element&#39;s opening tag and the <code>&lt;</code> that begins its own closing tag — the <strong>raw inner span, UTF-8, untrimmed</strong>. No leading or trailing newline is added or removed before the witness is computed or checked.</p>
-<p><strong>Finding the addressable element&#39;s own closing tag.</strong> Let <em>TAG</em> be the tag name of the addressable element (<code>section</code> for manifest-first, <code>article</code> for tail). When the element contains no nested element of the same <em>TAG</em>, its closing tag is the next <code>&lt;/<em>TAG</em>&gt;</code>. When elements of the same <em>TAG</em> nest (only relevant for <code>section</code>, since §5.3b prohibits nesting of witnessed articles), the element&#39;s own closing tag is found by a <strong>depth-walk</strong>:</p>
+<p>The witnessed bytes of an addressable unit (a <code>&lt;section&gt;</code> in manifest-first shape, an
+<code>&lt;article&gt;</code> in tail shape — collectively &quot;the addressable element&quot;) are <strong>exactly</strong> the literal
+bytes between the <code>&gt;</code> that ends the addressable element&#39;s opening tag and the <code>&lt;</code> that begins
+its own closing tag — the <strong>raw inner span, UTF-8, untrimmed</strong>. No leading or trailing newline
+is added or removed before the witness is computed or checked.</p>
+<p><strong>The boundary-token grammar (normative, exact).</strong> Let <em>TAG</em> be the tag name of the addressable
+element (<code>section</code> for manifest-first, <code>article</code> for tail). A byte sequence is an <strong>open token</strong>
+for <em>TAG</em> if and only if it is the literal bytes <code>&lt;</code> followed by <em>TAG</em> (case-sensitive, lowercase)
+followed by exactly one of: ASCII whitespace, <code>/</code>, or <code>&gt;</code> — and no other byte. This is an
+<strong>exact tag-name match</strong>, not a prefix match: the open-token test MUST NOT match on a shared
+prefix followed by any other byte. <code>&lt;section-foo&gt;</code> is therefore <strong>not</strong> a <code>&lt;section&gt;</code> open token
+— the byte immediately after <code>section</code> is <code>-</code>, which is none of <code>{whitespace, /, &gt;}</code> — and a
+reader MUST NOT treat it as a boundary of any kind (it is ordinary content, subject to the
+content-profile prohibition below). A byte sequence is a <strong>close token</strong> for <em>TAG</em> if and only if
+it is the literal bytes <code>&lt;/</code> followed by <em>TAG</em> followed by <code>&gt;</code> with <strong>zero interior whitespace or
+other bytes</strong> — i.e. exactly <code>&lt;/section&gt;</code> or exactly <code>&lt;/article&gt;</code>. This is the <strong>canonical</strong>
+closing-tag serialization; it is the only serialization the depth-walk below recognizes as a
+close token.</p>
+<p><strong>Finding the addressable element&#39;s own closing tag.</strong> When the element contains no nested
+element of the same <em>TAG</em>, its closing tag is the next close token for <em>TAG</em>. When elements of
+the same <em>TAG</em> nest (only relevant for <code>section</code>, since §5.3b prohibits nesting of witnessed
+articles), the element&#39;s own closing tag is found by a <strong>depth-walk</strong>:</p>
 <ol>
 <li>Start at the byte just after the opening tag&#39;s <code>&gt;</code>. Set <code>depth = 1</code>.</li>
-<li>Scan forward for the next <code>&lt;<em>TAG</em> ...&gt;</code> or <code>&lt;/<em>TAG</em>&gt;</code> token (matching the same <em>TAG</em>).</li>
-<li>Each opening token increases <code>depth</code> by 1; each closing token decreases it by 1.</li>
-<li>The element&#39;s own closing tag is the <code>&lt;/<em>TAG</em>&gt;</code> that returns <code>depth</code> to 0.</li>
-<li>The witnessed bytes run from the byte after the opening tag&#39;s <code>&gt;</code> to the byte before that</li>
+<li>Scan forward for the next open token or close token for <em>TAG</em>, per the boundary-token grammar above.</li>
+<li>Each open token increases <code>depth</code> by 1; each close token decreases it by 1.</li>
+<li>The element&#39;s own closing tag is the close token that returns <code>depth</code> to 0.</li>
+<li>The witnessed bytes run from the byte after the opening tag&#39;s <code>&gt;</code> to the byte before that depth-zero close token&#39;s <code>&lt;</code>.</li>
 </ol>
-<p>   depth-zero <code>&lt;/<em>TAG</em>&gt;</code>&#39;s <code>&lt;</code>.</p>
-<p><strong>HTML comments are inert in this walk.</strong> Any <code>&lt;<em>TAG</em> ...&gt;</code> or <code>&lt;/<em>TAG</em>&gt;</code> token appearing inside a <code>&lt;!-- ... --&gt;</code> comment MUST NOT be counted and MUST NOT match a boundary. (Comment bytes that fall inside the inner span are still part of the witnessed bytes; they are skipped only for the purpose of matching boundary tokens.)</p>
-<p>The witness arithmetic — SHA-256 over the raw, untrimmed inner span as UTF-8; char-count = code points of that same slice — is identical for both shapes. The tag name is the only parameter.</p>
+<p>The depth-walk and the unit-discovery scan that locates a witnessed unit by <code>id</code> (§7.1) MUST use
+the identical boundary-token grammar — a reader MUST NOT apply the exact-tag-name rule in one
+scan and a looser (e.g. prefix or word-boundary) match in the other. Both are byte-token scans;
+neither requires an HTML tokenizer or parser in the trust base.</p>
+<p><strong>HTML comments and raw-text elements are inert in this walk.</strong> Any open token or close token for
+<em>TAG</em> appearing inside a <code>&lt;!-- ... --&gt;</code> comment, or inside the raw-text content of a <code>&lt;script&gt;</code> or
+<code>&lt;style&gt;</code> element, MUST NOT be counted and MUST NOT match a boundary. (Comment and raw-text bytes
+that fall inside the inner span are still part of the witnessed bytes; they are skipped only for
+the purpose of matching boundary tokens.) §12 states the general inert-region definition this rule
+instantiates.</p>
+<p><strong>The NON-CANONICAL verdict.</strong> A boundary-adjacent token that is legal, browser-parsed HTML but
+does not match the exact grammar above — most notably a close tag carrying interior whitespace,
+such as <code>&lt;/section &gt;</code> (a space before <code>&gt;</code>; §10 row V22), or a custom-element tag name sharing
+<em>TAG</em> as a prefix, such as <code>&lt;section-foo&gt;</code> appearing where a boundary was expected (§10 row V23)
+— is <strong>not</strong> a boundary token and MUST NOT be reported as &quot;unterminated&quot; or any variant implying
+the element has no closing tag. Instead, a conforming reader MUST refuse the document with the
+distinct verdict <strong><code>NON-CANONICAL</code></strong>, and that refusal MUST carry a <strong>required byte offset</strong>: the
+zero-based byte position, within the document&#39;s UTF-8 byte stream, of the first byte of the
+off-grammar token that triggered the refusal. <code>NON-CANONICAL</code> is a refusal outcome under
+fail-closed (§7.3), not a pass with caveats and not a new equivalence class — §6.5&#39;s
+zero-equivalence-classes rule for comparison is unaffected; <code>NON-CANONICAL</code> names why the reader
+stopped, it does not relax what counts as a match.</p>
+<p>The witness arithmetic — SHA-256 over the raw, untrimmed inner span as UTF-8; char-count =
+code points of that same slice — is identical for both shapes. The tag name is the only
+parameter.</p>
 <h3>6.3 The witness is computed, not trusted</h3>
-<p>A conforming reader MUST recompute the SHA-256 of the inner bytes (§6.2) and compare it against the stored <code>data-witness</code> value; it MUST NOT take the stored hex as given.</p>
-<p><strong>Manifest-first shape — two-carrier agreement (V4).</strong> In a manifest-first document the same <code>data-witness</code> value appears twice: on the <code>&lt;section&gt;</code> element and on its manifest link. <strong>Both carriers MUST equal the recomputed digest</strong>; a link whose witness matches the section text but not the recomputed bytes is still a failure.</p>
-<p><strong>Tail shape — single carrier.</strong> In a tail document an article&#39;s <code>data-witness</code> appears once, on the <code>&lt;article&gt;</code> element. There is no manifest link. Carrier-agreement (V4) is <strong>not applicable</strong> for tail documents; a reader MUST NOT require a second carrier and MUST NOT fail for its absence.</p>
-<p>In both shapes, a reader MUST return, as an addressable unit&#39;s content, the same bytes the witness covers — it MUST NOT present trimmed, re-encoded, or DOM-normalized bytes as witness-verified.</p>
+<p>For a <strong>consecrated</strong> witness (§6.7), a conforming reader MUST recompute the SHA-256 of the inner
+bytes (§6.2) and compare it against the stored <code>data-witness</code> digest; it MUST NOT take the stored
+hex as given. A <strong>writing-room</strong> witness (§6.7) carries a UTC timestamp, not a digest: it is
+validated by grammar — and, under the Append profile (§11, V15), by strictly-increasing document
+order — and MUST NOT be hash-recomputed. Recomputing it, or failing a live document merely for its
+non-recompute, is itself non-conforming.</p>
+<p><strong>Manifest-first shape — two-carrier agreement (V4).</strong> In a manifest-first document the same
+<code>data-witness</code> value appears twice: on the <code>&lt;section&gt;</code> element and on its manifest link.
+<strong>Both carriers MUST equal the recomputed digest</strong>; a link whose witness matches the section
+text but not the recomputed bytes is still a failure.</p>
+<p><strong>Tail shape — single carrier.</strong> In a tail document an article&#39;s <code>data-witness</code> appears once,
+on the <code>&lt;article&gt;</code> element. There is no manifest link. Carrier-agreement (V4) is <strong>not
+applicable</strong> for tail documents; a reader MUST NOT require a second carrier and MUST NOT fail
+for its absence.</p>
+<p>In both shapes, a reader MUST return, as an addressable unit&#39;s content, the same bytes the
+witness covers — it MUST NOT present trimmed, re-encoded, or DOM-normalized bytes as
+witness-verified.</p>
 <h3>6.4 Reading a witnessed attribute (quote-aware)</h3>
-<p>Within an element&#39;s start tag, attributes are <code>name</code> or <code>name=value</code> pairs separated by ASCII whitespace. A conforming reader MUST tokenize <strong>quote-aware</strong>: a quoted value runs to its matching quote character, and a <code>name=</code> sequence appearing <em>inside</em> another attribute&#39;s quoted value is part of that value, not a separate attribute. A reader that matches attributes with a naïve substring or unquoted regex can be fooled by an <code>id=</code> or <code>data-witness=</code> string embedded in another attribute&#39;s value; the quote-aware rule is REQUIRED so the real <code>id</code> and <code>data-witness</code> cannot be impersonated.</p>
+<p>Within an element&#39;s start tag, attributes are <code>name</code> or <code>name=value</code> pairs separated by ASCII
+whitespace. A conforming reader MUST tokenize <strong>quote-aware</strong>: a quoted value runs to its
+matching quote character, and a <code>name=</code> sequence appearing <em>inside</em> another attribute&#39;s quoted
+value is part of that value, not a separate attribute. A reader that matches attributes with a
+naïve substring or unquoted regex can be fooled by an <code>id=</code> or <code>data-witness=</code> string embedded
+in another attribute&#39;s value; the quote-aware rule is REQUIRED so the real <code>id</code> and
+<code>data-witness</code> cannot be impersonated.</p>
+<p><strong>Double-quoted attribute values are REQUIRED on witnessed-unit opening tags</strong> (§10 row V24). On
+the opening tag of an addressable element (<code>&lt;section&gt;</code> in manifest-first shape, <code>&lt;article&gt;</code> in
+tail shape), every attribute that carries a value (<code>id</code>, <code>data-witness</code>, <code>data-char-count</code>,
+<code>data-kind</code>, <code>data-supersedes</code>, and any other <code>name=value</code> pair) MUST use the double-quote form
+(<code>name=&quot;value&quot;</code>). Single-quoted (<code>name=&#39;value&#39;</code>) and unquoted (<code>name=value</code>) attribute values on
+a witnessed-unit opening tag are <strong>NON-CANONICAL</strong>; a conforming reader MUST refuse such a
+document with the <code>NON-CANONICAL</code> verdict and a required byte offset (§6.2), not silently accept
+an alternate quoting as equivalent. This closes the single canonical serialization the
+Producer-profile (§9.2a) commits to emitting.</p>
+<p><strong>Duplicate-attribute refusal</strong> (§10 row V25). If the same attribute name appears more than once
+on a single opening tag of an addressable element — whether both occurrences use the same
+quoting or not — the tag is NON-CANONICAL and a conforming reader MUST refuse with a required
+byte offset (§6.2) pointing at the second (duplicate) occurrence. A reader MUST NOT silently
+prefer the first occurrence, the last occurrence, or any other resolution rule; a duplicated
+attribute name is itself the refusal condition, independent of whether the two values agree.</p>
+<h3>6.4a The content-profile prohibition (distinct from the boundary-token grammar)</h3>
+<p>The boundary-token grammar of §6.2 governs what counts as an <em>open</em> or <em>close</em> token when
+walking the byte stream to find an addressable element&#39;s own closing tag. It is a <strong>separate</strong>
+rule from the one stated here, which governs what content is permitted to appear, unmasked,
+<em>inside</em> an already-delimited witnessed span.</p>
+<p><strong>The rule</strong> (§10 row V26). A witnessed span (the inner bytes of a <code>&lt;section&gt;</code> or <code>&lt;article&gt;</code>
+addressable element, as delimited by §6.2) MUST NOT contain, outside an inert region (§12), any
+content element whose tag name is exactly <code>section</code> or exactly <code>article</code> <strong>followed immediately
+by</strong> one of the three characters <code>-</code>, <code>.</code>, or <code>:</code> (for example <code>&lt;section-foo&gt;</code>, <code>&lt;article.x&gt;</code>,
+<code>&lt;section:widget&gt;</code>). Such an element, when it appears unmasked inside a witnessed span, is
+refused with the <code>NON-CANONICAL</code> verdict and a required byte offset (§6.2) pointing at the first
+byte of its opening tag.</p>
+<p><strong>Why this is a distinct rule.</strong> This prohibition is caught by <strong>neither</strong> the boundary-token
+grammar of §6.2 <strong>nor</strong> the closing-tag count guard a Core reader implements over that grammar:</p>
+<ul>
+<li>The boundary-token grammar (§6.2) governs matching an *open*/*close* token to walk depth; an element such as <code>&lt;section-foo&gt;</code> is correctly recognized as <em>not</em> a <code>&lt;section&gt;</code> open token (the byte after <code>section</code> is <code>-</code>, not whitespace/<code>/</code>/<code>&gt;</code>) and is therefore, correctly, never treated as a boundary at all — it is ordinary content to that rule, and the boundary-token grammar has nothing further to say about it.</li>
+<li>The count guard tallies close-token literals against the depth-walk&#39;s own expectation; an element like <code>&lt;section-foo&gt;...&lt;/section-foo&gt;</code> (or a self-closing <code>&lt;section-foo/&gt;</code>) introduces no <code>&lt;section&gt;</code>-exact open or close token at all, so it changes neither side of the count-guard&#39;s tally and passes the count guard undetected.</li>
+</ul>
+<p>Because both existing checks are silent on it, this content-profile prohibition MUST be enforced
+as its own, explicit rule — a reader that implements only the boundary-token grammar and the
+count guard has <strong>not</strong> yet enforced §6.4a and is not conforming with respect to it.</p>
+<p><strong>Comment-masking exemption.</strong> An occurrence of a prohibited tag name inside a <code>&lt;!-- ... --&gt;</code>
+comment, or inside the raw-text content of a <code>&lt;script&gt;</code> or <code>&lt;style&gt;</code> element, is an inert region
+(§12) and is exempt from this prohibition — it is prose/data bytes, not a content element, to a
+browser and to a conforming reader alike.</p>
 <h3>6.5 Pinned comparison — zero equivalence classes</h3>
-<p>The comparison rule for a consecrated witness (§6.7) is byte-exact with <strong>zero equivalence classes</strong> (the Subresource Integrity lineage). A conforming verifier MUST search for no normalization under which mismatched bytes would match; it MUST expose no normalization knob; a one-byte mismatch MUST fail closed. &quot;The hash verifies&quot; is a claim about the bytes you actually received, not about some transform of them.</p>
+<p>The comparison rule for a consecrated witness (§6.7) is byte-exact with <strong>zero equivalence
+classes</strong> (the Subresource Integrity lineage). A conforming verifier MUST search for no
+normalization under which mismatched bytes would match; it MUST expose no normalization knob; a
+one-byte mismatch MUST fail closed. &quot;The hash verifies&quot; is a claim about the bytes you actually
+received, not about some transform of them.</p>
 <h3>6.6 The character count</h3>
-<p><code>data-char-count</code>, when present, MUST be the number of Unicode code points obtained by decoding the same UTF-8 byte slice (§6.2) — for example <code>Array.from(str).length</code> in JavaScript or <code>len(bytes.decode(&quot;utf-8&quot;))</code> in Python. It MUST NOT be a UTF-16 code-unit count (<code>str.length</code>) and MUST NOT be the raw byte length.</p>
+<p><code>data-char-count</code>, when present, MUST be the number of Unicode code points obtained by decoding
+the same UTF-8 byte slice (§6.2) — for example <code>Array.from(str).length</code> in JavaScript or
+<code>len(bytes.decode(&quot;utf-8&quot;))</code> in Python. It MUST NOT be a UTF-16 code-unit count (<code>str.length</code>)
+and MUST NOT be the raw byte length.</p>
 <h3>6.7 The two epochs of the witness</h3>
-<p>The <code>data-witness</code> slot carries one of two <strong>formally disjoint</strong> grammars. The form alone names the epoch; a reader MUST recover the epoch from the form, never by guessing.</p>
-<table><thead><tr>
-<th>Epoch</th>
-<th>Grammar (regex)</th>
-<th>Meaning</th>
-</tr></thead><tbody>
-<tr>
-<td><strong>Consecrated</strong></td>
-<td><code>^[0-9a-f]{64}$</code></td>
-<td>A SHA-256 digest (64 lowercase hex). Fixes the section&#39;s bytes for all time. The integrity epoch.</td>
-</tr>
-<tr>
-<td><strong>Writing-room</strong></td>
-<td><code>^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$</code></td>
-<td>A UTC timestamp, exactly the 20-character form <code>YYYY-MM-DDTHH:MM:SSZ</code>. An ordinal recording a live entry&#39;s place in a sequence. The live epoch (e.g. a chat tail before sealing).</td>
-</tr>
+<p>The <code>data-witness</code> slot carries one of two <strong>formally disjoint</strong> grammars. The form alone names
+the epoch; a reader MUST recover the epoch from the form, never by guessing.</p>
+<table>
+<thead><tr><th>Epoch</th><th>Grammar (regex)</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><strong>Consecrated</strong></td><td><code>^[0-9a-f]{64}$</code></td><td>A SHA-256 digest (64 lowercase hex). Fixes the section&#39;s bytes for all time. The integrity epoch.</td></tr>
+<tr><td><strong>Writing-room</strong></td><td><code>^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$</code></td><td>A UTC timestamp, exactly the 20-character form <code>YYYY-MM-DDTHH:MM:SSZ</code>. An ordinal recording a live entry&#39;s place in a sequence. The live epoch (e.g. a chat tail before sealing).</td></tr>
 </tbody></table>
-<p>The writing-room form is <strong>specific</strong>, not ISO 8601 in general: fractional seconds, non-<code>Z</code> offsets (<code>+00:00</code>), and basic-format timestamps (<code>20260527T143214Z</code>) are all non-conforming.</p>
+<p>The writing-room form is <strong>specific</strong>, not ISO 8601 in general: fractional seconds, non-<code>Z</code>
+offsets (<code>+00:00</code>), and basic-format timestamps (<code>20260527T143214Z</code>) are all non-conforming.</p>
 <ul>
-<li>The two grammars never overlap — they differ in length (20 vs 64) and alphabet (the</li>
-</ul>
-<p>  timestamp&#39;s <code>{-,T,:,Z}</code> never appear in lowercase hex). A reader MUST discriminate them by   form alone.</p>
-<ul>
-<li>A writing-room witness MUST be strictly later than every prior writing-room entry&#39;s</li>
-</ul>
-<p>  timestamp in document order. Consecrated predecessors carry a hash, not a timestamp, and are   not in the comparison. This ordering is enforced by the <strong>Append</strong> profile (§11, V15), in   either document shape; a Core reader validates the witness grammar only and does not enforce   ordering.</p>
-<ul>
-<li><strong>Consecration</strong> is the fold (§7) that replaces a writing-room timestamp with the SHA-256 of</li>
-</ul>
-<p>  the bytes it fixed at entry time.</p>
-<ul>
+<li>The two grammars never overlap — they differ in length (20 vs 64) and alphabet (the timestamp&#39;s <code>{-,T,:,Z}</code> never appear in lowercase hex). A reader MUST discriminate them by form alone.</li>
+<li>A writing-room witness MUST be strictly later than every prior writing-room entry&#39;s timestamp in document order. Consecrated predecessors carry a hash, not a timestamp, and are not in the comparison. This ordering is enforced by the <strong>Append</strong> profile (§11, V15), in either document shape; a Core reader validates the witness grammar only and does not enforce ordering.</li>
+<li><strong>Consecration</strong> is the fold (§7) that replaces a writing-room timestamp with the SHA-256 of the bytes it fixed at entry time.</li>
 <li>A witness whose form matches <strong>neither</strong> grammar is <strong>invalid</strong> and the reader MUST refuse.</li>
-<li>A value matching <strong>both</strong> grammars is impossible by construction. Should a reader ever</li>
+<li>A value matching <strong>both</strong> grammars is impossible by construction. Should a reader ever encounter one, it MUST halt loudly and MUST NOT silently downgrade it to invalid or resolve it — a both-match event means an assumption this format rests on has failed.</li>
 </ul>
-<p>  encounter one, it MUST halt loudly and MUST NOT silently downgrade it to invalid or resolve   it — a both-match event means an assumption this format rests on has failed.</p>
-<p>A reader that only reads consecrated documents (Core profile, §11) MUST still reject a witness that is neither valid grammar; it need not implement writing-room ordering unless it claims the Append extension.</p></section>
+<p>A reader that only reads consecrated documents (Core profile, §11) MUST still reject a witness
+that is neither valid grammar; it need not implement writing-room ordering unless it claims the
+Append extension.</p>
+<p><strong>A tail whose articles carry a mix of these two epochs, or carry writing-room witnesses
+exclusively, requires a verdict that names which register was actually checked — see §7.3a (the
+<code>ORDINAL-ONLY</code> verdict and the scoped <code>PASS (verified=m, ordinal=k)</code> form). In particular: a tail
+with zero consecrated witnesses MUST NOT be reported as a bare <code>PASS</code>, no matter how many
+writing-room witnesses are grammar-valid and correctly ordered.</strong></p></section>
 
-<section id="fold" data-witness="406187afb66e46d42e00fd5c3c311aeac51174e47c4cae73673b79b4d39360f2" data-char-count="3687"><h2>7. The Fold — keeping the word honest</h2>
+<section id="fold" data-witness="79487fcef0c4494ec61700ca84c6e45cc3bdca20478bf716d912cae506f0bdca" data-char-count="9933"><h2>7. The Fold — keeping the word honest</h2>
 <h3>7.1 Selective hydration — shape-conditional</h3>
-<p><strong>Manifest-first shape.</strong> This is the format&#39;s primary reason for being. A conforming reader MUST NOT load the whole file to answer a local question. It MUST:</p>
+<p><strong>Manifest-first shape.</strong> This is the format&#39;s primary reason for being. A conforming reader
+MUST NOT load the whole file to answer a local question. It MUST:</p>
 <ol>
 <li>Read the manifest first.</li>
 <li>From each link&#39;s title and summary, decide which sections bear on the task.</li>
 <li>Extract only those sections by <code>#id</code>, using the boundary rule of §6.2.</li>
 <li>Verify each extracted section&#39;s bytes against its witness (§6.3).</li>
 </ol>
-<p>Sections it did not hydrate never enter its working memory. The manifest is bounded by the count of sections, not their size, so a reader can navigate a document many times larger than it could hold — though the manifest&#39;s own size grows with the section count, a real cost at extreme scale (§12). The saving is relative to loading the document into context and depends on the harness and task; it is <strong>not</strong> a claim of token superiority over an external retrieval index.</p>
-<p><strong>Tail shape.</strong> A tail document has no summary skim-layer. A reader discovers addressable units by scanning for <code>&lt;article data-witness&gt;</code> elements in document order (no manifest to read first). Reading a large tail document therefore requires loading it in document order; there is no selective-skim shortcut. This is a known cost named in §12. The witness recompute (§6.2, §6.3) is identical to the manifest-first path.</p>
+<p>Sections it did not hydrate never enter its working memory. The manifest is bounded by the
+count of sections, not their size, so a reader can navigate a document many times larger than
+it could hold — though the manifest&#39;s own size grows with the section count, a real cost at
+extreme scale (§12). The saving is relative to loading the document into context and depends on
+the harness and task; it is <strong>not</strong> a claim of token superiority over an external retrieval
+index.</p>
+<p><strong>Tail shape.</strong> A tail document has no summary skim-layer. A reader discovers addressable units
+by scanning for <code>&lt;article data-witness&gt;</code> elements in document order (no manifest to read first).
+Reading a large tail document therefore requires loading it in document order; there is no
+selective-skim shortcut. This is a known cost named in §12, and the fold (§8.4) is its remedy: folding the tail mints
+the summary skim-layer the tail lacks. The witness recompute (§6.2, §6.3) is identical to the
+manifest-first path.</p>
+<p><strong>The recency window (folded records; Append profile, RECOMMENDED).</strong> The default reading
+posture for a folded record is: (1) read the manifest&#39;s gist column in full — it is bounded by
+turn count, not turn size; (2) hydrate the last <em>N</em> <strong>candidate-current</strong> units in full (the
+recency window), where a unit is candidate-current iff no later unit&#39;s <code>data-supersedes</code>
+names it (§8.2) — a <strong>routing computation over an un-witnessed edge</strong> (see &quot;Currency is
+routing, not testimony&quot;, below), which is why the constraint that follows is part of the
+posture, not an afterthought; (3) hydrate anything older on demand by <code>#id</code>, verifying each
+hydrated unit&#39;s witness. <strong>The safe-reader rule:</strong> because the edge is un-witnessed, a
+reader adopting this posture MUST NOT let it silently <em>exclude</em> a witnessed unit from what
+the reader (or the model behind it) is told exists. Supersession-guided routing may choose
+what is hydrated <em>first</em>; where an edge nominates a head over a superseded unit, the reader
+either (a) verifies a supersession statement carried in the units&#39; <strong>sealed content</strong>, or
+(b) presents the nominated head with its currency marked <strong>uncertified</strong> and the superseded
+unit still addressable in the skim, or (c) refuses to choose. An edge that quietly removes
+a witnessed turn from model-visible context has been given the authority of testimony, and
+it has none. Current-head computation over <code>data-supersedes</code> chains is §8.2&#39;s <strong>existing</strong>
+law — the reader, not the substrate, computes the winner, and superseded bytes remain
+addressable and citable <em>as history</em>; this posture adds no new conformance requirement on
+top of it. The window size <em>N</em> is a reader/harness choice, not a format constant; the whole
+discipline is RECOMMENDED reading posture, not a Core conformance requirement. No
+token-economy claim attaches to it (the existing §7.1 disclaimer governs).</p>
+<p><strong>Currency is routing, not testimony.</strong> <code>data-supersedes</code> lives on the unit&#39;s opening tag,
+outside every witnessed span. A retargeted edge — one valid turn pointed at another valid
+turn — changes the current-head mapping while every checker stays green (reproduced
+firsthand on the live record, 2026-07-16). The current-head computation is therefore an
+<strong>un-witnessed routing result</strong>: a reader MAY use it to choose what to hydrate; under
+this posture a reader MUST
+NOT present a unit as the current word on the edge&#39;s authority alone — the witnessed ground
+is the hydrated units themselves and whatever supersession statements their sealed content
+carries. v0.4 <strong>discloses</strong> this boundary rather than moving it; witnessing the edge
+in-span (so a retarget breaks a SHA-256) is a named candidate for a future recension, since
+it changes the append grammar (§4 item 8).</p>
 <h3>7.2 The fold-confirmation checks</h3>
-<p>After any append, a conforming reader can re-confirm the document without trusting the writer. The confirmation MUST establish, at minimum:</p>
+<p>After any append, a conforming reader can re-confirm the document without trusting the writer.
+The confirmation MUST establish, at minimum:</p>
 <ul>
 <li>every prior section&#39;s bytes, id, and witness are unchanged;</li>
 <li>every prior consecrated witness still re-derives;</li>
 <li>no id is duplicated among live elements;</li>
 <li>every <code>data-supersedes</code> reference resolves to an existing, earlier section;</li>
-<li>on a growing body, writing-room witnesses strictly increase in document order (a missing or</li>
+<li>on a growing body, writing-room witnesses strictly increase in document order (a missing or malformed entry is refused, not waived);</li>
+<li>a superseded section is still addressable at its original witness while the superseding section reads as current.</li>
 </ul>
-<p>  malformed entry is refused, not waived);</p>
-<ul>
-<li>a superseded section is still addressable at its original witness while the superseding</li>
-</ul>
-<p>  section reads as current.</p>
 <h3>7.3 Fail-closed, non-vacuity, point-don&#39;t-declare</h3>
 <ul>
-<li><strong>Fail-closed.</strong> The reader MUST refuse whenever the document&#39;s structure is violated — a</li>
+<li><strong>Fail-closed.</strong> The reader MUST refuse whenever the document&#39;s structure is violated — a witness that does not re-derive, a duplicated id, an invalid witness grammar, a missing manifested section (manifest-first) or a missing superseded section, a failed shape detection. This list is illustrative, not exhaustive; the reader MUST NOT promote a non-closure into a closure by improvising.</li>
+<li><strong>Non-vacuity.</strong> A check MUST be positive, not permissive — it MUST bite where the document claims. For manifest-first: every section the manifest names MUST be present and witnessed. For tail: at least one article MUST have a valid-grammar witness that recomputes. A check that verifies nothing (zero addressable units, a zero-of-zero pass) MUST report failure, not success.</li>
+<li><strong>Point, don&#39;t declare.</strong> The document&#39;s surfaces — summaries, banners, manifest entries, spec prose — <em>route</em> a reader to bytes; they MUST NOT declare a verdict on the document&#39;s own truth, completeness, or verification status. A remembered &quot;yes, this was written&quot; is never spent as &quot;yes, this is so&quot;: the fold adjudicates over the bytes; the record only keeps.</li>
 </ul>
-<p>  witness that does not re-derive, a duplicated id, an invalid witness grammar, a missing   manifested section (manifest-first) or a missing superseded section, a failed shape detection.   This list is illustrative, not exhaustive; the reader MUST NOT promote a non-closure into a   closure by improvising.</p>
+<h3>7.3a The ORDINAL-ONLY verdict</h3>
+<p>A tail document (§5.3b) MAY hold a mix of the two witness epochs (§6.7) across its articles: some
+consecrated (SHA-256, byte-recomputed), some writing-room (UTC timestamp, ordinal-only). A
+conforming reader&#39;s verdict MUST name which register it actually checked:</p>
 <ul>
-<li><strong>Non-vacuity.</strong> A check MUST be positive, not permissive — it MUST bite where the document</li>
+<li><strong>Zero consecrated witnesses, at least one grammar-valid writing-room witness.</strong> This is a tail where every article is still live — nothing has ever been consecrated. The ordinal register (sequence, grammar; and, under the Append profile, strict increase) is fully checkable and MUST be checked, but <strong>zero bytes have ever been recomputed</strong>. A conforming reader MUST NOT report a bare <code>PASS</code> for this case — doing so would fold the ordinal register into the byte-integrity register the format&#39;s PASS verdict has always meant. Instead the reader MUST report the distinct verdict <strong><code>ORDINAL-ONLY</code></strong>: the sequence was verified; no content byte was. This is a refusal outcome for the purposes of an automated gate (a caller checking for <code>PASS</code> alone MUST treat <code>ORDINAL-ONLY</code> as not-PASS), reported with its own name rather than folded into the ordinary non-vacuity <code>FAIL</code> (§7.3) — the two are distinguishable causes: non-vacuity fires when there is no grammar-valid witness of <em>either</em> epoch at all (a genuinely empty or all-invalid tail); <code>ORDINAL-ONLY</code> fires when the ordinal register is non-empty and fully valid but the identity register (consecrated bytes) is empty.</li>
+<li><strong>At least one consecrated witness AND at least one writing-room witness (mixed epoch).</strong> The reader recomputes the consecrated articles (identity register) and grammar/order-checks the writing-room articles (ordinal register), and — when both registers hold — reports the <strong>scoped</strong> verdict <code>PASS (verified=m, ordinal=k)</code>, where <code>m</code> is the count of recomputed consecrated articles and <code>k</code> is the count of valid writing-room articles. The two counts are asserted <strong>separately</strong>; a reader MUST NOT collapse them into one undifferentiated &quot;verified N&quot; count, because a caller reading only that blended number cannot tell how many of the N were byte-recomputed versus merely sequence-checked.</li>
+<li><strong>All consecrated (or zero writing-room present).</strong> Ordinary <code>PASS</code>/<code>FAIL</code> reporting applies unchanged (§6.3, §9.1) — this is the pre-existing case with no ordinal-register component to name.</li>
 </ul>
-<p>  claims. For manifest-first: every section the manifest names MUST be present and witnessed.   For tail: at least one article MUST have a valid-grammar witness that recomputes. A check that   verifies nothing (zero addressable units, a zero-of-zero pass) MUST report failure, not   success.</p>
-<ul>
-<li><strong>Point, don&#39;t declare.</strong> The document&#39;s surfaces — summaries, banners, manifest entries,</li>
-</ul>
-<p>  spec prose — <em>route</em> a reader to bytes; they MUST NOT declare a verdict on the document&#39;s own   truth, completeness, or verification status. A remembered &quot;yes, this was written&quot; is never   spent as &quot;yes, this is so&quot;: the fold adjudicates over the bytes; the record only keeps.</p></section>
+<p><code>ORDINAL-ONLY</code> and the <code>PASS (verified=m, ordinal=k)</code> scoped form are Core-reportable: a Core
+reader classifies each witness by grammar alone (§6.7) and already knows, without claiming the
+Append extension, which of its recomputed-consecrated or grammar-valid-writing-room registers is
+non-empty. An Append-profile reader additionally enforces writing-room strict-increase (V15) as
+part of what counts as &quot;valid&quot; in the writing-room count above; a writing-room witness that fails
+strict-increase does not count toward <code>k</code> on an Append-profile reader.</p></section>
 
-<section id="appending" data-witness="8b0683fe9455cc4be932f0e11fe7ce607ca1cef9f3b9588ca465779e606625e0" data-char-count="2622"><h2>8. Appending and supersession</h2>
+<section id="appending" data-witness="096cd32b3c188f3c535c5ca9e6d0f573e4320cc3217b11c594adadc2a215eec8" data-char-count="9802"><h2>8. Appending and supersession — memory is append-only</h2>
 <h3>8.1 Immutability</h3>
-<p>Once a section enters a document, its inner bytes, its <code>id</code>, and its <code>data-witness</code> MUST NOT change. There is <strong>no deletion, no reorder of existing sections, and no in-place edit.</strong></p>
+<p>Once a section enters a document, its inner bytes, its <code>id</code>, and its <code>data-witness</code> MUST NOT
+change. There is <strong>no deletion, no reorder of existing sections, and no in-place edit.</strong></p>
 <h3>8.2 Correction is supersession</h3>
 <p>A correction is made by <strong>appending</strong> a later section bearing a <code>data-supersedes</code> attribute.</p>
-<table><thead><tr>
-<th>Rule</th>
-<th>Requirement</th>
-</tr></thead><tbody>
-<tr>
-<td>Value</td>
-<td><code>data-supersedes</code> MUST be a fragment reference (<code>#old-id</code>) naming an earlier, existing section in the same document.</td>
-</tr>
-<tr>
-<td>The old section</td>
-<td>MUST remain in place, still addressable, still carrying its original witness.</td>
-</tr>
-<tr>
-<td>The new section</td>
-<td>Reads as current.</td>
-</tr>
-<tr>
-<td>Adjudication</td>
-<td>The format MUST NOT compute a winner for the reader. Which reading is current is adjudicated by the reader following the supersession references, not enforced by the substrate.</td>
-</tr>
-<tr>
-<td>Ordering</td>
-<td>A growing body appends new entries in document order, each with a unique id and a writing-room witness strictly later than every prior writing-room entry&#39;s. The writing-room witness — not any ordering of ids — fixes sequence.</td>
-</tr>
+<table>
+<thead><tr><th>Rule</th><th>Requirement</th></tr></thead>
+<tbody>
+<tr><td>Value</td><td><code>data-supersedes</code> MUST be a fragment reference (<code>#old-id</code>) naming an earlier, existing section in the same document.</td></tr>
+<tr><td>The old section</td><td>MUST remain in place, still addressable, still carrying its original witness.</td></tr>
+<tr><td>The new section</td><td>Reads as current.</td></tr>
+<tr><td>Adjudication</td><td>The format MUST NOT compute a winner for the reader. Which reading is current is adjudicated by the reader following the supersession references, not enforced by the substrate.</td></tr>
+<tr><td>Ordering</td><td>A growing body appends new entries in document order, each with a unique id and a writing-room witness strictly later than every prior writing-room entry&#39;s. The writing-room witness — not any ordering of ids — fixes sequence.</td></tr>
 </tbody></table>
 <h3>8.3 Typed sections — <code>data-kind</code></h3>
-<p>A section MAY carry a <code>data-kind</code> naming its role from a small vocabulary the document declares in-band. <code>data-kind</code> is <strong>descriptive, not a control surface</strong>: a conforming reader MUST NOT branch trust, security, or authority decisions on its value. Four disciplines keep it honest:</p>
+<p>A section MAY carry a <code>data-kind</code> naming its role from a small vocabulary the document declares
+in-band. <code>data-kind</code> is <strong>descriptive, not a control surface</strong>: a conforming reader MUST NOT
+branch trust, security, or authority decisions on its value. A document that uses <code>data-kind</code>
+SHOULD declare its vocabulary in-band — in non-witnessed chrome or its <code>format-spec</code> section — so
+every kind a reader meets is resolvable; an undeclared kind is descriptive only. Four disciplines
+keep it honest:</p>
 <ol>
-<li><strong>Prose-authoritative</strong> — a meaningful <code>data-kind</code> is mirrored by a human-visible label in</li>
-</ol>
-<p>   the section&#39;s prose; on any disagreement the prose is ground truth.</p>
-<ol>
-<li><strong>Immutable</strong> — a <code>data-kind</code> is never edited in place; reclassification is by appending a</li>
-</ol>
-<p>   superseding section.</p>
-<ol>
-<li><strong>Not a status</strong> — mutable status such as &quot;proposed&quot; or &quot;approved&quot; is a <em>state</em>, resolved by</li>
-</ol>
-<p>   placement and supersession, never a <code>data-kind</code> value.</p>
-<ol>
+<li><strong>Prose-authoritative</strong> — a meaningful <code>data-kind</code> is mirrored by a human-visible label in the section&#39;s prose; on any disagreement the prose is ground truth.</li>
+<li><strong>Immutable</strong> — a <code>data-kind</code> is never edited in place; reclassification is by appending a superseding section.</li>
+<li><strong>Not a status</strong> — mutable status such as &quot;proposed&quot; or &quot;approved&quot; is a <em>state</em>, resolved by placement and supersession, never a <code>data-kind</code> value.</li>
 <li><strong>Off the manifest</strong> — <code>data-kind</code> is not copied onto the manifest anchor (§5.4).</li>
 </ol>
-<p>The richer downgrade-only authority vocabulary for runtime-appended sections is reserved beyond v0.3 (§12).</p></section>
+<p>The richer downgrade-only authority vocabulary for runtime-appended sections is reserved beyond
+v0.3 (§12).</p>
+<h3>8.4 The fold motion</h3>
+<p>The <strong>fold</strong> is the whole-document consecration motion: it transforms a writing-room tail
+(§5.3b) into an ordinary manifest-first record. After the fold, every rule of §5, §6, and §7
+applies to the record unchanged — the folded record is not a third shape.</p>
+<table>
+<thead><tr><th>Rule</th><th>Requirement</th></tr></thead>
+<tbody>
+<tr><td>Totality</td><td>The fold MUST fold <strong>every witnessed unit</strong> or refuse and write <strong>nothing</strong>. A witnessed <code>&lt;article&gt;</code> that does not satisfy the unit grammar below (missing <code>data-turn</code>, non-conforming id) is a <strong>refusal, never a silent skip</strong> — a fold that quietly drops a witnessed turn has forged the record&#39;s completeness. Every check — witness grammar (a grammar-invalid witness is refused, never skipped), unit grammar, duplicate ids, supersession soundness (no self-supersession; no forward target; no dangling target) — runs <strong>before any byte is written</strong>; the write is atomic and last.</td></tr>
+<tr><td>Unit grammar</td><td>A foldable unit is a witnessed <code>&lt;article data-turn&gt;</code> whose id has the canonical form <strong><code>turn-NNNNNN</code></strong> (the literal prefix <code>turn-</code> followed by exactly six decimal digits). This grammar is normative for folded-record units, and an id outside it is a fold refusal.</td></tr>
+<tr><td>Unit projection</td><td>Each <code>&lt;article data-turn&gt;</code> becomes a <code>&lt;section&gt;</code> carrying the <strong>same id, same inner bytes</strong>, and a consecrated witness (§6.7) recomputed from those bytes. <strong>Every attribute on the unit&#39;s opening tag</strong> — id, role/kind/turn attributes, <code>class</code> (§5.3b), <code>data-supersedes</code>, <code>data-gist</code>, and any other authored <code>name=&quot;value&quot;</code> pair §6.4 admits — survives <strong>byte-verbatim</strong> on the section&#39;s opening tag: this surface crosses no escaping boundary, and the reference fold re-serializes the original opening-tag bytes rather than rebuilding them from a parse. The exceptions are exactly the two integrity carriers the fold itself mints: <code>data-witness</code> is <strong>recomputed</strong> at consecration (§6.7), never carried, and the <code>data-char-count</code> carrier (§6.6) is <strong>refreshed from the projected bytes</strong> wherever it is emitted. <strong>Supersession edges live on the record&#39;s units, never in the manifest</strong>.</td></tr>
+<tr><td>The gist</td><td>Each manifest link&#39;s text is the unit&#39;s <strong>gist</strong> — authored routing under the §5.4 disclosure. Where the tail unit carries <code>data-gist</code>, the fold preserves the authored attribute bytes on the section (the projection row above) and carries the carrier&#39;s <strong>decoded text</strong> into the manifest link text — <strong>equality of the decoded value, at any authored length, each surface serialized correctly for its own context</strong>. The source is a double-quoted attribute value and the destination a text node; the two contexts share no single raw serialization (an attribute&#39;s <code>&amp;#38;</code> and a text node&#39;s <code>&amp;amp;</code> are the same decoded text in lawfully different bytes, and a raw <code>&lt;</code> the attribute grammar admits must be escaped in the text node or it becomes markup), so the promise that CAN hold — and MUST — is decoded-text equality, never byte equality. <strong>The decoded value is what the host language&#39;s parsing yields for each surface</strong> — full HTML character-reference decoding, as the destination context&#39;s own grammar defines &quot;the same text&quot; (so <code>&amp;copy;</code> decodes to <code>©</code>, not to a literal <code>&amp;copy;</code>); this pins no table in this SPEC and imports nothing into Core verification — it names the host grammar both surfaces already live in. (gist-v1&#39;s deliberately restricted five-entity decode is untouched: it governs a different surface — the unit&#39;s inner text feeding a <em>minted</em> line — and is tool documentation, §8.4.) Where the unit carries no gist, the fold mints the link text as an authored line derived from the unit&#39;s inner text (how the reference tooling derives it is tool documentation — the note below). In both cases the gist routes and does not testify (§5.4); in neither case does Core verification certify the text against the unit&#39;s content.</td></tr>
+<tr><td>Chrome</td><td>Un-witnessed top-level <code>&lt;section&gt;</code> chrome MUST be re-tagged to a non-section container at fold time, so that in the folded record <strong>every top-level <code>&lt;section&gt;</code> is witnessed and manifested</strong> — the flat order-bijection (§10 row V29) then holds with no exemptions.</td></tr>
+</tbody></table>
+<p><strong>Tooling note (informative — the discipline lives in the tools).</strong> The reference gate and
+fold carry the forcing fixtures for the covenant&#39;s one fold row (totality, V32), and
+enforce, as their own documented law rather than as covenant: require-and-compare of the
+<code>data-witness</code> and <code>data-char-count</code> carriers on every manifest entry they check; a single
+gist normalization-and-truncation law at every path where the tools themselves <strong>mint</strong>
+text — the append gate&#39;s own emission (which refuses an oversize supplied gist with a
+clear error, never silently rewriting an author&#39;s line) and the fold&#39;s default-derived
+link text — while an authored carrier&#39;s decoded text is carried unchanged into the link
+text, context-correctly re-escaped (the gist row above), with
+derive/verify tolerant of authored length; and a <strong>derive-and-compare lint</strong> at fold and
+check time that recomputes each unit&#39;s gist from its witnessed inner bytes under the
+default generator and reports any divergence from the carried text — a diagnostic that
+makes drift and tampering <em>visible</em>, never a conformance verdict, because an authored gist
+that diverges from the derivation is conforming routing under §5.4. The tools speak a
+<strong>pinned verdict register</strong> — <code>PASS</code> / <code>WARN</code> / <code>LINT</code> (qualified non-success), beyond
+the existing hard <code>FAIL</code> —
+forced with fixtures in the landing plan (§5 2a(vii)), so that &quot;reported&quot; has one
+machine-reproducible meaning across implementations. The default generator
+— <code>gist-v1</code>, a six-step byte-level extraction — is specified in the reference gate&#39;s
+documentation together with its measurements and its does-not-earn list; a future generator
+is a new documented tool version, and no generator version is ever a property of the
+document. Per the sealed Discernment (§2.5): <em>helpers may exist; they are not the format</em> —
+and a checker that prints &quot;verified&quot; over a surface it did not check is a defect.</p></section>
 
-<section id="reference-algorithms" data-witness="e5ff1d0f85ec0b4aa280146969452553c6425d7191f402690640fd86c280a9fa" data-char-count="6969"><h2>9. Reference algorithms (language-agnostic)</h2>
-<p>Pseudocode is normative for behavior, not for syntax. An implementation MUST produce the same results; it need not mirror this control flow.</p>
+<section id="reference-algorithms" data-witness="98dab04cf64a28ee97a5aece2f819e5013c5857fe0c16aa68580d14c881cfde8" data-char-count="14349"><h2>9. Reference algorithms (language-agnostic)</h2>
+<p>Pseudocode is normative for behavior, not for syntax. An implementation MUST produce the same
+results; it need not mirror this control flow.</p>
 <h3>9.1 Verify a document</h3>
 <p>Shape detection (§5.0) runs first; the body of verify() forks on the detected shape.</p>
 <pre><code>function verify(bytes):
+    # --- §6.1 global dup-id, over EVERY live element, before shape dispatch ---
+    # Walks every opening tag in the document (outside inert regions, §12) — not only
+    # addressable-unit opening tags — because §6.1&#39;s uniqueness rule is a property of the
+    # whole document&#39;s id space (top-level sections/articles, nested sections, manifest
+    # link targets, id-bearing &lt;img&gt; elements under §5.5, anything else carrying id=).
+    check_global_dup_ids(bytes)                                # §6.1 fail-closed, whole-doc scope
+
     # --- Shape detection (§5.0) ---
     manifest = find_element(bytes, tag=&quot;nav&quot;, id=&quot;manifest&quot;)
+    articles = collect_witnessed_articles(bytes)               # &lt;article data-witness&gt; elements
+    if manifest is not None and len(articles) &gt; 0:
+        FAIL(&quot;mixed shapes: both &lt;nav id=\&quot;manifest\&quot;&gt; and witnessed &lt;article&gt; present&quot;)  # V18
     if manifest is not None:
         return verify_manifest_first(bytes, manifest)
-    articles = collect_witnessed_articles(bytes)               # &lt;article data-witness&gt; elements
     if len(articles) &gt; 0:
         return verify_tail(bytes, articles)
     FAIL(&quot;shape detection failed: no manifest and no witnessed articles&quot;)
@@ -522,6 +654,15 @@ function verify_manifest_first(bytes, manifest):
     links = collect_anchor_descendants(manifest)               # §5.3
     sections = collect_top_level_sections(bytes)               # §5.2
     if len(sections) == 0: FAIL(&quot;vacuous: zero addressable units&quot;)  # §7.3 non-vacuity
+
+    # --- Order-bijection (V29) ---
+    # The manifest&#39;s link order and the body&#39;s top-level section document-order MUST name
+    # the identical id sequence — same id-set, same order. A manifest that lists the same
+    # sections in a different order than they appear in the body is refused; this is
+    # distinct from V7 (a manifest naming a MISSING section) and from V5 (dup-id).
+    manifest_id_seq = [read_attr_quote_aware(l, &quot;href&quot;)[1:] for l in links]  # strip leading &#39;#&#39;
+    body_id_seq     = [read_attr_quote_aware(sec, &quot;id&quot;) for sec in sections]
+    if manifest_id_seq != body_id_seq: FAIL(&quot;order-bijection: manifest order != body order&quot;)  # V29
 
     seen_ids = set()
     for sec in sections in document order:
@@ -541,17 +682,49 @@ function verify_manifest_first(bytes, manifest):
 
         link = link_for(links, id)
         if link is None: FAIL(&quot;section not in manifest&quot;)       # §7.3 non-vacuity (manifest-first)
-        if read_attr_quote_aware(link, &quot;data-witness&quot;) != w_section: FAIL(&quot;carrier disagreement&quot;)  # V4
+        w_link = read_attr_quote_aware(link, &quot;data-witness&quot;)
+        # V4 two-carrier agreement: BOTH the section&#39;s own carrier and the link&#39;s carrier
+        # MUST equal the recomputed digest — a section whose own data-witness disagrees
+        # with a correct manifest-link witness (or vice versa) is a carrier-mismatch FAIL,
+        # not just a link-vs-section string comparison.
+        if epoch == CONSECRATED and sha256_hex(inner) != w_section: FAIL(&quot;carrier disagreement: section&quot;)  # V4
+        if w_link != w_section: FAIL(&quot;carrier disagreement: link vs section&quot;)                              # V4
+        if epoch == CONSECRATED and w_link != sha256_hex(inner): FAIL(&quot;carrier disagreement: link&quot;)        # V4
         cc_link = read_attr_quote_aware(link, &quot;data-char-count&quot;)
         cc_sec  = read_attr_quote_aware(sec,  &quot;data-char-count&quot;)
         if cc_link and cc_sec and cc_link != cc_sec: FAIL(&quot;char-count disagreement&quot;)
         if cc_sec and int(cc_sec) != codepoint_count(inner): FAIL(&quot;char-count wrong&quot;)  # §6.6
 
         sup = read_attr_quote_aware(sec, &quot;data-supersedes&quot;)    # §8.2
+        if sup and not sup.startswith(&quot;#&quot;): FAIL(&quot;supersedes not a fragment reference (#old-id)&quot;)  # §8.2 Value
         if sup and target_of(sup) not in earlier_sections(sec): FAIL(&quot;dangling supersedes&quot;)
 
     for link in links:                                         # every manifested section exists
         if section_for(link) is None: FAIL(&quot;manifest names a missing section&quot;)
+
+    # --- Nested witnessed-section recompute (verify-all, charter decision #2) ---
+    # A nested &lt;section data-witness&gt; (one not reachable from the manifest&#39;s top-level
+    # link list, but present inside another witnessed unit&#39;s span) is ALSO an addressable
+    # unit under §5.2 and MUST have its own witness recomputed — the fold-confirmation
+    # contract (§7.2: &quot;every prior consecrated witness still re-derives&quot;) does not carve
+    # out nesting depth. A reader that recomputes only manifest-listed (top-level)
+    # sections and treats a nested section&#39;s data-witness as decorative diverges from
+    # trials/scripts/verify_sections.py&#39;s isolation-mode checker, which recomputes every
+    # section it finds regardless of nesting depth.
+    for sec in collect_all_sections(bytes):                    # includes nested, any depth
+        id = read_attr_quote_aware(sec, &quot;id&quot;)
+        if id in seen_ids: continue                            # already verified above (top-level)
+        w = read_attr_quote_aware(sec, &quot;data-witness&quot;)
+        if w is None: continue                                 # non-witnessed structural nesting
+        seen_ids.add(id)                                        # dup-id already enforced globally
+        inner = witnessed_bytes(bytes, sec, tag=&quot;section&quot;)
+        epoch = classify(w)
+        if epoch == INVALID: FAIL(&quot;invalid witness grammar&quot;)
+        if epoch == CONSECRATED:
+            if sha256_hex(inner) != w: FAIL(&quot;witness mismatch (nested section)&quot;)
+        cc = read_attr_quote_aware(sec, &quot;data-char-count&quot;)
+        if cc and int(cc) != codepoint_count(inner): FAIL(&quot;char-count wrong (nested section)&quot;)  # §6.6
+
     return PASS
 
 
@@ -579,14 +752,31 @@ function verify_tail(bytes, articles):
         if cc_art and int(cc_art) != codepoint_count(inner): FAIL(&quot;char-count wrong&quot;)  # §6.6
 
         sup = read_attr_quote_aware(art, &quot;data-supersedes&quot;)    # §8.2
+        if sup and not sup.startswith(&quot;#&quot;): FAIL(&quot;supersedes not a fragment reference (#old-id)&quot;)  # §8.2 Value
         if sup and target_of(sup) not in earlier_articles(art): FAIL(&quot;dangling supersedes&quot;)
 
     # Non-vacuity for a consecrated tail: at least one article must have recomputed
     if valid_count == 0: FAIL(&quot;vacuous: zero addressable units with recomputing witnesses&quot;)
     return PASS
-    # No link checks, no manifest-names-missing check: V4 is N/A for tail.</code></pre>
+    # No link checks, no manifest-names-missing check: V4 is N/A for tail.
+
+
+function check_global_dup_ids(bytes):
+    # §6.1 scope-of-&quot;live element&quot; — walks EVERY opening tag in the document (outside
+    # inert regions, §12: HTML comments and &lt;script&gt;/&lt;style&gt; raw-text content), not only
+    # addressable-unit opening tags. Any id= value seen twice is a fail-closed refusal,
+    # regardless of the two elements&#39; tag names (a &lt;section id=&quot;x&quot;&gt; and an &lt;img id=&quot;x&quot;&gt;
+    # collide exactly as two &lt;section id=&quot;x&quot;&gt; elements would).
+    seen = set()
+    for tag in collect_all_opening_tags(bytes):                # quote-aware attrs, §6.4
+        id = read_attr_quote_aware(tag, &quot;id&quot;)
+        if id is None: continue
+        if id in seen: FAIL(&quot;duplicate id&quot;)                    # §6.1 fail-closed, whole-doc scope
+        seen.add(id)</code></pre>
 <h3>9.2 Build a document <em>(manifest-first shape)</em></h3>
-<p>The following pseudocode builds a manifest-first document. A tail producer emits <code>&lt;article&gt;</code> elements in place of <code>&lt;section&gt;</code> elements and omits the <code>&lt;nav id=&quot;manifest&quot;&gt;</code> block entirely; the witness arithmetic is identical.</p>
+<p>The following pseudocode builds a manifest-first document. A tail producer emits <code>&lt;article&gt;</code>
+elements in place of <code>&lt;section&gt;</code> elements and omits the <code>&lt;nav id=&quot;manifest&quot;&gt;</code> block entirely;
+the witness arithmetic is identical.</p>
 <pre><code>function build(sections):                                      # sections in document order
     for sec in sections:
         sec.inner   = serialize(sec.body)                      # exact bytes, untrimmed
@@ -604,248 +794,154 @@ function verify_tail(bytes, articles):
         emit sec.inner
         emit &#39;&lt;/section&gt;\n&#39;
     emit &quot;&lt;/body&gt;\n&lt;/html&gt;\n&quot;</code></pre>
-<p>For a manifest-first document, a producer MUST emit the section&#39;s <code>data-witness</code> and the matching link&#39;s <code>data-witness</code> as the <strong>same</strong> value, computed over the exact inner bytes it emits. Re-running a deterministic build over unchanged inputs MUST produce byte-identical output (modulo a build timestamp, if any, which MUST live in a section excluded from the eternity claim).</p></section>
+<p>For a manifest-first document, a producer MUST emit the section&#39;s <code>data-witness</code> and the
+matching link&#39;s <code>data-witness</code> as the <strong>same</strong> value, computed over the exact inner bytes it
+emits. Re-running a deterministic build over unchanged inputs MUST produce byte-identical output
+(modulo a build timestamp, if any, which MUST live in a section excluded from the eternity
+claim).</p>
+<h3>9.2a The Producer profile — RESTRICT PRODUCERS to one canonical serialization (§10 row V28)</h3>
+<p>A conforming <strong>Producer</strong> (§11.1) MUST emit every witnessed-unit boundary and every
+witnessed-unit opening-tag attribute in <strong>exactly one</strong> serialization — the canonical form a
+Core reader&#39;s boundary-token grammar (§6.2) and attribute rules (§6.4) recognize without
+qualification. This is a deliberate policy choice: the alternative — widening a reader into a
+general HTML tokenizer so it can accept every legal-but-non-canonical spelling a browser would
+render — would drag a full parser into the trust base and forfeit the property that a conforming
+reader can be, and remain, a byte-scanner (§3, §6.5&#39;s zero-equivalence-classes lineage). Canonical
+producers plus a fail-closed, non-canonical-refusing reader keeps &quot;identical bytes imply identical
+witnesses&quot; provable without that cost.</p>
+<p>A conforming Producer MUST emit, for every addressable element (<code>&lt;section&gt;</code> or <code>&lt;article&gt;</code>):</p>
+<ol>
+<li><strong>Lowercase tag names.</strong> <code>&lt;section</code>, <code>&lt;/section&gt;</code>, <code>&lt;article</code>, <code>&lt;/article&gt;</code> — never <code>&lt;SECTION&gt;</code>, <code>&lt;Article&gt;</code>, or any mixed case.</li>
+<li><strong>Canonical closing tags with zero interior whitespace.</strong> Exactly <code>&lt;/section&gt;</code> or exactly <code>&lt;/article&gt;</code> — never <code>&lt;/section &gt;</code>, <code>&lt;/ section&gt;</code>, or any variant carrying interior whitespace.</li>
+<li><strong>Double-quoted attribute values on every witnessed-unit opening tag</strong> (§6.4) — never single-quoted or unquoted.</li>
+<li><strong>No duplicated attribute name</strong> on a witnessed-unit opening tag (§6.4).</li>
+<li><strong>No content element whose tag name is <code>section</code> or <code>article</code> followed by <code>-</code>, <code>.</code>, or <code>:</code></strong> anywhere inside a witnessed span, unless comment-masked (§6.4a, §12).</li>
+</ol>
+<p>A Producer that emits any construct outside this profile has emitted a NON-CANONICAL document
+(§6.2); it is not conforming at the Producer profile even if the resulting bytes happen to be
+legal, browser-renderable HTML. The Producer profile is additive to, and does not relax, every
+other Producer MUST already stated in this section.</p></section>
 
-<section id="validation-matrix" data-witness="91cf2c801eb02075c77301044b5c63e4895cdce68b6befbda80186c6a8108998" data-char-count="4409"><h2>10. Validation matrix</h2>
-<p>A conforming implementation MUST satisfy every <strong>Core</strong> row. An implementation that claims an extension MUST satisfy that extension&#39;s rows.</p>
-<table><thead><tr>
-<th>#</th>
-<th>Profile</th>
-<th>Shape scope</th>
-<th>Assertion</th>
-</tr></thead><tbody>
-<tr>
-<td>V1</td>
-<td>Core</td>
-<td>manifest-first</td>
-<td>A document with a valid <code>&lt;nav id=&quot;manifest&quot;&gt;</code> and matching witnessed sections verifies PASS.</td>
-</tr>
-<tr>
-<td>V1T</td>
-<td>Core</td>
-<td>tail</td>
-<td>A consecrated tail (no nav-manifest, ≥1 <code>&lt;article data-witness&gt;</code>) verifies PASS; each article&#39;s SHA-256 recomputes from its §6.2 inner bytes.</td>
-</tr>
-<tr>
-<td>V2</td>
-<td>Core</td>
-<td>both</td>
-<td>A reader recomputes SHA-256 over §6.2 inner bytes and does not trust the stored hex.</td>
-</tr>
-<tr>
-<td>V3</td>
-<td>Core</td>
-<td>both</td>
-<td>A one-byte change to any addressable unit&#39;s inner bytes causes a witness mismatch → FAIL.</td>
-</tr>
-<tr>
-<td>V4</td>
-<td>Core</td>
-<td>manifest-first only</td>
-<td>A link whose <code>data-witness</code> differs from its section&#39;s → FAIL (carrier disagreement). V4 is N/A for tail documents.</td>
-</tr>
-<tr>
-<td>V5</td>
-<td>Core</td>
-<td>both</td>
-<td>Two live elements sharing an <code>id</code> → FAIL closed (no silent resolution).</td>
-</tr>
-<tr>
-<td>V6</td>
-<td>Core</td>
-<td>both</td>
-<td>A witness matching neither grammar (§6.7) → FAIL (invalid).</td>
-</tr>
-<tr>
-<td>V7</td>
-<td>Core</td>
-<td>both</td>
-<td>A document with zero addressable units → FAIL (non-vacuity). For manifest-first: a manifest naming a missing section → FAIL.</td>
-</tr>
-<tr>
-<td>V8</td>
-<td>Core</td>
-<td>both</td>
-<td>An addressable unit id beginning with a digit, or containing whitespace → non-conforming.</td>
-</tr>
-<tr>
-<td>V9</td>
-<td>Core</td>
-<td>both</td>
-<td>An <code>id=</code>/<code>data-witness=</code> string embedded inside another attribute&#39;s quoted value does not impersonate the real attribute (§6.4).</td>
-</tr>
-<tr>
-<td>V10</td>
-<td>Core</td>
-<td>both</td>
-<td>The §6.2 depth-walk uses the addressable element&#39;s own tag as the boundary token; a token inside a comment does not move a boundary.</td>
-</tr>
-<tr>
-<td>V11</td>
-<td>Core</td>
-<td>both</td>
-<td><code>data-char-count</code>, when present, equals the code-point count of the inner bytes, not the byte length or UTF-16 length.</td>
-</tr>
-<tr>
-<td>V12</td>
-<td>Core</td>
-<td>both</td>
-<td>Reading requires no server, no JavaScript, no network, no installed tooling (Tier 0).</td>
-</tr>
-<tr>
-<td>V13</td>
-<td>Append</td>
-<td>both</td>
-<td>A superseded section remains addressable at its original witness; the superseding section reads as current (§8.2).</td>
-</tr>
-<tr>
-<td>V14</td>
-<td>Append</td>
-<td>both</td>
-<td>A <code>data-supersedes</code> whose target does not exist earlier in the document → FAIL (dangling).</td>
-</tr>
-<tr>
-<td>V15</td>
-<td>Append</td>
-<td>both (writing-room epoch)</td>
-<td>In a writing-room body of either shape, a timestamp witness not strictly later than the prior writing-room entry in document order → FAIL (ordering, §6.7). Malformed grammar is V6 (Core).</td>
-</tr>
-<tr>
-<td>V16</td>
-<td>Append</td>
-<td>both</td>
-<td>An in-place edit to a prior addressable unit&#39;s bytes/id/witness is detected by re-confirmation (§7.2).</td>
-</tr>
-<tr>
-<td>V17</td>
-<td>Core</td>
-<td>both</td>
-<td>A pure-JS or stdlib SHA-256 reproduces the NIST <code>&quot;abc&quot;</code> vector <code>ba7816bf…f20015ad</code> and the §13 section vectors byte-exact.</td>
-</tr>
-<tr>
-<td>V18</td>
-<td>Core</td>
-<td>both</td>
-<td>A document where both <code>&lt;section data-witness&gt;</code> and <code>&lt;article data-witness&gt;</code> appear → FAIL (mixed shapes, homogeneity violation).</td>
-</tr>
-<tr>
-<td>V19</td>
-<td>Core</td>
-<td>both</td>
-<td>Shape detection fails (no manifest, no valid-grammar witnessed article) → FAIL.</td>
-</tr>
-<tr>
-<td>V20</td>
-<td>Core</td>
-<td>tail</td>
-<td>A tail document containing a nested <code>&lt;article data-witness&gt;</code> inside another <code>&lt;article data-witness&gt;</code> → FAIL (nesting prohibited, §5.3b).</td>
-</tr>
-<tr>
-<td>V21</td>
-<td>Core</td>
-<td>tail</td>
-<td>An <code>append-anchor</code> element carrying a <code>data-witness</code> attribute is non-conforming; a reader MUST NOT count it as an addressable unit (§5.3b).</td>
-</tr>
+<section id="validation-matrix" data-witness="271927e8c6cd9984d35fcd20887ff84b759eff29ba84adf44c8d142da1adbce3" data-char-count="8764"><h2>10. Validation matrix</h2>
+<p>A conforming implementation MUST satisfy every <strong>Core</strong> row. An implementation that claims an
+extension MUST satisfy that extension&#39;s rows.</p>
+<table>
+<thead><tr><th>#</th><th>Profile</th><th>Shape scope</th><th>Assertion</th></tr></thead>
+<tbody>
+<tr><td>V1</td><td>Core</td><td>manifest-first</td><td>A document with a valid <code>&lt;nav id=&quot;manifest&quot;&gt;</code> and matching witnessed sections verifies PASS.</td></tr>
+<tr><td>V1T</td><td>Core</td><td>tail</td><td>A consecrated tail (no nav-manifest, ≥1 <code>&lt;article data-witness&gt;</code>) verifies PASS; each article&#39;s SHA-256 recomputes from its §6.2 inner bytes.</td></tr>
+<tr><td>V2</td><td>Core</td><td>both</td><td>A reader recomputes SHA-256 over §6.2 inner bytes and does not trust the stored hex.</td></tr>
+<tr><td>V3</td><td>Core</td><td>both</td><td>A one-byte change to any addressable unit&#39;s inner bytes causes a witness mismatch → FAIL.</td></tr>
+<tr><td>V4</td><td>Core</td><td>manifest-first only</td><td>Two-carrier agreement (§6.3): the section&#39;s own <code>data-witness</code> and the manifest link&#39;s <code>data-witness</code> MUST <strong>both</strong> equal the recomputed digest — a section carrying a stale or zeroed <code>data-witness</code> while the link carries the true hash (or vice versa) → FAIL (carrier disagreement), even though a link-vs-section string comparison alone would not catch a case where the link agrees with a wrong section value that itself doesn&#39;t recompute. V4 is N/A for tail documents.</td></tr>
+<tr><td>V5</td><td>Core</td><td>both</td><td>Two live elements sharing an <code>id</code> → FAIL closed (no silent resolution).</td></tr>
+<tr><td>V6</td><td>Core</td><td>both</td><td>A witness matching neither grammar (§6.7) → FAIL (invalid).</td></tr>
+<tr><td>V7</td><td>Core</td><td>both</td><td>A document with zero addressable units → FAIL (non-vacuity). For manifest-first: a manifest naming a missing section → FAIL.</td></tr>
+<tr><td>V8</td><td>Core</td><td>both</td><td>An addressable unit id beginning with a digit, or containing whitespace → non-conforming.</td></tr>
+<tr><td>V9</td><td>Core</td><td>both</td><td>An <code>id=</code>/<code>data-witness=</code> string embedded inside another attribute&#39;s quoted value does not impersonate the real attribute (§6.4).</td></tr>
+<tr><td>V10</td><td>Core</td><td>both</td><td>The §6.2 depth-walk uses the addressable element&#39;s own tag as the boundary token; a token inside a comment does not move a boundary.</td></tr>
+<tr><td>V11</td><td>Core</td><td>both</td><td><code>data-char-count</code>, when present, equals the code-point count of the inner bytes, not the byte length or UTF-16 length.</td></tr>
+<tr><td>V12</td><td>Core</td><td>both</td><td>Reading requires no server, no JavaScript, no network, no installed tooling (Tier 0).</td></tr>
+<tr><td>V13</td><td>Append</td><td>both</td><td>A superseded section remains addressable at its original witness; the superseding section reads as current (§8.2).</td></tr>
+<tr><td>V14</td><td>Append</td><td>both</td><td>A <code>data-supersedes</code> whose target does not exist earlier in the document → FAIL (dangling).</td></tr>
+<tr><td>V15</td><td>Append</td><td>both (writing-room epoch)</td><td>In a writing-room body of either shape, a timestamp witness not strictly later than the prior writing-room entry in document order → FAIL (ordering, §6.7). Malformed grammar is V6 (Core).</td></tr>
+<tr><td>V16</td><td>Append</td><td>both</td><td>An in-place edit to a prior addressable unit&#39;s bytes/id/witness is detected by re-confirmation (§7.2).</td></tr>
+<tr><td>V17</td><td>Core</td><td>both</td><td>A pure-JS or stdlib SHA-256 reproduces the NIST <code>&quot;abc&quot;</code> vector <code>ba7816bf…f20015ad</code> and the §13 section vectors byte-exact.</td></tr>
+<tr><td>V18</td><td>Core</td><td>both</td><td>A document where both <code>&lt;section data-witness&gt;</code> and <code>&lt;article data-witness&gt;</code> appear → FAIL (mixed shapes, homogeneity violation).</td></tr>
+<tr><td>V19</td><td>Core</td><td>both</td><td>Shape detection fails (no manifest, no valid-grammar witnessed article) → FAIL.</td></tr>
+<tr><td>V20</td><td>Core</td><td>tail</td><td>A tail document containing a nested <code>&lt;article data-witness&gt;</code> inside another <code>&lt;article data-witness&gt;</code> → FAIL (nesting prohibited, §5.3b).</td></tr>
+<tr><td>V21</td><td>Core</td><td>tail</td><td>An <code>append-anchor</code> element carrying a <code>data-witness</code> attribute is non-conforming; a reader MUST NOT count it as an addressable unit (§5.3b).</td></tr>
+<tr><td>V22</td><td>Core</td><td>both</td><td>A close tag carrying interior whitespace (e.g. <code>&lt;/section &gt;</code>) is not a canonical close token (§6.2) → FAIL <code>NON-CANONICAL</code> with a required byte offset, never reported as &quot;unterminated&quot;.</td></tr>
+<tr><td>V23</td><td>Core</td><td>both</td><td>A tag sharing an addressable element&#39;s tag name as a prefix but not matching the exact-tag-name open-token grammar (e.g. <code>&lt;section-foo&gt;</code>) is not a boundary token of any kind (§6.2) and MUST NOT be treated as an open or close token by either the depth-walk or the unit-discovery scan.</td></tr>
+<tr><td>V24</td><td>Core</td><td>both</td><td>A witnessed-unit opening tag carrying a single-quoted or unquoted attribute value → FAIL <code>NON-CANONICAL</code> with a required byte offset (§6.4).</td></tr>
+<tr><td>V25</td><td>Core</td><td>both</td><td>A witnessed-unit opening tag carrying a duplicated attribute name → FAIL <code>NON-CANONICAL</code> with a required byte offset pointing at the duplicate occurrence (§6.4), regardless of whether the two values agree.</td></tr>
+<tr><td>V26</td><td>Core</td><td>both</td><td>A witnessed span containing, outside an inert region, a content element whose tag name is <code>section</code> or <code>article</code> followed by <code>-</code>, <code>.</code>, or <code>:</code> → FAIL <code>NON-CANONICAL</code> with a required byte offset (§6.4a); this case is distinct from V23 and is not caught by the boundary-token grammar or a closing-tag count guard.</td></tr>
+<tr><td>V27</td><td>Core</td><td>both</td><td>Shape detection (§5.0) is satisfiable by a single quote-aware byte-scan for <code>&lt;nav id=&quot;manifest&quot;&gt;</code> or a valid-grammar <code>&lt;article data-witness&gt;</code> opening tag, without constructing a DOM tree or invoking an HTML parser.</td></tr>
+<tr><td>V28</td><td>Producer</td><td>both</td><td>A conforming Producer emits only the canonical serialization named in §9.2a (lowercase tags, zero-interior-whitespace close tags, double-quoted attributes, no duplicated attribute names, no unmasked section-/article-prefixed content element inside a witnessed span); a Producer emitting any other construct is non-conforming at the Producer profile.</td></tr>
+<tr><td>V29</td><td>Core</td><td>manifest-first only</td><td>The manifest&#39;s link order and the body&#39;s top-level section document-order MUST name the identical id sequence (§9.1 order-bijection) → a manifest that lists the same id-set in a different order than the body → FAIL. Distinct from V7 (a manifest naming a section absent from the body) and V5 (dup-id): this row catches a same-id-set, wrong-order manifest.</td></tr>
+<tr><td>V30</td><td>Core</td><td>both</td><td>The §6.1 dup-id check (§9.1 <code>check_global_dup_ids</code>) walks <strong>every</strong> opening tag in the document, not only addressable-unit opening tags — a duplicate <code>id</code> between a top-level section/article and a nested section, a manifest-anchor target, or an <code>id</code>-bearing <code>&lt;img&gt;</code> (§5.5) → FAIL closed, same as two top-level sections sharing an id (V5).</td></tr>
+<tr><td>V31</td><td>Core</td><td>manifest-first only</td><td>A <strong>nested</strong> <code>&lt;section data-witness&gt;</code> (not reachable from the manifest&#39;s top-level link list, but present inside another witnessed unit&#39;s span) has its own witness recomputed and compared, exactly as a top-level section&#39;s is — a nested section&#39;s <code>data-witness</code> is never decorative. Closes the divergence between the root readers and <code>trials/scripts/verify_sections.py</code>&#39;s isolation-mode checker (§9.1 nested-recompute clause).</td></tr>
+<tr><td>V32</td><td>Producer</td><td>tail → manifest-first</td><td>The fold is total and fail-closed: a tail containing a grammar-invalid witness, a duplicate id, a self/forward/dangling <code>data-supersedes</code>, or zero addressable units folds to <strong>nothing</strong> — zero bytes written, non-zero exit (§8.4).</td></tr>
 </tbody></table></section>
 
-<section id="conformance-profiles" data-witness="1cee76f51356c297e32a3125c8ce56c04d08f7fd750dd1bc398155ad3a92506d" data-char-count="4113"><h2>11. Conformance profiles and Definition of Done</h2>
+<section id="conformance-profiles" data-witness="9ef6760da4549dc409d79a3dc694ca1bae0581aa111a2e519fcfb24885f4bbd7" data-char-count="6683"><h2>11. Conformance profiles and Definition of Done</h2>
 <h3>11.1 Profiles</h3>
 <ul>
-<li><strong>Core (REQUIRED of every conforming implementation).</strong> Shape detection (§5.0); manifest</li>
-</ul>
-<p>  discovery for manifest-first shape; tail-shape article discovery; quote-aware attribute   reading; §6.2 witnessed-bytes extraction with depth-walk and comment masking (parameterized   on the addressable element&#39;s tag); consecrated-witness recomputation and pinned comparison;   fail-closed and non-vacuity; the id production; homogeneity enforcement; mixed-shape refusal;   nested-article prohibition; append-anchor discipline. Rows V1, V1T, V2–V12, V17–V21.</p>
-<ul>
-<li><strong>Append (extension).</strong> Writing-room epoch ordering, supersession resolution, append-only</li>
-</ul>
-<p>  re-confirmation. Rows V13–V16.</p>
-<ul>
-<li><strong>Producer (extension).</strong> Emits conforming documents per §9.2.</li>
+<li><strong>Core (REQUIRED of every conforming implementation).</strong> Shape detection (§5.0) as a byte-scan; manifest discovery for manifest-first shape; tail-shape article discovery; quote-aware attribute reading with double-quote and no-duplicate-attribute enforcement on witnessed-unit opening tags (§6.4); §6.2 witnessed-bytes extraction with the exact-tag-name boundary-token grammar, the depth-walk, and comment/raw-text masking (parameterized on the addressable element&#39;s tag), refusing off-grammar boundaries as <code>NON-CANONICAL</code> with a required byte offset rather than &quot;unterminated&quot;; the §6.4a content-profile prohibition (distinct from the boundary-token grammar); consecrated-witness recomputation and pinned comparison; fail-closed and non-vacuity; the id production; homogeneity enforcement; mixed-shape refusal; nested-article prohibition; append-anchor discipline; whole-document dup-id scope (every live element&#39;s <code>id</code>, not only addressable-unit ids); manifest order-bijection; nested witnessed-section recompute. A Core reader classifies a tail article&#39;s witness by grammar and recomputes only the consecrated epoch; it is not required to enforce writing-room ordering — that is the Append seam named explicitly in §5.3b. Rows V1, V1T, V2–V12, V17–V31. Core is <strong>unchanged</strong> by v0.4 — v0.4 adds no Core conformance requirement. A Core reader reading a folded record sees an ordinary manifest-first document and verifies it under the unchanged rules; no folded-record inference is ever made from link-text shape.</li>
+<li><strong>Append (extension).</strong> Writing-room epoch ordering, supersession resolution, append-only re-confirmation. Layered on top of Core (§5.3b); a reader claiming Append MUST also satisfy every Core row. Rows V13–V16. Also: the recency-window reading posture (§7.1) and candidate-head presentation over <code>data-supersedes</code> chains under the §7.1 safe-reader rule — RECOMMENDED.</li>
+<li><strong>Producer (extension).</strong> Emits conforming documents per §9.2, restricted to the single canonical serialization named in §9.2a. Row V28. Also: the fold motion (§8.4, row V32): a producer that folds MUST fold totally and fail-closed, emit the manifest by independent enumeration of the body, and emit the single canonical serialization of §9.2a.</li>
 </ul>
 <h3>11.2 Definition of Done</h3>
 <p>An implementation is done when, at its declared profile, all REQUIRED boxes check:</p>
 <ul>
-<li>[ ] <strong>(REQUIRED)</strong> Detects document shape (§5.0): manifest-first if <code>&lt;nav id=&quot;manifest&quot;&gt;</code> is</li>
+<li>☐ <strong>(REQUIRED)</strong> Detects document shape (§5.0): manifest-first if <code>&lt;nav id=&quot;manifest&quot;&gt;</code> is present; tail if no manifest and ≥1 valid witnessed <code>&lt;article&gt;</code>; FAIL otherwise. Refuses documents mixing <code>&lt;section data-witness&gt;</code> and <code>&lt;article data-witness&gt;</code>.</li>
+<li>☐ <strong>(REQUIRED — manifest-first)</strong> Discovers <code>&lt;nav id=&quot;manifest&quot;&gt;</code> and collects <code>&lt;a&gt;</code> descendants in document order.</li>
+<li>☐ <strong>(REQUIRED — tail)</strong> Discovers <code>&lt;article data-witness&gt;</code> elements in document order; no manifest is required or expected.</li>
+<li>☐ <strong>(REQUIRED)</strong> Reads <code>id</code> / <code>data-witness</code> / <code>data-char-count</code> quote-aware (§6.4); refuses a witnessed-unit opening tag carrying a single-quoted/unquoted value or a duplicated attribute name as <code>NON-CANONICAL</code> with a required byte offset.</li>
+<li>☐ <strong>(REQUIRED)</strong> Extracts an addressable unit&#39;s inner bytes by the §6.2 boundary rule (the exact-tag-name boundary-token grammar, depth-walk, and comment/raw-text masking, parameterized on the element&#39;s own tag), untrimmed; refuses an off-grammar boundary (a whitespace-carrying close tag, a tag-name-prefix collision such as <code>&lt;section-foo&gt;</code>) as <code>NON-CANONICAL</code> with a required byte offset, never as &quot;unterminated&quot;.</li>
+<li>☐ <strong>(REQUIRED)</strong> Enforces the §6.4a content-profile prohibition — a witnessed span containing an unmasked <code>section</code>-/<code>article</code>-prefixed content element (<code>-</code>, <code>.</code>, or <code>:</code> suffix) fails <code>NON-CANONICAL</code>, as a rule distinct from the boundary-token grammar and any count guard.</li>
+<li>☐ <strong>(REQUIRED — manifest-first)</strong> Recomputes SHA-256 and compares byte-exact against <strong>both</strong> carriers (section + manifest link), with zero equivalence classes (§6.3, §6.5).</li>
+<li>☐ <strong>(REQUIRED — tail)</strong> Recomputes SHA-256 and compares byte-exact against the <strong>single</strong> carrier (the article element), with zero equivalence classes (§6.3, §6.5). No link check.</li>
+<li>☐ <strong>(REQUIRED)</strong> Validates the id production and fails closed on duplicate ids (§6.1).</li>
+<li>☐ <strong>(REQUIRED)</strong> Classifies a witness into exactly one epoch by form, and refuses invalid grammars (§6.7).</li>
+<li>☐ <strong>(REQUIRED)</strong> Fails closed and refuses vacuous passes (§7.3).</li>
+<li>☐ <strong>(REQUIRED)</strong> Passes Validation Matrix rows V1, V1T, V2–V12, V17–V27.</li>
+<li>☐ <strong>(REQUIRED)</strong> Requires no server, JS, network, or tooling to read (Tier 0).</li>
+<li>☐ <em>(RECOMMENDED — Append)</em> Resolves <code>data-supersedes</code>; enforces writing-room ordering; re-confirms append-only. Passes V13–V16.</li>
+<li>☐ <em>(RECOMMENDED — Producer)</em> Emits conforming documents per §9.2, restricted to the single canonical serialization of §9.2a; deterministic rebuild is byte-identical. Passes V28.</li>
+<li>☐ <em>(RECOMMENDED — Producer)</em> A producer that folds performs the fold motion (§8.4) totally and fail-closed. Passes V32.</li>
 </ul>
-<p>      present; tail if no manifest and ≥1 valid witnessed <code>&lt;article&gt;</code>; FAIL otherwise. Refuses       documents mixing <code>&lt;section data-witness&gt;</code> and <code>&lt;article data-witness&gt;</code>.</p>
-<ul>
-<li>[ ] <strong>(REQUIRED — manifest-first)</strong> Discovers <code>&lt;nav id=&quot;manifest&quot;&gt;</code> and collects <code>&lt;a&gt;</code></li>
-</ul>
-<p>      descendants in document order.</p>
-<ul>
-<li>[ ] <strong>(REQUIRED — tail)</strong> Discovers <code>&lt;article data-witness&gt;</code> elements in document order; no</li>
-</ul>
-<p>      manifest is required or expected.</p>
-<ul>
-<li>[ ] <strong>(REQUIRED)</strong> Reads <code>id</code> / <code>data-witness</code> / <code>data-char-count</code> quote-aware (§6.4).</li>
-<li>[ ] <strong>(REQUIRED)</strong> Extracts an addressable unit&#39;s inner bytes by the §6.2 boundary rule</li>
-</ul>
-<p>      (depth-walk + comment masking, parameterized on the element&#39;s own tag), untrimmed.</p>
-<ul>
-<li>[ ] <strong>(REQUIRED — manifest-first)</strong> Recomputes SHA-256 and compares byte-exact against</li>
-</ul>
-<p>      <strong>both</strong> carriers (section + manifest link), with zero equivalence classes (§6.3, §6.5).</p>
-<ul>
-<li>[ ] <strong>(REQUIRED — tail)</strong> Recomputes SHA-256 and compares byte-exact against the <strong>single</strong></li>
-</ul>
-<p>      carrier (the article element), with zero equivalence classes (§6.3, §6.5). No link check.</p>
-<ul>
-<li>[ ] <strong>(REQUIRED)</strong> Validates the id production and fails closed on duplicate ids (§6.1).</li>
-<li>[ ] <strong>(REQUIRED)</strong> Classifies a witness into exactly one epoch by form, and refuses invalid</li>
-</ul>
-<p>      grammars (§6.7).</p>
-<ul>
-<li>[ ] <strong>(REQUIRED)</strong> Fails closed and refuses vacuous passes (§7.3).</li>
-<li>[ ] <strong>(REQUIRED)</strong> Passes Validation Matrix rows V1, V1T, V2–V12, V17–V21.</li>
-<li>[ ] <strong>(REQUIRED)</strong> Requires no server, JS, network, or tooling to read (Tier 0).</li>
-<li>[ ] <em>(RECOMMENDED — Append)</em> Resolves <code>data-supersedes</code>; enforces writing-room ordering;</li>
-</ul>
-<p>      re-confirms append-only. Passes V13–V16.</p>
-<ul>
-<li>[ ] <em>(RECOMMENDED — Producer)</em> Emits conforming documents per §9.2; deterministic rebuild is</li>
-</ul>
-<p>      byte-identical.</p>
 <h3>11.3 Hardening the spec (how to drill it down)</h3>
-<p>A spec is only as unambiguous as the implementations it produces. To harden this spec, build it from these words in <strong>several languages with independent agents</strong>, run all of them against §10 and §13, and treat <strong>every divergence as a spec defect to fix</strong> — not an implementation bug. Identical bytes in, identical witnesses out, across every reader, is the target. This cross-reader convergence is the format&#39;s design aim; it is not yet a measured result.</p></section>
+<p>A spec is only as unambiguous as the implementations it produces. To harden this spec, build it
+from these words in <strong>several languages with independent agents</strong>, run all of them against §10
+and §13, and treat <strong>every divergence as a spec defect to fix</strong> — not an implementation bug.
+Identical bytes in, identical witnesses out, across every reader, is the target. An <strong>initial
+cross-reader convergence has been observed</strong> — independent readers, including one built blind from
+this specification, agree byte-for-byte on clean, corrupted, and CRLF-variant fixtures — but the
+full multi-corner battery (nested boundaries, comment masking, raw-text and multibyte edges) is
+the standing target, not yet a closed result.</p></section>
 
-<section id="what-is-not" data-witness="1d36fe4e1cfe23bfd4c9128045c1a73a8c447585754cb3cabcadf85f90dd7e53" data-char-count="2197"><h2>12. What is NOT in v0.3</h2>
-<p>A conforming v0.3 reader MUST NOT require any of these:</p>
+<section id="what-is-not" data-witness="3734a93286d88ec242211e095a5c7809d8a3840c741c85f5a16f535b59de17fd" data-char-count="6836"><h2>12. What is NOT in v0.4</h2>
+<blockquote><p><strong>Note — the inert-region definition (not an exclusion).</strong> §6.2 and §6.4a both refer to an
+&quot;inert region.&quot; An <strong>inert region</strong> is, for the purposes of the boundary-token grammar (§6.2)
+and the content-profile prohibition (§6.4a), exactly the union of: (a) the bytes between a
+<code>&lt;!--</code> and its matching <code>--&gt;</code>, i.e. an HTML comment; and (b) the raw-text content bytes of a
+<code>&lt;script&gt;</code> or <code>&lt;style&gt;</code> element — the bytes between that element&#39;s own opening <code>&gt;</code> and its own
+<code>&lt;/script&gt;</code>/<code>&lt;/style&gt;</code> closing tag, which HTML defines as CDATA/raw text a browser never parses
+as markup. A boundary token or a prohibited content-element tag name that occurs inside an
+inert region MUST NOT be counted, MUST NOT match a boundary, and MUST NOT trigger the §6.4a
+content-profile refusal — it is prose or script/style data to a browser, and a conforming
+reader treats it identically. Bytes inside an inert region that also fall inside a witnessed
+span remain part of that span&#39;s witnessed bytes; only *boundary-token and content-profile
+matching* skip them, never the witness arithmetic itself (§6.2). This note defines a term used
+normatively above; it is listed in §12 for proximity to the other structural notes, not because
+inert-region masking is out of scope — it is a Core MUST (§6.2, §6.4a, §11.1).</p></blockquote>
+<p>A conforming v0.4 reader MUST NOT require any of these:</p>
 <ul>
-<li><strong>The live loop</strong> (Claim B, §4.2) — writing a turn (model call, key, disk write) is a</li>
-</ul>
-<p>  platform action a scriptless browser cannot perform.</p>
-<ul>
+<li><strong>The live loop</strong> (Claim B, §4.2) — writing a turn (model call, key, disk write) is a platform action a scriptless browser cannot perform. The run leg is delegated to external infrastructure (a shim, not a bespoke server); the format defines the <em>result</em> it must produce, not the apparatus that produces it.</li>
 <li><strong>A resolver tier</strong> — no resolver, lookup service, or address-resolution protocol.</li>
 <li><strong>A selector grammar</strong> — no CSS-selector or XPath addressing within sections.</li>
-<li><strong>Web-app machinery</strong> — no client-side framework, service worker, or dynamic rendering; no</li>
-</ul>
-<p>  executing JavaScript is required to read, address, or verify.</p>
-<ul>
+<li><strong>Web-app machinery</strong> — no client-side framework, service worker, or dynamic rendering; no executing JavaScript is required to read, address, or verify.</li>
 <li><strong>Cross-document addressing</strong> — links across separate doc.html files are not defined.</li>
-<li><strong>Hierarchical manifests at extreme scale</strong> — a flat manifest grows linearly with section</li>
-</ul>
-<p>  count, and at large scale the manifest&#39;s own size becomes the binding cost. A nested manifest   is a known future need. A producer MUST measure the manifest&#39;s own cost at scale rather than   assume it is unbounded. (Manifest-first shape.)</p>
+<li>**A binding commitment over the <em>set</em> of sections** — each witness binds one unit&#39;s bytes; v0.3 has no Merkle root or signed tree head binding the <em>collection</em>. An adversary who controls the file can drop or reorder whole sections (in a tail document, or by removing both a section and its manifest entry) and every remaining witness still verifies. The witness is <em>tamper-evident per unit</em> — not a set-membership proof against a root — and thus not <em>tamper-resistant over the whole</em>. Two facts bound this precisely:</li>
 <ul>
-<li><strong>Selective skim for tail documents at scale</strong> — a tail document has no summary skim-layer.</li>
+<li><em>An optional root can be added without disturbing v0.3.</em> A Merkle root over the ordered set of unit witnesses, carried in-band as a legible attribute with per-unit inclusion proofs, closes drop/reorder detection at O(log n) per unit <strong>without changing per-unit verification</strong> — a rootless document needs nothing beyond the witness it already checks. Such a layer is a candidate for a future version; v0.3 does not require or define it.</li>
+<li><em>But the external anchor is a permanent boundary, not a temporary gap.</em> Even a perfectly rooted document cannot detect a <strong>split-view</strong> — two internally-consistent forks, each with its own valid root — from its own bytes: no verifier that accepts every well-formed, self-consistent document can also reject one member of such a pair. Completeness, currency, and fork-detection therefore rest on an anchor <strong>outside</strong> the file — a git commit, a published root, a gossip of observers. This is Certificate Transparency&#39;s ceiling relocated into one file: <em>integrity is not currency</em>, and detection of deletion rests on something the file cannot contain.</li>
 </ul>
-<p>  Reading a large tail requires scanning the document in order; there is no shortcut to locate   a specific turn without reading from the beginning. This is a real cost at scale, analogous   to the flat-manifest cost above. v0.3 names this honestly and does not solve it.</p>
-<ul>
-<li><strong>The downgrade-only typed-section authority discipline</strong> — the richer <code>data-kind</code> contract</li>
-</ul>
-<p>  for runtime-appended sections is reserved beyond v0.3.</p>
-<ul>
-<li><strong>Substrate-shaped build metadata</strong> — no <code>data-built-at</code>, <code>data-manifest-version</code>, JSON-LD</li>
-</ul>
-<p>  mirror, or MCP-server integration. Version is stated in prose (§14).</p>
-<ul>
-<li><strong>A helper-script requirement</strong> — integrity is <em>verifiable with</em> an included checker; the</li>
-</ul>
-<p>  format does not claim a reader spontaneously verifies without one.</p></section>
+<li><strong>Hierarchical manifests at extreme scale</strong> — a flat manifest grows linearly with section count, and at large scale the manifest&#39;s own size becomes the binding cost. A nested manifest — one whose entries are themselves sub-indices — can be <strong>projected derivably</strong> from the flat append-only order, but v0.3&#39;s manifest is a <em>flat bijection</em> (§5.3: it links top-level sections one-to-one, and a reader rejects witness-less sub-indices), which does not admit it. Hierarchical addressing is a candidate for a future version. A producer MUST measure the manifest&#39;s own cost at scale rather than assume it is unbounded. (Manifest-first shape.) A folded record (§8.4) inherits the flat manifest&#39;s linear-scan cost at scale — a record of thousands of turns reads its gist column in one long pass, and this recension deliberately does not introduce a hierarchical manifest to remedy that (the exclusion stands).</li>
+<li>**Selective skim for <em>unfolded</em> tail documents<strong> — a live tail has no summary skim-layer; reading a large tail requires scanning it in order. v0.4 provides the remedy at the epoch boundary: the fold (§8.4) mints a gist manifest, and the folded record reads with the recency-window posture (§7.1). The cost statement stands for any tail </strong>not yet folded** — the live epoch pays it by design, because the live epoch optimizes for append-simplicity, not skim.</li>
+<li><strong>The un-witnessed control plane, disclosed as a class.</strong> Manifest link text (gists, titles, summaries), <code>data-supersedes</code> edges, and ordering chrome live outside every witnessed span. Core verification proves the sealed units&#39; bytes; it certifies nothing about these routing surfaces, and the format declines to add per-surface in-band integrity declarations for them — any such declaration would itself be editor-controlled bytes, promising defense it cannot deliver. Where cross-boundary trust in routing surfaces is required, it comes from custody, version history, or a publisher&#39;s signature — out-of-band, where it has always lived.</li>
+<li><strong>The downgrade-only typed-section authority discipline</strong> — the richer <code>data-kind</code> contract for runtime-appended sections is reserved beyond v0.3.</li>
+<li><strong>Substrate-shaped build metadata</strong> — no <code>data-built-at</code>, <code>data-manifest-version</code>, JSON-LD mirror, or MCP-server integration. Version is stated in prose (§14).</li>
+<li><strong>A helper-script requirement</strong> — integrity is <em>verifiable with</em> an included checker; the format does not claim a reader spontaneously verifies without one.</li>
+</ul></section>
 
-<section id="test-vectors" data-witness="373059db2b3b486f7f49bc2c6eeccf17adcc2be69baa1fb00db98d74fa3cd362" data-char-count="7011"><h2>13. Appendix A — test vectors</h2>
+<section id="test-vectors" data-witness="028a235ecbc441750bf0ef16598a52bb8e0f308afe6065e472e31c84ee1cdcd0" data-char-count="22461"><h2>13. Appendix A — test vectors</h2>
 <p><strong>SHA-256 sanity (NIST):</strong> <code>sha256(&quot;abc&quot;)</code> = <code>ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad</code>.</p>
 <hr>
 <h3>Vector set 1 — manifest-first (two sections)</h3>
-<p>The reference file <code>examples/minimal.doc.html</code> is the smallest valid manifest-first doc.html and contains exactly these two sections; it verifies 2/2 with the readers in this repo.</p>
+<p>The reference file <a href="minimal.doc.html"><code>examples/minimal.doc.html</code></a> is the smallest
+valid manifest-first doc.html and contains exactly these two sections; it verifies 2/2 with the
+readers in this repo.</p>
 <p><strong>Section <code>intro</code>.</strong> Inner bytes (UTF-8, untrimmed, <code>\n</code> is a single LF byte):</p>
 <pre><code>&lt;h1&gt;Introduction&lt;/h1&gt;
 &lt;p&gt;A doc.html is a single self-verifying HTML file.&lt;/p&gt;</code></pre>
@@ -860,33 +956,36 @@ function verify_tail(bytes, articles):
 <li>byte length: 75 · code points: 75</li>
 <li><code>data-witness</code> = <code>771feff3620a380e35e3fa970868af438c21223dd279aa3001851387b2647d91</code></li>
 </ul>
-<p>A conforming reader, given <code>examples/minimal.doc.html</code>, MUST recompute both witnesses from the inner bytes (§6.2), MUST find them equal to <strong>both</strong> carriers (section + manifest link), and MUST return PASS. A reader that trims a leading/trailing newline, decodes as UTF-16, or normalizes whitespace will compute a different digest and is non-conforming.</p>
+<p>A conforming reader, given <code>examples/minimal.doc.html</code>, MUST recompute both witnesses from the
+inner bytes (§6.2), MUST find them equal to <strong>both</strong> carriers (section + manifest link), and
+MUST return PASS. A reader that trims a leading/trailing newline, decodes as UTF-16, or
+normalizes whitespace will compute a different digest and is non-conforming.</p>
 <hr>
 <h3>Vector set 2 — tail shape (consecrated articles)</h3>
-<p>The reference file <code>examples/chat.doc.html</code> is a writing-room-tail doc.html: 8 consecrated <code>&lt;article&gt;</code> turns, no <code>&lt;nav id=&quot;manifest&quot;&gt;</code>, no <code>&lt;section data-witness&gt;</code>. It verifies 8/8 with the readers in this repo. The vectors below are sealed from that file.</p>
+<p>The reference file <a href="chat.doc.html"><code>examples/chat.doc.html</code></a> is a writing-room-tail
+doc.html: 8 consecrated <code>&lt;article&gt;</code> turns, no <code>&lt;nav id=&quot;manifest&quot;&gt;</code>, no <code>&lt;section data-witness&gt;</code>.
+It verifies 8/8 with the readers in this repo. The vectors below are sealed from that file.</p>
 <p>This vector set exercises three conformance properties:</p>
 <ol>
-<li><strong>Shape detection</strong> — no <code>&lt;nav id=&quot;manifest&quot;&gt;</code> is present; a reader MUST detect tail shape</li>
+<li><strong>Shape detection</strong> — no <code>&lt;nav id=&quot;manifest&quot;&gt;</code> is present; a reader MUST detect tail shape (≥1 <code>&lt;article data-witness&gt;</code> with valid-grammar witness) and proceed to the article-discovery path (V1T, V19).</li>
+<li><strong>Commented article tag / depth-walk comment-masking</strong> — <code>turn-000004</code>&#39;s inner span contains a literal <code>&lt;!-- &lt;/article&gt; --&gt;</code> comment. A depth-walking reader MUST NOT treat that commented token as this article&#39;s closing boundary (§6.2, V10).</li>
+<li><strong>Single-carrier / no-link case</strong> — every article&#39;s <code>data-witness</code> appears once, on the element; there is no manifest link to cross-check (§6.3 tail single-carrier path; V4 is N/A).</li>
 </ol>
-<p>   (≥1 <code>&lt;article data-witness&gt;</code> with valid-grammar witness) and proceed to the article-discovery    path (V1T, V19).</p>
-<ol>
-<li><strong>Commented article tag / depth-walk comment-masking</strong> — <code>turn-000004</code>&#39;s inner span contains</li>
-</ol>
-<p>   a literal <code>&lt;!-- &lt;/article&gt; --&gt;</code> comment. A depth-walking reader MUST NOT treat that commented    token as this article&#39;s closing boundary (§6.2, V10).</p>
-<ol>
-<li><strong>Single-carrier / no-link case</strong> — every article&#39;s <code>data-witness</code> appears once, on the</li>
-</ol>
-<p>   element; there is no manifest link to cross-check (§6.3 tail single-carrier path; V4 is N/A).</p>
 <hr>
-<p><strong>Article <code>turn-000001</code> (normal turn — shape detection + single-carrier).</strong> Inner bytes (UTF-8, untrimmed; <code>\n</code> is a single LF byte, <code>—</code> is the 3-byte UTF-8 sequence E2 80 94):</p>
+<p><strong>Article <code>turn-000001</code> (normal turn — shape detection + single-carrier).</strong> Inner bytes
+(UTF-8, untrimmed; <code>\n</code> is a single LF byte, <code>—</code> is the 3-byte UTF-8 sequence E2 80 94):</p>
 <pre><code>\n  &lt;header&gt;&lt;h3&gt;Turn 1 — User&lt;/h3&gt;\n    &lt;p class=&quot;meta&quot;&gt;kind: transcription&lt;/p&gt;&lt;/header&gt;\n  &lt;div class=&quot;turn-content&quot;&gt;\n    &lt;p&gt;What is a doc.html file and how does it store information?&lt;/p&gt;\n  &lt;/div&gt;\n</code></pre>
 <ul>
 <li>byte length: 197 · code points (<code>data-char-count</code>): 195</li>
 <li><code>data-witness</code> = <code>f4f2f5db437a1156c1ec65185646e1bb8dda27118e3230d348b87e7acb865368</code></li>
 </ul>
-<p>The byte/code-point difference (197 vs 195) arises because <code>—</code> (U+2014 EM DASH) encodes as 3 UTF-8 bytes but counts as 1 code point; <code>data-char-count</code> is always code points (§6.6).</p>
+<p>The byte/code-point difference (197 vs 195) arises because <code>—</code> (U+2014 EM DASH) encodes as 3
+UTF-8 bytes but counts as 1 code point; <code>data-char-count</code> is always code points (§6.6).</p>
 <hr>
-<p><strong>Article <code>turn-000004</code> (commented <code>&lt;/article&gt;</code> tag — exercises §6.2 comment-masking).</strong> The inner span of this article contains the literal HTML comment <code>&lt;!-- &lt;/article&gt; --&gt;</code> as part of its prose. The witnessed bytes include the comment; the comment is skipped only for the purpose of matching boundary tokens during the depth-walk.</p>
+<p><strong>Article <code>turn-000004</code> (commented <code>&lt;/article&gt;</code> tag — exercises §6.2 comment-masking).</strong> The
+inner span of this article contains the literal HTML comment <code>&lt;!-- &lt;/article&gt; --&gt;</code> as part of
+its prose. The witnessed bytes include the comment; the comment is skipped only for the purpose
+of matching boundary tokens during the depth-walk.</p>
 <p>Inner bytes (UTF-8, untrimmed; excerpt showing the critical comment region):</p>
 <pre><code>…    &lt;p&gt;The shapes are mutually exclusive: a document MUST be exactly one shape…&lt;/p&gt;
     &lt;!-- &lt;/article&gt; --&gt;
@@ -896,59 +995,151 @@ function verify_tail(bytes, articles):
 <li>byte length: 1159 · code points (<code>data-char-count</code>): 1154</li>
 <li><code>data-witness</code> = <code>2709fd288f0fc457a0e05df650b1d92f8727b3d8b31e012a0b0574206b8d8059</code></li>
 </ul>
-<p>A reader that treats the <code>&lt;/article&gt;</code> inside the comment as a boundary will compute the SHA-256 of a shorter inner span and get a different digest — a conformance failure.</p>
+<p>A reader that treats the <code>&lt;/article&gt;</code> inside the comment as a boundary will compute the SHA-256
+of a shorter inner span and get a different digest — a conformance failure.</p>
 <hr>
 <p><strong>All 8 article witnesses</strong> (for full cross-checking):</p>
-<table><thead><tr>
-<th>id</th>
-<th><code>data-char-count</code></th>
-<th><code>data-witness</code></th>
-</tr></thead><tbody>
-<tr>
-<td><code>turn-000001</code></td>
-<td>195</td>
-<td><code>f4f2f5db437a1156c1ec65185646e1bb8dda27118e3230d348b87e7acb865368</code></td>
-</tr>
-<tr>
-<td><code>turn-000002</code></td>
-<td>997</td>
-<td><code>20d6b7a5080d8c259fbd950e2eec8dada50c21b7b1916a11b5cca43ef0d1bc5c</code></td>
-</tr>
-<tr>
-<td><code>turn-000003</code></td>
-<td>225</td>
-<td><code>974580b2cbe3859821acd009ba7018a0d403e1ed78ef5199a49e9610c3223b88</code></td>
-</tr>
-<tr>
-<td><code>turn-000004</code></td>
-<td>1154</td>
-<td><code>2709fd288f0fc457a0e05df650b1d92f8727b3d8b31e012a0b0574206b8d8059</code></td>
-</tr>
-<tr>
-<td><code>turn-000005</code></td>
-<td>202</td>
-<td><code>6f8fc9ac79aca8c875d937f89e427774958fec7734f83c52ba61ff9cf95dfcc7</code></td>
-</tr>
-<tr>
-<td><code>turn-000006</code></td>
-<td>899</td>
-<td><code>8e4cb94fe477c4edb359951ccf88554dd2f8d34a7fdeacbf816c2c93b1271122</code></td>
-</tr>
-<tr>
-<td><code>turn-000007</code></td>
-<td>246</td>
-<td><code>9a87dd3fdf1d9c63597714beb201aa67964a776c7c369ded16fe40ea5040ff8b</code></td>
-</tr>
-<tr>
-<td><code>turn-000008</code></td>
-<td>1112</td>
-<td><code>8bd10d9e13231b7a51ec417f498a72c4f0918894d9503bd3fe8bde1eeaa85e90</code></td>
-</tr>
+<table>
+<thead><tr><th>id</th><th><code>data-char-count</code></th><th><code>data-witness</code></th></tr></thead>
+<tbody>
+<tr><td><code>turn-000001</code></td><td>195</td><td><code>f4f2f5db437a1156c1ec65185646e1bb8dda27118e3230d348b87e7acb865368</code></td></tr>
+<tr><td><code>turn-000002</code></td><td>997</td><td><code>20d6b7a5080d8c259fbd950e2eec8dada50c21b7b1916a11b5cca43ef0d1bc5c</code></td></tr>
+<tr><td><code>turn-000003</code></td><td>225</td><td><code>974580b2cbe3859821acd009ba7018a0d403e1ed78ef5199a49e9610c3223b88</code></td></tr>
+<tr><td><code>turn-000004</code></td><td>1154</td><td><code>2709fd288f0fc457a0e05df650b1d92f8727b3d8b31e012a0b0574206b8d8059</code></td></tr>
+<tr><td><code>turn-000005</code></td><td>202</td><td><code>6f8fc9ac79aca8c875d937f89e427774958fec7734f83c52ba61ff9cf95dfcc7</code></td></tr>
+<tr><td><code>turn-000006</code></td><td>899</td><td><code>8e4cb94fe477c4edb359951ccf88554dd2f8d34a7fdeacbf816c2c93b1271122</code></td></tr>
+<tr><td><code>turn-000007</code></td><td>246</td><td><code>9a87dd3fdf1d9c63597714beb201aa67964a776c7c369ded16fe40ea5040ff8b</code></td></tr>
+<tr><td><code>turn-000008</code></td><td>1112</td><td><code>8bd10d9e13231b7a51ec417f498a72c4f0918894d9503bd3fe8bde1eeaa85e90</code></td></tr>
 </tbody></table>
-<p>Assertion: a conforming reader, given <code>examples/chat.doc.html</code>, MUST detect tail shape, recompute each article&#39;s SHA-256 from its §6.2 inner bytes (parameterized on <code>article</code>), MUST find each equal to the single carrier, and MUST return PASS (8/8). A reader that trims a leading/trailing newline, decodes as UTF-16, normalizes whitespace, or misidentifies the <code>&lt;!-- &lt;/article&gt; --&gt;</code> comment token as a boundary will fail on one or more articles.</p></section>
+<p>Assertion: a conforming reader, given <code>examples/chat.doc.html</code>, MUST detect tail shape,
+recompute each article&#39;s SHA-256 from its §6.2 inner bytes (parameterized on <code>article</code>), MUST
+find each equal to the single carrier, and MUST return PASS (8/8). A reader that trims a
+leading/trailing newline, decodes as UTF-16, normalizes whitespace, or misidentifies the
+<code>&lt;!-- &lt;/article&gt; --&gt;</code> comment token as a boundary will fail on one or more articles.</p>
+<hr>
+<h3>Vector set 3 — NON-CANONICAL boundary and content-profile refusals</h3>
+<p>This vector set names the text/rows for the R3/R4 honest-input vectors and the §6.4/§6.4a
+attribute and content-profile rules introduced by this specification revision. It states the
+<strong>assertion each vector MUST satisfy</strong>; the fixture <em>files</em> that exercise these assertions land
+in a later implementation packet (P0.2/P0.4), not here.</p>
+<table>
+<thead><tr><th>Vector</th><th>Boundary/rule under test</th><th>Input shape (illustrative)</th><th>Required verdict</th></tr></thead>
+<tbody>
+<tr><td><strong>R3 — whitespace-in-end-tag</strong></td><td>§6.2 canonical close token</td><td>A <code>&lt;section id=&quot;x&quot; data-witness=&quot;…&quot;&gt;…&lt;/section &gt;</code> where the closing tag carries one interior space before <code>&gt;</code></td><td><code>NON-CANONICAL</code>, with a required byte offset at the first byte of <code>&lt;/section &gt;</code>. MUST NOT be reported as &quot;unterminated&quot;: the depth-walk never reaches <code>depth = 0</code> under the exact-token grammar, and the reader distinguishes &quot;no canonical close token found&quot; from &quot;this off-grammar token is present but not canonical.&quot;</td></tr>
+<tr><td><strong>R4 — custom-element name-prefix (bare boundary case)</strong></td><td>§6.2 exact-tag-name open token</td><td>A top-level <code>&lt;section-foo id=&quot;y&quot;&gt;…&lt;/section-foo&gt;</code> sibling adjacent to (not nested inside) a witnessed <code>&lt;section id=&quot;x&quot; data-witness=&quot;…&quot;&gt;…&lt;/section&gt;</code></td><td>The bare <code>&lt;section-foo&gt;</code> open/close pair is correctly recognized as <em>not</em> a <code>&lt;section&gt;</code> open/close token (§6.2) — it does not perturb the depth-walk finding <code>&lt;section id=&quot;x&quot;&gt;</code>&#39;s own close, and on its own is not, by the boundary-token grammar alone, a NON-CANONICAL trigger. (Contrast the <em>inside-span</em> case, next row: the same tag name, unmasked <em>inside</em> a witnessed span, is refused — a different rule, §6.4a, catches that shape; the boundary-token grammar alone does not.)</td></tr>
+<tr><td><strong>§6.4 double-quote requirement</strong></td><td>§6.4 attribute grammar</td><td>A witnessed-unit opening tag <code>&lt;section id=&#39;x&#39; data-witness=&quot;…&quot;&gt;</code> (single-quoted <code>id</code>) or <code>&lt;section id=x data-witness=&quot;…&quot;&gt;</code> (unquoted <code>id</code>)</td><td><code>NON-CANONICAL</code>, with a required byte offset at the first byte of the non-double-quoted attribute value.</td></tr>
+<tr><td><strong>§6.4 duplicate-attribute refusal</strong></td><td>§6.4 attribute grammar</td><td>A witnessed-unit opening tag <code>&lt;section id=&quot;x&quot; data-witness=&quot;…&quot; id=&quot;x&quot;&gt;</code> (repeated <code>id</code>)</td><td><code>NON-CANONICAL</code>, with a required byte offset at the first byte of the second (duplicate) <code>id=&quot;x&quot;</code> occurrence — regardless of whether the two values agree.</td></tr>
+<tr><td><strong>§6.4a content-profile prohibition (V26)</strong></td><td>§6.4a — distinct from the boundary-token grammar</td><td>A <code>&lt;section id=&quot;x&quot; data-witness=&quot;…&quot;&gt;</code> whose inner span contains an unmasked <code>&lt;section-foo&gt;</code> or <code>&lt;article.x&gt;</code> content element</td><td><code>NON-CANONICAL</code>, with a required byte offset at the first byte of the prohibited element&#39;s opening tag. This vector MUST be verified to reproduce the assertion that <strong>neither</strong> the boundary-token grammar (§6.2 — <code>&lt;section-foo&gt;</code> is correctly not a boundary token) <strong>nor</strong> a closing-tag count guard (the prohibited element contributes no <code>&lt;section&gt;</code>-exact open/close token to any tally) independently catches it; only the explicit §6.4a rule does.</td></tr>
+<tr><td><strong>§6.4a comment-masking exemption</strong></td><td>§6.4a exemption</td><td>A <code>&lt;section id=&quot;x&quot; data-witness=&quot;…&quot;&gt;</code> whose inner span contains <code>&lt;!-- &lt;section-foo&gt; --&gt;</code> (the prohibited tag name inside a comment)</td><td>PASS — the occurrence is inside an inert region (§12) and is exempt from §6.4a; the witness recomputes normally over the untrimmed inner bytes including the comment text.</td></tr>
+</tbody></table>
+<p>A conforming implementation&#39;s fixture battery MUST include, at minimum, one document exercising
+each row above, and each MUST assert the verdict column exactly — a <code>NON-CANONICAL</code> row that
+instead reports &quot;unterminated,&quot; a bare parse error, or a silent PASS is a conformance failure of
+the implementation, not an ambiguity in this vector set.</p>
+<hr>
+<h3>Vector set 4 — epoch-scoped tail verdicts (ORDINAL-ONLY, mixed-epoch, out-of-order, invalid grammar)</h3>
+<p>This vector set names the required verdicts for the §7.3a epoch-scoping rules and the negative
+witness-grammar cases. Fixture files exercising these assertions are in <code>examples/</code> (positive and
+negative-adjacent exhibits) and <code>trials/scripts/fixtures/chat-v3/</code> (linter-family negatives),
+built by <code>examples/build-writing-room-examples.mjs</code> and
+<code>examples/build-negative-writing-room-fixtures.mjs</code> (P0.4).</p>
+<table>
+<thead><tr><th>Vector</th><th>Rule under test</th><th>Input shape (illustrative)</th><th>Required verdict</th></tr></thead>
+<tbody>
+<tr><td><strong>All-timestamp tail</strong></td><td>§7.3a ORDINAL-ONLY</td><td>A tail whose every <code>&lt;article data-witness&gt;</code> carries a grammar-valid writing-room (timestamp) witness and none carries a consecrated (SHA-256) witness</td><td><code>ORDINAL-ONLY</code> on every reader (Core and Append) — never a bare <code>PASS</code>, even though every writing-room witness is grammar-valid (and, under Append, strictly increasing).</td></tr>
+<tr><td><strong>Mixed-epoch tail</strong></td><td>§7.3a scoped PASS</td><td>A tail whose earlier articles are consecrated and later articles are writing-room (e.g. 2 consecrated + 2 writing-room)</td><td><code>PASS (verified=2, ordinal=2)</code> — the two counts asserted separately, never blended into one number.</td></tr>
+<tr><td><strong>Out-of-order writing-room</strong></td><td>§6.7/V15, Append profile only</td><td>Two writing-room articles where the second&#39;s timestamp is NOT strictly later than the first&#39;s</td><td>A Core reader (grammar-only) reports its ordinary epoch-scoped verdict (e.g. <code>ORDINAL-ONLY</code> if all-writing-room) — Core does not enforce ordering. An Append-profile reader (§11.1) MUST refuse, naming the ordering violation (V15) explicitly; it MUST NOT silently accept the mis-ordered pair.</td></tr>
+<tr><td><strong>Invalid witness grammar</strong></td><td>§6.7, V6</td><td>A <code>data-witness</code> value matching neither the consecrated (64-hex) nor the writing-room (20-char timestamp) grammar</td><td><code>FAIL</code>, both readers naming the same reason (a substring identifying &quot;invalid witness grammar&quot;) — no silent drop of the offending article, no downgrade to a different verdict.</td></tr>
+<tr><td><strong>Placeholder witness grammar</strong></td><td>§6.7, V6 (a construction case of the row above)</td><td>A <code>data-witness</code> value that is the literal, un-filled template string <code>YYYY-MM-DDTHH:MM:SSZ</code> (the placeholder text itself, never substituted with real digits — it fails the writing-room grammar because <code>Y</code>/<code>M</code>/<code>D</code>/<code>H</code>/<code>S</code> are not the digits <code>\d</code> the grammar requires)</td><td><code>FAIL</code>, with the <strong>same named reason</strong> as the invalid-witness-grammar row — a template leftover is an ordinary invalid-grammar refusal, not a special-cased silent pass or a distinct verdict.</td></tr>
+<tr><td><strong>Both-match impossibility</strong></td><td>§6.7</td><td>(Unreachable by construction — no string can match both the 20-char timestamp grammar and the 64-char hex grammar, by the Disjointness Theorem, <code>experiments/probes/fold-test/witness_proof.py</code>)</td><td>An implementation MUST halt loudly (an uncaught assertion failure) if this branch is ever reached — it MUST NOT silently downgrade the value to <code>INVALID</code> or otherwise resolve it. Reaching this branch is a canon emergency, not a recoverable case.</td></tr>
+</tbody></table>
+<p>A conforming implementation&#39;s fixture battery MUST include, at minimum, one document exercising
+each row above (except the unreachable both-match row, which is asserted at the classifier level,
+not via a document fixture), and each MUST assert the verdict column exactly.</p>
+<h3>Vector set 5 — the folded record (fold motion, §8.4; row V32)</h3>
+<p>A minimal two-turn writing-room tail (one supersession edge; turn 1 carries an <strong>authored</strong>
+<code>data-gist</code>, turn 2 carries none and receives the minted default) and the <strong>byte-exact record
+the reference fold emits</strong> — byte-exact <em>as a vector</em>, not as a conformance claim on every
+fold, since minted link text is tool documentation, not spec law. Bytes generated by the
+reference tooling (<code>trials/scripts/gen_vector_set5.py</code> → <code>tools/chat_runtime.py fold_file</code>),
+deterministic, zero live calls.</p>
+<p><strong>The tail (input):</strong></p>
+<pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;&lt;head&gt;&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;title&gt;vector set 5 — two-turn tail&lt;/title&gt;&lt;/head&gt;&lt;body&gt;
+&lt;section id=&quot;conversation-log&quot;&gt;
+&lt;article id=&quot;turn-000001&quot; class=&quot;turn operator&quot; data-role=&quot;operator&quot; data-turn=&quot;1&quot; data-gist=&quot;the operator&amp;#39;s authored routing line&quot; data-witness=&quot;87f7d663ebd0c92ca55afe94a61956f019bf71defb7e07761cdd7e56e55dbe4f&quot; data-char-count=&quot;67&quot;&gt;
+  &lt;div class=&quot;turn-content&quot;&gt;&lt;p&gt;What does the fold mint?&lt;/p&gt;&lt;/div&gt;
+&lt;/article&gt;
+&lt;article id=&quot;turn-000002&quot; class=&quot;turn assistant&quot; data-role=&quot;assistant&quot; data-turn=&quot;2&quot; data-supersedes=&quot;#turn-000001&quot; data-witness=&quot;eaa737d84f16ca6377987b04153731ad0181d537a908d473168de439ca836521&quot; data-char-count=&quot;111&quot;&gt;
+  &lt;div class=&quot;turn-content&quot;&gt;&lt;p&gt;Correction: the fold mints the gist manifest &amp;amp; the record epoch.&lt;/p&gt;&lt;/div&gt;
+&lt;/article&gt;
+&lt;/section&gt;
+&lt;/body&gt;&lt;/html&gt;</code></pre>
+<p><strong>The folded record (reference fold output; sha256
+<code>a1d3214322d9cd13b39ae7d66bcf1e589bc9266eeb132c45ec5999e54d298c40</code>):</strong></p>
+<pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;&lt;head&gt;&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;title&gt;vector set 5 — two-turn tail&lt;/title&gt;&lt;/head&gt;&lt;body&gt;
+&lt;nav id=&quot;manifest&quot; aria-label=&quot;Document manifest&quot;&gt;
+  &lt;ol&gt;
+    &lt;li&gt;&lt;a href=&quot;#turn-000001&quot; data-witness=&quot;87f7d663ebd0c92ca55afe94a61956f019bf71defb7e07761cdd7e56e55dbe4f&quot; data-char-count=&quot;67&quot;&gt;the operator&amp;#x27;s authored routing line&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a href=&quot;#turn-000002&quot; data-witness=&quot;eaa737d84f16ca6377987b04153731ad0181d537a908d473168de439ca836521&quot; data-char-count=&quot;111&quot;&gt;Correction: the fold mints the gist manifest &amp;amp; the record epoch.&lt;/a&gt;&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/nav&gt;
 
-<section id="versioning-policy" data-witness="1824005ae0bc451bfa2e3d34cf6a89c44f5a74294e0bc2076d5f6b770d27569e" data-char-count="536"><h2>14. Versioning policy</h2>
-<p>This document specifies <strong>version 0.3</strong> of the doc.html format. The version is stated here in prose; it is <strong>not</strong> encoded in any machine-readable attribute. A reader implementing v0.3 SHOULD fail loudly when it encounters a non-conforming manifest shape (for example, a v0.1 JSON-island manifest). Silent degradation is discouraged; the version boundary is hard. Future versions will be specified in their own document; this text remains the v0.3 canonical specification.</p></section>
+&lt;div id=&quot;conversation-log&quot;&gt;
+  &lt;h2&gt;Conversation log&lt;/h2&gt;
+  &lt;p&gt;&lt;em&gt;Consecrated record: homogeneous, non-nesting &lt;code&gt;&amp;lt;section class=&quot;turn&quot;&amp;gt;&lt;/code&gt; units, read in document order. This container is itself un-witnessed chrome (a &amp;lt;div&amp;gt;, never a &amp;lt;section&amp;gt;, carries no data-witness slot); only the turns inside it are witnessed.&lt;/em&gt;&lt;/p&gt;
+
+&lt;section id=&quot;turn-000001&quot; class=&quot;turn operator&quot; data-role=&quot;operator&quot; data-turn=&quot;1&quot; data-gist=&quot;the operator&amp;#39;s authored routing line&quot; data-witness=&quot;87f7d663ebd0c92ca55afe94a61956f019bf71defb7e07761cdd7e56e55dbe4f&quot; data-char-count=&quot;67&quot;&gt;
+  &lt;div class=&quot;turn-content&quot;&gt;&lt;p&gt;What does the fold mint?&lt;/p&gt;&lt;/div&gt;
+&lt;/section&gt;
+
+&lt;section id=&quot;turn-000002&quot; class=&quot;turn assistant&quot; data-role=&quot;assistant&quot; data-turn=&quot;2&quot; data-supersedes=&quot;#turn-000001&quot; data-witness=&quot;eaa737d84f16ca6377987b04153731ad0181d537a908d473168de439ca836521&quot; data-char-count=&quot;111&quot;&gt;
+  &lt;div class=&quot;turn-content&quot;&gt;&lt;p&gt;Correction: the fold mints the gist manifest &amp;amp; the record epoch.&lt;/p&gt;&lt;/div&gt;
+&lt;/section&gt;
+
+&lt;/div&gt;
+
+
+&lt;/body&gt;&lt;/html&gt;</code></pre>
+<p>Note the decoded-text law (§8.4 gist row) visible in the bytes: turn 1&#39;s authored carrier
+<code>the operator&amp;#39;s authored routing line</code> (attribute context) surfaces in the manifest as
+<code>the operator&amp;#x27;s authored routing line</code> (text-node context) — lawfully <strong>different bytes,
+one decoded value</strong>. Every opening-tag attribute survives byte-verbatim on the section
+(projection row); the two integrity carriers are minted (<code>data-witness</code> recomputed — here
+identical, since the tail was already consecrated — and <code>data-char-count</code> refreshed).</p>
+<p><strong>Three companion vectors — the verdicts that teach the disclosed boundary (§12, the
+un-witnessed control plane).</strong> Each mutation of the folded record above is stated with its
+intended verdict; none is a refusal set:</p>
+<ol>
+<li><strong>One gist character mutated in the manifest alone</strong> (e.g. <code>the operator&amp;#x27;s</code> → <code>The operator&amp;#x27;s</code>) → <strong>conforming under Core</strong> — link text is authored routing; the mutation is invisible to §5/§6 verification. The reference gate&#39;s derive-and-compare lint reports the divergence (<code>LINT</code>, cause <code>gist-drift</code>/<code>gist-twin-mismatch</code>).</li>
+<li><strong>The coordinated mutation</strong> — <code>data-gist</code> and its manifest twin changed together, no witnessed byte touched → <strong>conforming under Core</strong> for the same reason; the reference lint reports it (this exact vector passed all four checkers under r3&#39;s attribute-wins law, reproduced firsthand 2026-07-16 — it is the standing regression for derive-and-compare in the tool batteries, <code>trials/scripts/check_fold_gist_law.py</code>).</li>
+<li><strong>The <code>data-supersedes</code> edge retargeted</strong> to another valid turn → <strong>conforming under Core</strong>, documented as un-certified routing — currency is disclosed at §7.1.</li>
+</ol>
+<p>The live exemplar is <code>experiments/chat-v3/Mnemon.chat.doc.html</code> on dev @ <code>8ab94cd</code>
+(sha256 <code>08859ce7f21b944cbff8f423199dc74dab6c29050d0fab0e864876c7b51f8a0d</code>). <strong>The pin is
+final:</strong> the record&#39;s carried gists are authored routing, conforming as they stand; any
+future re-fold under the gate&#39;s default generator is housekeeping at the Operator&#39;s
+discretion, not an obligation of this recension.</p></section>
+
+<section id="versioning-policy" data-witness="206f764035271794b7adc0de8ac49e1e558ea4fe655439b6aed125ebb085b01e" data-char-count="1187"><h2>14. Versioning policy</h2>
+<p>This document specifies <strong>version 0.4</strong> of the doc.html format. v0.4 is additive over v0.3:
+it defines the fold motion (§8.4), the gist link-text form and the §5.4 disclosure, the
+recency-window reading posture (§7.1), and matrix row V32 (Producer). Every v0.3-conforming
+document remains v0.4-conforming, and — stronger — <strong>v0.4 adds no Core conformance
+requirement at all</strong>: a v0.3 reader and a v0.4 reader verify the same documents to the same
+verdicts; a span-less plain-text-link manifest (already conforming under v0.3 §5.4, where
+title/summary spans are SHOULD-level) is read under the unchanged rules and is never
+mistaken for a folded record by its link-text shape. The version boundary remains hard and
+stated in prose.</p>
+<p>The version is stated here in
+prose; it is <strong>not</strong> encoded in any machine-readable attribute. A reader implementing v0.4
+SHOULD fail loudly when it encounters a non-conforming manifest shape (for example, a v0.1
+JSON-island manifest). Silent degradation is discouraged. Future
+versions will be specified in their own document; this text remains the canonical
+specification.</p></section>
 
 </body>
 </html>

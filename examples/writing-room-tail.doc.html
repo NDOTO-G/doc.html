@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Writing-room tail — doc.html v0.3 live-tail exhibit</title>
+</head>
+<body>
+
+<header class="doc-header">
+  <h1>Writing-room tail — doc.html v0.3 live-tail exhibit</h1>
+  <p class="header-meta">doc.html v0.3 &middot; 4 turns &middot; writing-room-tail shape &middot; all witnesses writing-room (live, uncon­secrated)</p>
+  <div>
+    <h2>About this document</h2>
+    <p>This is a <strong>writing-room-tail</strong> doc.html: every turn carries a live, strictly-increasing UTC-timestamp witness (writing-room epoch, &sect;6.7). No turn has been consecrated yet.</p>
+    <p>A conforming reader detects tail shape, walks articles in document order, validates each writing-room witness by grammar (and, under the Append profile, strict increase), and reports <strong>ORDINAL-ONLY</strong> &mdash; never a bare PASS &mdash; because zero bytes have been recomputed (&sect;6.3, &sect;7.3).</p>
+  </div>
+</header>
+
+<article id="turn-000001" class="turn user" data-role="user" data-turn="1" data-kind="transcription" data-char-count="203" data-witness="2026-07-01T12:00:00Z">
+  <header><h3>Turn 1 — User</h3>
+    <p class="meta">kind: transcription</p></header>
+  <div class="turn-content">
+    <p>Start the writing room: what happens before a turn is consecrated?</p>
+  </div>
+</article>
+
+<article id="turn-000002" class="turn assistant" data-role="assistant" data-turn="2" data-kind="synthesis" data-char-count="371" data-witness="2026-07-01T12:00:01Z">
+  <header><h3>Turn 2 — Assistant</h3>
+    <p class="meta">kind: synthesis</p></header>
+  <div class="turn-content">
+    <p>A live turn carries a UTC timestamp witness (writing-room epoch, &sect;6.7) &mdash; it records this turn's place in sequence but is not hash-recomputed. Consecration later replaces the timestamp with a SHA-256 over these exact bytes.</p>
+  </div>
+</article>
+
+<article id="turn-000003" class="turn user" data-role="user" data-turn="3" data-kind="transcription" data-char-count="211" data-witness="2026-07-01T12:00:02Z">
+  <header><h3>Turn 3 — User</h3>
+    <p class="meta">kind: transcription</p></header>
+  <div class="turn-content">
+    <p>So a reader that only ever sees writing-room witnesses can never say PASS?</p>
+  </div>
+</article>
+
+<article id="turn-000004" class="turn assistant" data-role="assistant" data-turn="4" data-kind="synthesis" data-char-count="323" data-witness="2026-07-01T12:00:03Z">
+  <header><h3>Turn 4 — Assistant</h3>
+    <p class="meta">kind: synthesis</p></header>
+  <div class="turn-content">
+    <p>Correct. A tail with zero consecrated witnesses reports the distinct ORDINAL-ONLY verdict, not PASS &mdash; the ordinal register (sequence) was checked, but no byte was ever recomputed.</p>
+  </div>
+</article>
+
+</body>
+</html>

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<!-- P0.3 linter fixture: a top-level <section id="photo"> collides with an <img id="photo">
+     inside a DIFFERENT section's content (V5/V30, SPEC.md §6.1 — id-uniqueness spans the whole
+     live-element id space, not only witnessed section/article ids). -->
+<html lang="en">
+<head><meta charset="UTF-8"><title>dup-id-anchor-image fixture</title></head>
+<body>
+<nav id="manifest">
+<a href="#intro" data-witness="b4829dd95b9f5e4e0525b72eb78ab5c4568169d2a5bc46a762dd2348785b9977">intro</a>
+<a href="#photo" data-witness="30922c616c3e45e11c8e536a1b6ae684ecba807d214ef79bafe360ddf4ffb9d7">photo</a>
+</nav>
+<section id="intro" data-witness="b4829dd95b9f5e4e0525b72eb78ab5c4568169d2a5bc46a762dd2348785b9977"><p>Intro control section.</p><img id="photo" src="cover.png" alt="cover"></section>
+<section id="photo" data-witness="30922c616c3e45e11c8e536a1b6ae684ecba807d214ef79bafe360ddf4ffb9d7"><p>Second section, id=photo — collides with the img id below.</p></section>
+</body>
+</html>

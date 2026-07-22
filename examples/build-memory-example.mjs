@@ -30,7 +30,7 @@ const SECTIONS = [
 <p>This file is a <strong>memory-as-document</strong> exhibit — a worked example in the <code>doc.html</code> v0.3 format showing how an AI coding-assistant might store project knowledge as a witnessed, addressable document rather than a prose blob or a database.</p>
 <p>It holds the fictional <strong>Lantern</strong> service's conventions, architecture decisions, preferences, and gotchas. Every fact is a <code>&lt;section&gt;</code> with a <code>data-witness</code> (SHA-256 over its raw inner bytes) and a <code>data-char-count</code>. A reader can verify any single section in isolation: fetch <code>#the-id</code>, recompute the hash over what sits between the opening tag's <code>&gt;</code> and <code>&lt;/section&gt;</code>, and compare.</p>
 <p><strong>How to hydrate efficiently:</strong> read the manifest below to find the section you need, load only that anchor (<code>#id</code>), verify the witness, and inject it into your context. You do not need the whole file. This is the point.</p>
-<p><strong>Supersession:</strong> this document follows append-and-supersede discipline. When a fact changes, the original section remains (permanently addressable) and a new section carries <code>data-supersedes="old-id"</code>. Both are readable; the newer one is authoritative. See <code>#datastore</code> and <code>#datastore-revised</code> for a live example.</p>
+<p><strong>Supersession:</strong> this document follows append-and-supersede discipline. When a fact changes, the original section remains (permanently addressable) and a new section carries <code>data-supersedes="#old-id"</code>. Both are readable; the newer one is authoritative. See <code>#datastore</code> and <code>#datastore-revised</code> for a live example.</p>
 <p>All content is obviously fictional and illustrative. No real service, person, or decision is described.</p>`,
   },
   {
@@ -190,7 +190,7 @@ const manifestLinks = records
 
 const body = records
   .map((r) => {
-    const supersedesAttr = r.supersedes ? ` data-supersedes="${r.supersedes}"` : "";
+    const supersedesAttr = r.supersedes ? ` data-supersedes="#${r.supersedes}"` : "";
     return `<section id="${r.id}" data-witness="${r.hash}" data-char-count="${r.chars}"${supersedesAttr}>${r.inner}</section>`;
   })
   .join("\n\n");

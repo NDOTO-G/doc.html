@@ -6,7 +6,7 @@ doc.html is a public-domain, web-native format for portable AI knowledge, memory
 
 **Human-readable. Agent-navigable. Integrity-witnessed. Public domain.**
 
-**Status:** v0.3.2 · first public release 2026-07-07 · updated 2026-07-13
+**Status:** v0.4.0 · first public release 2026-07-07 · updated 2026-07-22
 
 A `doc.html` is **one self-describing document**. Multiple documents link into **collections** — wikis, knowledge bases, memory archives, agent workspaces. Nothing here requires a proprietary reader, an external retrieval index, a JavaScript runtime, or a server: the file alone is the whole format.
 
@@ -30,10 +30,10 @@ Tested, sealed, and traced — every number below links to a sealed probe via [`
 |---|---|
 | **72.5 MB · 17,631 sections** | navigated selectively, manifest-then-drill, without loading the body ([§1](EVIDENCE.md#1-scale--reading-past-the-context-window)) |
 | **480/480** | navigation turns OK in the sealed at-scale run ([§1](EVIDENCE.md#1-scale--reading-past-the-context-window)) |
-| **120/120** | proof-of-read canaries recovered — the model provably read the bytes, not its training data; strict composite gate 116/120 ([§3c](EVIDENCE.md#3c-proof-of-read-at-xl-scale-share)) |
+| **120/120** | proof-of-read canaries recovered — the model provably read the bytes, not its training data; strict folio reference 116/120 ([§3c](EVIDENCE.md#3c-proof-of-read-at-xl-scale-share)) |
 | **240/240** | self-citations verified byte-for-byte against sealed content ([§3c](EVIDENCE.md#3c-proof-of-read-at-xl-scale-share)) |
 | **3 model families** | Claude, GPT, and Kimi read the same artifact in the sealed at-scale run, 40 graded cells each ([§3c](EVIDENCE.md#3c-proof-of-read-at-xl-scale-share)) |
-| **3 reader languages** | JavaScript, Python, and a PowerShell stranger-proxy reader written blind from the spec ([§5](EVIDENCE.md#5-what-is-not-yet-demonstrated)) |
+| **3 reader languages** | JavaScript, Python, and a PowerShell stranger-proxy reader written blind from the spec — base fixtures only, blindness instruction-enforced; §5 records the boundary ([§5](EVIDENCE.md#5-what-is-not-yet-demonstrated)) |
 | **−52.9% tokens, +1.19 quality** | vs loading the document whole, on the baseline corpus ([§2a](EVIDENCE.md#2a-token-and-quality-savings-on-a-759-kb-corpus)) |
 | **0 proprietary services** | required by the format for reading and verifying — the file plus standard computation; no server, no JavaScript ([§4](EVIDENCE.md#4-integrity--read-and-verify-with-no-server-no-javascript)) |
 
@@ -56,13 +56,13 @@ Don't make the model read everything. Give it a map.
 
 ## What it can carry
 
-**A wiki.** Multiple `doc.html` files form a linked collection: every page stays a normal web page while carrying agent-readable navigation, stable addresses, and integrity witnesses. A familiar AI wiki has been rebuilt this way in the lab record (the `llm-wiki` probe, on the lab branch); a public browsable showcase lands with the website phase. This is not one enormous file — it is a wiki: a linked collection of self-describing documents.
+**A wiki.** Multiple `doc.html` files form a linked collection: every page stays a normal web page while carrying agent-readable navigation, stable addresses, and integrity witnesses. This is not one enormous file — it is a wiki: a linked collection of self-describing documents. A wiki has been rebuilt this way in unpublished lab work; until a public showcase ships, read this paragraph as architecture, not evidence.
 
 **Memory that belongs to you.** Project decisions, facts, corrections, and provenance in a file you can open, edit, archive, version, and give to another model — [`examples/memory.doc.html`](examples/memory.doc.html). Corrections supersede without erasing: current knowledge, history intact.
 
 **An agent's inheritance.** Instructions, procedures, memory, references, and unfinished work traveling together as one inspectable document. [`agents.html`](agents.html) is the dogfooded *repository-memory* case of this — the narrower, running-today cousin of full agent inheritance, which is the broader architecture. The document carries the agent's inheritance, never its runtime: the model can change; the knowledge remains.
 
-**A conversation** *(experimental frontier)*. Turns as durable, witnessed sections a later reader can inherit — [`examples/chat.doc.html`](examples/chat.doc.html). Close the interface; keep the conversation.
+**A conversation.** Turns as durable, witnessed sections a later reader can inherit — [`examples/chat.doc.html`](examples/chat.doc.html). This is normative, not experimental: the specification defines the append-oriented chat body — a sealed, witnessed head plus a writing-room tail for the live epoch — and v0.4 completes the surface with the fold motion, epoch-scoped verdicts, and sealed conformance vectors. The reference readers verify it. Close the interface; keep the conversation.
 
 ---
 
@@ -118,8 +118,9 @@ The agent needs only `SPEC.md`. No other context is required. The specification 
 | [`examples/memory.doc.html`](examples/memory.doc.html) | Portable memory: multi-section, manifest-first, supersession-aware. |
 | [`examples/chat.doc.html`](examples/chat.doc.html) | A conversation as a durable, witnessed document. |
 | [`examples/selective-context-demo.doc.html`](examples/selective-context-demo.doc.html) | Selective-context reading demonstration. |
-| [`examples/`](examples/) | All examples plus their emitter scripts. See `examples/README.md`. |
+| [`examples/`](examples/) | All exhibits — conforming and asserted-failing — plus the three shipped emitter scripts. See `examples/README.md`. |
 | [`build-doc.mjs`](build-doc.mjs) | Generalized builder: load sections from JSON or a directory of fragments and emit a conformant doc.html. |
+| [`tools/conformance.mjs`](tools/conformance.mjs) | Conformance harness: runs both readers over every example, asserts the pinned §13 reference vectors byte-exact, and asserts the negative battery — forged and malformed documents that BOTH readers must refuse. The battery ships with the bundle. |
 
 ---
 
@@ -143,7 +144,7 @@ Both implement the full Validation Matrix (§10): shape detection, manifest pars
 
 The slogan "HTML is all you need" splits into two claims. This format makes only the first:
 
-- **Claim A** — the document is all-HTML inheritable memory (read, address, verify, hydrate selectively; no server, no JS). **This is what v0.3 specifies, and it is demonstrated at 72.5 MB scale.**
+- **Claim A** — the document is all-HTML inheritable memory (read, address, verify, hydrate selectively; no server, no JS). **This is what v0.4 specifies, and it is demonstrated at 72.5 MB scale.**
 - **Claim B** — the live loop is all-HTML (write + model-call + append in a bare browser). **Out of scope.** The *read* loop is all-HTML and server-free; the *run* leg — model call, key, disk write — is a platform action a scriptless `file://` page cannot perform. That leg is delegated to mature, general infrastructure — a shim over existing tools, **not a bespoke doc.html server.** The format owns the verb's *result* (a witnessed, appended section), not its *execution*.
 
 ---

@@ -1,18 +1,27 @@
-# doc.html v0.3 — worked examples
+# doc.html v0.4 — worked examples
 
-Self-contained `doc.html` files that demonstrate the format. Every exhibit is a conformant v0.3
-document: witnessed addressable units (SHA-256 over raw inner bytes), all CSS in `<head>` outside
-the witnessed spans, zero JavaScript. Open any in a browser to read it; verify with:
+Self-contained `doc.html` files that demonstrate the format, in two deliberate groups. The
+**conforming exhibits** (`minimal`, `memory`, `selective-context-demo`, `chat`, `reference`,
+`mixed-epoch`) are documents both reference readers PASS: witnessed addressable units (SHA-256
+over raw inner bytes), all CSS in `<head>` outside the witnessed spans, zero JavaScript. The
+**asserted-failing negatives** (`writing-room-tail`, `all-timestamp`, `invalid-witness-grammar`,
+`placeholder-grammar`, `out-of-order`) are deliberately malformed or unfinished shapes that both
+readers must REFUSE — `tools/conformance.mjs` asserts every one of them non-zero on both readers,
+so a refusal that stops firing is caught as a regression. Open any in a browser to read it;
+verify (or watch it refuse) with:
 
 ```
 node verify.mjs examples/memory.doc.html
 node verify.mjs examples/chat.doc.html
 ```
 
-All exhibits are **emitted by a builder script** (`build-*.mjs` beside them), not hand-written.
-The builders reuse the same witness law as the reference builder (`build-doc.mjs`) — a small piece of evidence
-that the v0.3 spec is implementable by more than one hand (the literal "the document is the spec"
-claim, at the smallest scale). Rebuild any with `node examples/build-<name>.mjs`.
+Three exhibits ship with their **emitter script beside them** (`build-chat-example.mjs`,
+`build-memory-example.mjs`, `build-selective-context-example.mjs`) — rebuild those three with
+`node examples/build-<name>-example.mjs`; the remaining exhibits are emitted by lab-side
+builders and ship as sealed artifacts.
+The builders reuse the same witness law as the reference builder (`build-doc.mjs`) — a small piece of
+evidence that the spec is implementable by more than one hand (the literal "the document is
+the spec" claim, at the smallest scale).
 
 ## `chat.doc.html` — writing-room-tail (chat body)
 
@@ -60,6 +69,32 @@ see `../EVIDENCE.md` §5). This exhibit is the *shape* of selective hydration; i
 not the at-scale proof.
 
 - 152 sections · ~147 KB · verifies 152/152.
+
+## `mixed-epoch.doc.html` — two epochs in one tail
+
+A tail document whose articles span **two epochs**: a consecrated (sealed, hash-witnessed) head
+and a writing-room (live, timestamp-ordinal) tail — the shape of a chat mid-conversation. The
+readers verify the sealed articles byte-for-byte and report the live ones as ordinal-only, in one
+epoch-scoped verdict (§7.3a).
+
+- 4 articles · 2 verified + 2 ordinal · `PASS (verified=2, ordinal=2)` on both readers.
+
+## The asserted-failing negatives
+
+Five exhibits exist to be **refused** — each isolates one law by breaking it:
+
+- `writing-room-tail.doc.html` / `all-timestamp.doc.html` — a live tail with no consecrated
+  articles: nothing is byte-witnessed yet, so a Core reader has nothing to PASS (ORDINAL-ONLY,
+  non-zero exit).
+- `invalid-witness-grammar.doc.html` / `placeholder-grammar.doc.html` — a carrier whose witness
+  value breaks the grammar (one malformed, one a plausible-looking placeholder): the readers count
+  it as a **mismatch** (`verified 1/2, mismatches: 1`) — an unreadable witness is a refusal, never
+  a silent skip.
+- `out-of-order.doc.html` — writing-room timestamps out of order (§6.7/V15; Core readers report
+  ORDINAL-ONLY with non-zero exit; the ordering law itself binds the Append profile).
+
+`tools/conformance.mjs` runs the full battery — these five plus ten forged-document fixtures
+under `trials/scripts/fixtures/chat-v3/` — and asserts every one fails on BOTH readers.
 
 ### The at-scale proof lives elsewhere
 

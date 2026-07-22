@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<!-- P0.3 linter fixture: a <nav id="manifest">+<section data-witness> document that ALSO
+     carries a witnessed <article data-witness> tail unit (V18 mixed-shape refusal, SPEC.md
+     §10 row V18). Both outer scanners must engage and agree the document is refused. -->
+<html lang="en">
+<head><meta charset="UTF-8"><title>mixed-shape-manifest-article fixture</title></head>
+<body>
+<nav id="manifest">
+<a href="#intro" data-witness="b4829dd95b9f5e4e0525b72eb78ab5c4568169d2a5bc46a762dd2348785b9977">intro</a>
+</nav>
+<section id="intro" data-witness="b4829dd95b9f5e4e0525b72eb78ab5c4568169d2a5bc46a762dd2348785b9977"><p>Intro control section.</p></section>
+<article id="turn-000001" class="turn user" data-role="user" data-turn="1" data-char-count="70" data-witness="3add13b246ac7c0a8af9a5db2fec2671fb7363fa9b4b0a4856c0efa9dce6dfcb">
+  <p>A tail-shaped article mixed into a manifest-first document.</p>
+</article>
+</body>
+</html>

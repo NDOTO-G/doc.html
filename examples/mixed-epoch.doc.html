@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mixed-epoch tail — doc.html v0.3 scoped-verdict exhibit</title>
+</head>
+<body>
+
+<header class="doc-header">
+  <h1>Mixed-epoch tail — doc.html v0.3 scoped-verdict exhibit</h1>
+  <p class="header-meta">doc.html v0.3 &middot; 4 turns &middot; writing-room-tail shape &middot; mixed epoch: 2 consecrated + 2 writing-room</p>
+  <div>
+    <h2>About this document</h2>
+    <p>This is a <strong>writing-room-tail</strong> doc.html whose articles carry <strong>both</strong> witness epochs (&sect;6.7): turns 1&ndash;2 are <strong>consecrated</strong> (SHA-256, sealed); turns 3&ndash;4 are <strong>writing-room</strong> (live UTC-timestamp).</p>
+    <p>A conforming reader classifies each witness by form alone and reports the scoped verdict <strong>PASS (verified=m, ordinal=k)</strong> &mdash; <code>verified</code> counts recomputed consecrated bytes, <code>ordinal</code> counts grammar-valid writing-room witnesses. The two counts are asserted separately, never blended into one number.</p>
+  </div>
+</header>
+
+<article id="turn-000001" class="turn user" data-role="user" data-turn="1" data-kind="transcription" data-char-count="164" data-witness="99c4d22deaf5e9bc59faea62a918df712568e5d1aadf0b7955f683a11958019d">
+  <header><h3>Turn 1 — User</h3>
+    <p class="meta">kind: transcription</p></header>
+  <div class="turn-content">
+    <p>What is a mixed-epoch tail?</p>
+  </div>
+</article>
+
+<article id="turn-000002" class="turn assistant" data-role="assistant" data-turn="2" data-kind="synthesis" data-char-count="384" data-witness="72c2fc5344d6956f69fd4754477140af8371728318d151b329160a3fbe2be937">
+  <header><h3>Turn 2 — Assistant</h3>
+    <p class="meta">kind: synthesis</p></header>
+  <div class="turn-content">
+    <p>A tail where the earlier turns are consecrated (SHA-256, sealed for all time) and the later, still-live turns carry writing-room timestamps. Both registers are verified: consecrated turns recompute, writing-room turns are grammar-and-order valid.</p>
+  </div>
+</article>
+
+<article id="turn-000003" class="turn user" data-role="user" data-turn="3" data-kind="transcription" data-char-count="169" data-witness="2026-07-01T12:00:02Z">
+  <header><h3>Turn 3 — User</h3>
+    <p class="meta">kind: transcription</p></header>
+  <div class="turn-content">
+    <p>What does the verdict look like?</p>
+  </div>
+</article>
+
+<article id="turn-000004" class="turn assistant" data-role="assistant" data-turn="4" data-kind="synthesis" data-char-count="354" data-witness="2026-07-01T12:00:03Z">
+  <header><h3>Turn 4 — Assistant</h3>
+    <p class="meta">kind: synthesis</p></header>
+  <div class="turn-content">
+    <p>The verdict states its scope explicitly: PASS (verified=2, ordinal=2) &mdash; two recomputed consecrated bytes, two grammar-valid ordinal witnesses. The two registers are never folded into one undifferentiated count.</p>
+  </div>
+</article>
+
+</body>
+</html>

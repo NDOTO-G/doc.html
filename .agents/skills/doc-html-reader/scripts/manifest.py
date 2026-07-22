@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Extract the manifest from a v0.2 doc.html file.
+"""Extract the manifest from a manifest-first doc.html file.
 
 Reads the whole file from disk (cheap, local IO), finds the
 <nav id="manifest"> block in the document body, and synthesizes a JSON
@@ -153,7 +153,7 @@ def parse_manifest_nav(html: str) -> list[dict]:
         section_id = href.lstrip("#")
         if not section_id or not sha256:
             continue
-        # sha256 value is bare 64-hex (no 'sha256-' prefix in v0.2).
+        # sha256 value is bare 64-hex (no 'sha256-' prefix).
         entry: dict = {"id": section_id, "sha256": sha256}
         if char_count_raw is not None:
             try:
@@ -284,7 +284,7 @@ def main(argv: list[str]) -> int:
     if not sections:
         print(
             'no <nav id="manifest"> with <a> entries found; '
-            "file may not be a v0.2 doc.html",
+            "file may not be a manifest-first doc.html",
             file=sys.stderr,
         )
         return 1

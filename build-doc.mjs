@@ -145,7 +145,7 @@ function buildDoc(sections) {
     `<head>\n` +
     `<meta charset="utf-8">\n` +
     `<meta name="viewport" content="width=device-width, initial-scale=1">\n` +
-    `<title>doc.html v0.3</title>\n` +
+    `<title>doc.html</title>\n` +
     `<style>\n` +
     `  :root { --fg:#1a1a1a; --bg:#fafaf7; --muted:#666; --accent:#2a4d6e; --rule:#ddd; --code-bg:#f0ede5; }\n` +
     `  @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e3; --bg:#1a1a1a; --muted:#999; --accent:#8ab4d4; --rule:#333; --code-bg:#252523; } }\n` +

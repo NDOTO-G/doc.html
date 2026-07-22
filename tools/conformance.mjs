@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// tools/conformance.mjs — Phase F conformance harness for doc.html v0.3
+// tools/conformance.mjs — conformance harness for doc.html v0.4
 //
 // Runs BOTH reference readers (verify.mjs, verify.py) over every present
 // example, asserts SPEC §13 vectors byte-exact, and checks the NIST "abc"
@@ -50,12 +50,20 @@ header("Anti-vacuity gate — §13 Vector set 2 must not contain PLACEHOLDER");
 const specPath = path.join(REPO, "SPEC.md");
 const specText = fs.readFileSync(specPath, "utf8");
 
-// Find Vector set 2 section
+// Find Vector set 2 section — bounded to end at the NEXT "Vector set N"
+// heading (or, absent one, end of file) so this gate checks only Vector
+// set 2's own hashes and does not false-positive on unrelated later
+// content (e.g. a later vector set's own, deliberately-named "placeholder
+// grammar" fixture prose — P0.4 Vector set 4).
 const vs2Idx = specText.indexOf("Vector set 2");
 if (vs2Idx < 0) {
   fail("SPEC.md does not contain 'Vector set 2' — cannot check anti-vacuity");
 } else {
-  const vs2Tail = specText.slice(vs2Idx);
+  const nextVectorSetMatch = specText.slice(vs2Idx + "Vector set 2".length).match(/Vector set \d+/);
+  const vs2End = nextVectorSetMatch
+    ? vs2Idx + "Vector set 2".length + nextVectorSetMatch.index
+    : specText.length;
+  const vs2Tail = specText.slice(vs2Idx, vs2End);
   if (/PLACEHOLDER/i.test(vs2Tail)) {
     fail("SPEC.md §13 Vector set 2 contains the word PLACEHOLDER — Phase B2 did not backfill real hashes");
     console.log("  The harness cannot pass on placeholder vectors.");
@@ -264,6 +272,7 @@ const EXAMPLES = [
   "selective-context",
   "chat",
   "reference",
+  "mixed-epoch",
 ];
 
 // Maps example short-name → resolved path.
@@ -273,6 +282,7 @@ const exampleFiles = {
   "selective-context": path.join(REPO, "examples", "selective-context-demo.doc.html"),
   "chat":              path.join(REPO, "examples", "chat.doc.html"),
   "reference":         path.join(REPO, "examples", "reference.doc.html"),
+  "mixed-epoch":       path.join(REPO, "examples", "mixed-epoch.doc.html"),
 };
 
 const verifyMjs = path.join(REPO, "verify.mjs");
@@ -404,7 +414,80 @@ for (const name of present) {
 
 failures += readerFailures;
 
-// ─── 6. Summary ───────────────────────────────────────────────────────────────
+// ─── 6. Negative fixture battery — every negative fixture asserted-failing ───
+// P0.4: the full negative-fixture roster (writing-room negatives in
+// examples/, plus the P0.2/P0.3 smuggle/linter fixtures in
+// trials/scripts/fixtures/chat-v3/) MUST be asserted-failing on BOTH readers,
+// as one command. A fixture that unexpectedly PASSES is a conformance
+// regression the harness must catch — not a fixture that merely "happens to
+// still fail" without being checked.
+header("Negative fixture battery — every fixture asserted-failing (both readers)");
+
+const FIXTURES_DIR = path.join(REPO, "trials", "scripts", "fixtures", "chat-v3");
+
+// name -> resolved path. All of these MUST exit non-zero on BOTH verify.py
+// and verify.mjs.
+const NEGATIVE_FIXTURES = {
+  "writing-room-tail (all-timestamp form)": path.join(REPO, "examples", "writing-room-tail.doc.html"),
+  "all-timestamp":                path.join(REPO, "examples", "all-timestamp.doc.html"),
+  "invalid-witness-grammar":      path.join(REPO, "examples", "invalid-witness-grammar.doc.html"),
+  "placeholder-grammar":          path.join(REPO, "examples", "placeholder-grammar.doc.html"),
+  "exploit":                      path.join(FIXTURES_DIR, "exploit.doc.html"),
+  "exploit_v2":                   path.join(FIXTURES_DIR, "exploit_v2.doc.html"),
+  "r3-closing-space":             path.join(FIXTURES_DIR, "r3-closing-space.doc.html"),
+  "r4-inside-span-custom-element":path.join(FIXTURES_DIR, "r4-inside-span-custom-element.doc.html"),
+  "dup-id-toplevel":              path.join(FIXTURES_DIR, "dup-id-toplevel.doc.html"),
+  "dup-id-anchor-image":          path.join(FIXTURES_DIR, "dup-id-anchor-image.doc.html"),
+  "mixed-shape-manifest-article": path.join(FIXTURES_DIR, "mixed-shape-manifest-article.doc.html"),
+  "minimal-manifest-reversed":    path.join(FIXTURES_DIR, "minimal-manifest-reversed.doc.html"),
+  "nested-bad-witness":           path.join(FIXTURES_DIR, "nested-bad-witness.doc.html"),
+  "carrier-mismatch":             path.join(FIXTURES_DIR, "carrier-mismatch.doc.html"),
+};
+
+// out-of-order.doc.html is NOT in this table: it is an Append-profile-only
+// vector (§6.7/V15) — Core readers (verify.py/verify.mjs) do not enforce
+// writing-room ordering, so it correctly reports ORDINAL-ONLY (still exit 1,
+// asserted separately below) rather than an ordering-specific refusal.
+const outOfOrderPath = path.join(REPO, "examples", "out-of-order.doc.html");
+
+let negFailures = 0;
+for (const [name, fp] of Object.entries(NEGATIVE_FIXTURES)) {
+  if (!fs.existsSync(fp)) {
+    fail(`${name}: fixture not found at ${fp}`);
+    negFailures++;
+    continue;
+  }
+  const mjsResult = runReader(`node "${verifyMjs}"`, fp);
+  const pyResult  = runReader(`${pythonCmd} "${verifyPy}"`, fp);
+  const mjsRefused = mjsResult.exit !== 0;
+  const pyRefused  = pyResult.exit !== 0;
+  if (mjsRefused && pyRefused) {
+    pass(`${name}: asserted-failing on both readers (exit ${mjsResult.exit}/${pyResult.exit})`);
+  } else {
+    fail(`${name}: expected BOTH readers to refuse (non-zero exit); got mjs=${mjsResult.exit} py=${pyResult.exit}`);
+    negFailures++;
+  }
+}
+
+// out-of-order.doc.html: asserted non-zero exit (ORDINAL-ONLY) on both
+// Core readers, even though it is not a same-named-reason case.
+if (fs.existsSync(outOfOrderPath)) {
+  const mjsResult = runReader(`node "${verifyMjs}"`, outOfOrderPath);
+  const pyResult  = runReader(`${pythonCmd} "${verifyPy}"`, outOfOrderPath);
+  if (mjsResult.exit !== 0 && pyResult.exit !== 0) {
+    pass(`out-of-order: asserted-failing on both readers (ORDINAL-ONLY scope, exit ${mjsResult.exit}/${pyResult.exit})`);
+  } else {
+    fail(`out-of-order: expected BOTH readers to refuse; got mjs=${mjsResult.exit} py=${pyResult.exit}`);
+    negFailures++;
+  }
+} else {
+  fail(`out-of-order: fixture not found at ${outOfOrderPath}`);
+  negFailures++;
+}
+
+failures += negFailures;
+
+// ─── 7. Summary ───────────────────────────────────────────────────────────────
 console.log();
 console.log("─".repeat(72));
 if (skipped.length > 0) {

@@ -1,9 +1,15 @@
-# doc.html v0.3 — Publication Evidence
+# doc.html — Publication Evidence (the v0.3 record)
 
 > **Type:** Public evidence document — readable by a skeptic checking against sealed receipts
 > **Date:** 2026-06-15
 > **Source:** Transcribed from PUBLICATION_EVIDENCE_LEDGER.md (2026-06-14)
 > **Status:** Publication copy — every headline number traces to a sealed probe
+> **Version note (2026-07-22):** the specification has since advanced to v0.4, completing the
+> chat surface the v0.3 SPEC already defined — v0.4's additions are the fold motion, the
+> epoch-scoped verdicts, the gist disclosure, and the sealed chat conformance vectors. Every
+> probe below was sealed against the v0.3-era artifacts it names; the core those probes measure
+> is unchanged by v0.4 (the SPEC states this boundary itself). New v0.4-specific claims will
+> arrive with their own sealed probes, not by re-dating these.
 
 ---
 

@@ -239,6 +239,7 @@ const html = `<!DOCTYPE html>
     <p>This is a <strong>writing-room-tail</strong> doc.html: a chat exchange stored as an ordered sequence of witnessed <code>&lt;article&gt;</code> elements. No <code>&lt;nav id="manifest"&gt;</code> — shape detection finds the tail by the presence of <code>&lt;article data-witness&gt;</code> elements with valid witnesses.</p>
     <p>Two witness <strong>epochs</strong>: a <strong>writing-room</strong> timestamp (<code>YYYY-MM-DDTHH:MM:SSZ</code>) records live entries in order; a <strong>consecrated</strong> SHA-256 hex digest seals a unit&#39;s bytes for all time. This file carries only consecrated witnesses.</p>
     <p>To verify: detect tail shape, walk articles in document order, recompute SHA-256 over each article&#39;s raw inner UTF-8 bytes (untrimmed, §6.2), confirm each digest equals the stored <code>data-witness</code>. Single carrier per unit — no manifest link to cross-check (§6.3).</p>
+    <p><strong>Kind vocabulary (declared in-band, §8.3):</strong> this body uses two <code>data-kind</code> values — <code>transcription</code> (a verbatim user turn) and <code>synthesis</code> (a model-authored assistant turn). <code>data-kind</code> is descriptive only; a conforming reader never branches trust on it.</p>
   </div>
 </header>
 

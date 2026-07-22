@@ -1,16 +1,16 @@
 ---
 name: doc-html-reader
 description: This skill should be used when the user attaches, references, or asks to "read", "navigate", "summarize", "look up", or "find something in" a file named `doc.html` or `*.doc.html`, or any HTML file containing a `<nav id="manifest">` block in its body. Enforces selective hydration — extract only the sections needed, never the whole file.
-version: 0.3.0
+version: 0.4.0
 ---
 
 # Reading a doc.html
 
-A `doc.html` is a single HTML artifact that carries a machine-readable manifest of its own addressable sections. In v0.2 the manifest lives in a `<nav id="manifest">` element in the document body. Each entry is an `<a>` anchor with `href="#section-id"`, `data-witness` (64 bare hex characters — no prefix), and `data-char-count` (integer character count).
+A `doc.html` is a single HTML artifact that carries a machine-readable manifest of its own addressable sections. In a manifest-first document the manifest lives in a `<nav id="manifest">` element in the document body. Each entry is an `<a>` anchor with `href="#section-id"`, `data-witness` (64 bare hex characters — no prefix), and `data-char-count` (integer character count).
 
 The manifest is the discovery layer. The sections are the hydration layer. Never read the whole file with the Read tool — it may be hundreds of KB and most of it is irrelevant to any given question.
 
-This skill is a convenience. The same selective hydration is achievable with `python3 trials/scripts/naive_reader.py` plus standard text tools. The format does not require this skill — the recensed `doc.html` carries everything a reader needs.
+This skill is a convenience. The same selective hydration is achievable with standard text tools alone — locate the `<nav id="manifest">`, pick an id, extract that section's span. The format does not require this skill: a `doc.html` carries everything a reader needs in-band.
 
 ## Workflow
 
@@ -65,12 +65,12 @@ For very large documents (thousands of sections, hundreds of KB of manifest alon
 Refuse, or warn the user, in these cases:
 
 - The user asks to "read the whole document" — explain that the file may be large and confirm before calling `section.py` for every id.
-- The manifest is missing or malformed — the file does not follow the doc.html v0.2 contract; the skill cannot operate. Report this and fall back to user guidance.
+- The manifest is missing or malformed — with one lawful exception, the file does not follow the doc.html manifest-first contract and the skill cannot operate; report this and fall back to user guidance. **The exception:** an append-oriented chat body (the writing-room-tail shape, SPEC §5.0) lawfully carries *no* `<nav id="manifest">` — its witnessed units are `<article data-witness>` elements. This skill's manifest-first flow does not apply to that shape; point the reference readers (`verify.py` / `verify.mjs`) at it directly.
 - The manifest nav exceeds 50KB — discovery itself is now expensive; consider whether the user has a smaller index or whether to answer from the catalog directly without hydrating.
 
 ## The format, summarized
 
-The doc.html v0.2 manifest shape (inside `<nav id="manifest">`):
+The manifest-first shape (inside `<nav id="manifest">`):
 
 ```html
 <nav id="manifest">

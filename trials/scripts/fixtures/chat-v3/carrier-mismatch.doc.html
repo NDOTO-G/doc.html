@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<!-- P0.3 linter fixture: the manifest link for #mismatch carries the TRUE recomputed hash, but
+     the <section id="mismatch"> element's OWN data-witness is 64 zeros. Before P0.3 both readers
+     accepted this document (they only compared the manifest-link witness against the recomputed
+     bytes and never read the section's own data-witness attribute). V4 two-carrier agreement
+     (SPEC.md §6.3, §9.1) requires BOTH carriers to equal the recomputed digest — this FAILS. -->
+<html lang="en">
+<head><meta charset="UTF-8"><title>carrier-mismatch fixture</title></head>
+<body>
+<nav id="manifest">
+<a href="#intro" data-witness="b4829dd95b9f5e4e0525b72eb78ab5c4568169d2a5bc46a762dd2348785b9977">intro</a>
+<a href="#mismatch" data-witness="f24fbc7e69d2427f1827aefab8b223d0261bac1d8cc878e73feab8bb5dbc28e0">mismatch</a>
+</nav>
+<section id="intro" data-witness="b4829dd95b9f5e4e0525b72eb78ab5c4568169d2a5bc46a762dd2348785b9977"><p>Intro control section.</p></section>
+<section id="mismatch" data-witness="0000000000000000000000000000000000000000000000000000000000000000"><p>Carrier-mismatch section: its own data-witness is 64 zeros while the manifest link carries the true hash.</p></section>
+</body>
+</html>
