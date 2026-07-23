@@ -15,10 +15,12 @@ LICENSE       text eol=lf
 *.jsonl       text eol=lf
 
 # --- export-ignore: restrict `git archive` to the public share bundle ---
-# The bundle ships: SPEC.md README.md LICENSE EVIDENCE.md doc.html agents.html
-# verify.mjs verify.py build-doc.mjs .gitattributes examples/*
-# tools/conformance.mjs .agents/skills/doc-html-reader/* (the reading skill the
-# README names for agents.html, the repo's memory organ).
+# The bundle ships root artifacts including SPEC.md, README.md, LICENSE,
+# evidence.doc.html, EVIDENCE.md (a compatibility pointer), doc.html, agents.html,
+# verify.mjs, verify.py, build-doc.mjs, .gitattributes, examples/*,
+# tools/conformance.mjs, and .agents/skills/doc-html-reader/*.
+# promotion/evidence-doc/ is the private authored source for evidence.doc.html;
+# all promotion/ material remains excluded from the archive.
 # Everything below is internal source/research and is excluded from archives.
 # (Derived from `git ls-files`; the ship set is everything NOT listed here.)
 .claude/                  export-ignore
@@ -33,7 +35,6 @@ canon/                    export-ignore
 count_loc.py              export-ignore
 experiments/              export-ignore
 plans/                    export-ignore
-# promotion/ = public-positioning claim corpus; website-phase, not in the bundle yet
 promotion/                export-ignore
 research/                 export-ignore
 runs/                     export-ignore
