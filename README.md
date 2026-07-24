@@ -6,7 +6,7 @@ doc.html is a public-domain, web-native format for AI knowledge, memory, agents,
 
 **Human-readable. Agent-navigable. Integrity-witnessed. Public domain.**
 
-**Status:** v0.4.1 · first public release 2026-07-07 · updated 2026-07-23
+**Status:** v0.4.2 · first public release 2026-07-07 · updated 2026-07-24
 
 A `doc.html` is **one self-describing document**. Multiple documents link into **collections** — wikis, knowledge bases, memory archives, agent workspaces. Nothing here requires a proprietary reader, an external retrieval index, a JavaScript runtime, or a server: the file alone is the whole format.
 
@@ -101,6 +101,8 @@ Read the record by question: [overview](evidence.doc.html#evidence-overview), [r
 ## Read more
 
 The design descends from named prior art — Certificate Transparency's witnessed logs, Knuth's literate programming, the single-file web (MHTML, TiddlyWiki), and the recent work on why models need maps (Recursive Language Models, context rot). The [library](evidence.doc.html#library-and-lineage) collects the papers and specifications that shaped the design, with the bounded claim about what is actually new here.
+
+The project's design essays are published whole on [the wiki of witnessed documents](wiki.doc.html) — a root doc.html whose shelf links each essay as a separate document and pins it with a cross-file witness, the first public showing of the multi-document shape.
 
 ---
 
