@@ -6,7 +6,7 @@ doc.html is a public-domain, web-native format for AI knowledge, memory, agents,
 
 **Human-readable. Agent-navigable. Integrity-witnessed. Public domain.**
 
-**Status:** v0.4.2 · first public release 2026-07-07 · updated 2026-07-24
+**Status:** v0.4.3 · first public release 2026-07-07 · updated 2026-07-25
 
 A `doc.html` is **one self-describing document**. Multiple documents link into **collections** — wikis, knowledge bases, memory archives, agent workspaces. Nothing here requires a proprietary reader, an external retrieval index, a JavaScript runtime, or a server: the file alone is the whole format.
 
@@ -102,7 +102,7 @@ Read the record by question: [overview](evidence.doc.html#evidence-overview), [r
 
 The design descends from named prior art — Certificate Transparency's witnessed logs, Knuth's literate programming, the single-file web (MHTML, TiddlyWiki), and the recent work on why models need maps (Recursive Language Models, context rot). The [library](evidence.doc.html#library-and-lineage) collects the papers and specifications that shaped the design, with the bounded claim about what is actually new here.
 
-The project's design essays are published whole on [the wiki of witnessed documents](wiki.doc.html) — a root doc.html whose shelf links each essay as a separate document and pins it with a cross-file witness, the first public showing of the multi-document shape.
+The project's design essays are published whole on [the wiki of witnessed documents](wiki.doc.html) — a root doc.html whose shelf links each essay as a separate document and pins it with a cross-file witness (the doc-pin), the first public showing of the multi-document shape. The shape itself is specified in [`the-wiki-shape.doc.html`](the-wiki-shape.doc.html) — parts, rule, reading mechanism, receipts, and limits — so you can build and verify your own.
 
 ---
 
@@ -155,6 +155,16 @@ python verify.py <file>
 ```
 
 Both implement the Validation Matrix (§10): shape detection, manifest parsing, per-section witness recompute over the raw inner span, character-count checking, and non-vacuity. Integrity witnesses prove content consistency — the bytes you read are the bytes the document promised. They do not prove factual truth.
+
+To verify a whole wiki — the root plus every pinned document — two companion verifiers ship beside the readers. They delegate every document verdict to the readers above and own only the wiki layer (shelf discovery over the root's serialized bytes, leaf existence, pin comparison); a clean run prints the exact list of entries it checked, and states that whether an HTML reader presents them as live links was not checked:
+
+```bash
+python verify_wiki.py wiki.doc.html
+```
+
+```bash
+node verify_wiki.mjs wiki.doc.html
+```
 
 ---
 

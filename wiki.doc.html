@@ -27,12 +27,12 @@
 
 <nav id="manifest" aria-label="Document manifest">
   <ol>
-    <li><a href="#about-this-wiki" data-witness="484231139115c6a84b7113dba471e7d94960d67eeea30109d669a29293a2a852" data-char-count="3618"><span class="title">A wiki of witnessed documents</span> <span class="summary">A root document over separate doc.html files: each shelf entry pins a whole leaf document with a doc-fold — SHA-256 over the leaf&#39;s manifest witnesses in order — with the rule and its limits stated here.</span></a></li>
-    <li><a href="#the-shelf" data-witness="ad9de59b39cf1e587007fa36035c2c204bd66f326c82b7b2e99235407aca85db" data-char-count="3361"><span class="title">The shelf</span> <span class="summary">The record (evidence.doc.html) and the project&#39;s design essays, one whole document per entry, each pinned by its doc-fold.</span></a></li>
+    <li><a href="#about-this-wiki" data-witness="70c0fe698f4a071a26509ec5d2e5c4563a6b071fb99bb56a187ff12dd8b050db" data-char-count="4944"><span class="title">A wiki of witnessed documents</span> <span class="summary">A root document over separate doc.html files: each shelf entry names one whole leaf document and pins its ordered witnessed section content with a doc-pin — SHA-256 over the leaf&#39;s manifest witnesses in order — with the rule, the shipped verifiers, and the limits stated here.</span></a></li>
+    <li><a href="#the-shelf" data-witness="4356a3e2d0eebfeb5bbf5b31c8862bdf3242af46040bba10e72713de70c25ebb" data-char-count="4472"><span class="title">The shelf</span> <span class="summary">The shape&#39;s specification (the-wiki-shape.doc.html), the record (evidence.doc.html), and the project&#39;s design essays — each entry naming one whole document, its doc-pin binding that leaf&#39;s ordered witnessed section content.</span></a></li>
   </ol>
 </nav>
 
-<section id="about-this-wiki" data-witness="484231139115c6a84b7113dba471e7d94960d67eeea30109d669a29293a2a852" data-char-count="3618"><style>
+<section id="about-this-wiki" data-witness="70c0fe698f4a071a26509ec5d2e5c4563a6b071fb99bb56a187ff12dd8b050db" data-char-count="4944"><style>
   .doc-kicker { font-size:.78rem; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); font-weight:700; }
   .lede { font-size:1.05rem; }
   .shelf-entry { margin:1.2rem 0; }
@@ -46,41 +46,51 @@
   <p class="lede"><strong>This page is a root document over separate doc.html files. Each shelf entry links a whole document and carries a cross-file witness for it &mdash; so the link does not merely point at the leaf, it pins the witnessed section content the leaf held, in order, when the shelf was written.</strong></p>
 </header>
 <p>Every document on this site verifies alone: open any leaf and run either shipped reader (<code>verify.py</code> or <code>verify.mjs</code>) and each of its sections either hashes true to its manifest witness or is refused. What a single file cannot say is how a <em>collection</em> holds together &mdash; which documents belong, and whether one of them has been quietly rewritten and re-witnessed since the collection was assembled. That is the root's job, and it needs exactly one new rule:</p>
-<p><strong>The doc-fold.</strong> Take a leaf document's manifest <code>data-witness</code> values in manifest order, join them with <code>:</code> (ASCII colon), and compute the SHA-256 hex digest of that string. Each shelf entry below carries the result in a <code>data-doc-fold</code> attribute. A leaf whose every section still verifies, in the same order, reproduces the same fold; a leaf whose section content was rewritten &mdash; even one whose forger dutifully re-computed every per-section witness &mdash; produces a different one, and the mismatch shows here, at the root.</p>
-<p><strong>To check an entry yourself:</strong> (1) open the linked leaf and run a shipped reader &mdash; it must verify every section; (2) copy the leaf's manifest witnesses in order, join with <code>:</code>, and hash: <code>python -c "import hashlib;print(hashlib.sha256(':'.join(ws).encode()).hexdigest())"</code>; (3) compare against the entry's <code>data-doc-fold</code>. One reader run and one hash utility &mdash; nothing else.</p>
-<p class="bounded"><strong>What this binds, and what it cannot.</strong> The doc-fold is tamper-<em>evident</em>, never tamper-proof: it catches any change to a leaf's witnessed section content after this shelf was written, including a full re-witness of the leaf. It binds only that content, in manifest order: bytes a section witness does not cover &mdash; section <code>id</code> attributes, the manifest's own link text, page chrome outside sections &mdash; can change without moving the fold (an id rename is not silent in practice, since it breaks this root's own links into the leaf, but the fold itself does not see it). It also cannot date a leaf, cannot say a leaf is the <em>latest</em> recension, and is itself only as fixed as this root document &mdash; which carries its own per-section witnesses and is pinned, like everything here, by the repository's public history. The attribute is named <code>data-doc-fold</code>, not <code>data-witness</code>, deliberately: a witness attests one section's inner bytes; a fold attests a whole document's witness set. Different claims carry different names.</p>
+<p><strong>The doc-pin.</strong> Take a leaf document's manifest <code>data-witness</code> values in manifest order, join them with <code>:</code> (ASCII colon), and compute the SHA-256 hex digest of that string. Each shelf entry below carries the result in a <code>data-doc-pin</code> attribute. A leaf whose every section still verifies, in the same order, reproduces the same pin; a leaf whose section content was rewritten &mdash; even one whose forger dutifully re-computed every per-section witness &mdash; produces a different one, and the mismatch shows here, at the root. (One release shipped this attribute as <code>data-doc-fold</code>; the rule and every value are unchanged &mdash; the mechanism was renamed so that <em>fold</em> keeps naming the format's append-and-supersede office. The rule's full specification, <strong>doc-pin v1</strong>, is the first entry on the shelf below.)</p>
+<p><strong>To check an entry yourself:</strong> (1) open the linked leaf and run a shipped reader &mdash; it must verify every section; (2) copy the leaf's manifest witnesses in order into the list and run: <code>python -c "import hashlib;ws=['&lt;w1&gt;','&lt;w2&gt;'];print(hashlib.sha256(':'.join(ws).encode()).hexdigest())"</code> &mdash; replacing <code>'&lt;w1&gt;','&lt;w2&gt;'</code> with the witnesses, one quoted entry per manifest line; (3) compare against the entry's <code>data-doc-pin</code>. One reader run and one hash utility &mdash; nothing else. Two shipped companions automate all three steps for the whole shelf, in two languages, delegating every document verdict to the shipped readers: <code>python verify_wiki.py wiki.doc.html</code> or <code>node verify_wiki.mjs wiki.doc.html</code>. Each prints the verified list &mdash; every entry it checked, with its full pin &mdash; so the run hands back exactly the object it certified.</p>
+<p class="bounded"><strong>What this binds, and what it cannot.</strong> The doc-pin is tamper-<em>evident</em>, never tamper-proof: it catches any change to a leaf's witnessed section content after this shelf was written, including a full re-witness of the leaf. It binds only that content, in manifest order: bytes a section witness does not cover &mdash; section <code>id</code> attributes, the manifest's own link text, page chrome outside sections &mdash; can change without moving the pin (an id rename is not silent in practice, since it breaks this root's own links into the leaf, but the pin itself does not see it). It also cannot date a leaf, cannot say a leaf is the <em>latest</em> recension, and is itself only as fixed as this root document &mdash; which carries its own per-section witnesses and is pinned, like everything here, by the repository's public history. One further boundary belongs here in ink: the companions certify this shelf <em>as serialized</em> &mdash; that carrier-shaped entries occur in this page's source bytes, that each named leaf verifies, that each recomputed pin matches &mdash; and they emit the exact list they checked. Whether the page a reader is looking at presents each of those entries as a live link is not something the companions check; comparing their emitted list against the shelf below is the reader's own step, by design. The attribute is named <code>data-doc-pin</code>, not <code>data-witness</code>, deliberately: a witness attests one section's inner bytes; a pin attests a whole document's witness set. Different claims carry different names.</p>
 </section>
 
-<section id="the-shelf" data-witness="ad9de59b39cf1e587007fa36035c2c204bd66f326c82b7b2e99235407aca85db" data-char-count="3361"><p class="doc-kicker">The shelf &middot; each entry one whole document, pinned by its doc-fold</p>
+<section id="the-shelf" data-witness="4356a3e2d0eebfeb5bbf5b31c8862bdf3242af46040bba10e72713de70c25ebb" data-char-count="4472"><p class="doc-kicker">The shelf &middot; each entry names one whole document; its doc-pin binds the leaf's ordered witnessed section content</p>
 <h2>The shelf</h2>
+
+<h3>The shape</h3>
+<div class="shelf-entry">
+  <a href="the-wiki-shape.doc.html" data-doc-pin="c700543869503aa020fc03dab30d923f29496822652fa4a1c621f7a0478a15be">The Wiki Shape: A Root of Witnessed Documents</a> (8 sections)
+  <span class="why">The specification of the shape this page instantiates: the parts, the doc-pin v1 rule, the resident-map reading mechanism, the receipts with their bounds, and authoring guidance for building your own &mdash; with the shipped two-language verifiers documented in-band.</span>
+</div>
 
 <h3>The record</h3>
 <div class="shelf-entry">
-  <a href="evidence.doc.html" data-doc-fold="016a34a0530a9eb237cf12ef97fbea5cefb994d27e687985c7b4d28363ee5f4c">The evidence: what has actually been shown</a> (8 sections)
+  <a href="evidence.doc.html" data-doc-pin="016a34a0530a9eb237cf12ef97fbea5cefb994d27e687985c7b4d28363ee5f4c">The evidence: what has actually been shown</a> (8 sections)
   <span class="why">The project's results, read by question &mdash; scale and proof of read, cost and limits, what remains unproven &mdash; with the prior-art library and lineage on the same page. The claims and their limits are kept together; start here if you want receipts before essays.</span>
 </div>
 
 <h3>The essays</h3>
 <p>Design essays from the project's writing room, each carried as written in public recension &mdash; a whole essay per document, with its provenance and a dated postscript where a later run answered a question the essay left open. The first two are a deliberate pair: the thesis, and the project's own rebuttal of it.</p>
 <div class="shelf-entry">
-  <a href="essays/a-habitat-made-of-text.doc.html" data-doc-fold="45ec75a6d076c61f4493eff4800ccb6922504d5aa67b1562086d2988fb10c62f">A Habitat Made of Text: Toward a Document Built for Two Runtimes</a> (10 sections)
+  <a href="essays/a-habitat-made-of-text.doc.html" data-doc-pin="45ec75a6d076c61f4493eff4800ccb6922504d5aa67b1562086d2988fb10c62f">A Habitat Made of Text: Toward a Document Built for Two Runtimes</a> (10 sections)
   <span class="why">The "why" essay: what a document is for when its reader is a mind made of text &mdash; one artifact for two runtimes, a deterministic parser for permanence and a probabilistic model for meaning. The most accessible door into the project.</span>
 </div>
 <div class="shelf-entry">
-  <a href="essays/the-reader-has-no-conscience.doc.html" data-doc-fold="35048a3b815241792a5167c2c7c4f5546bd11c8b15cf70948daaea23c6d12d9e">The Reader Has No Conscience: A Counter-Receipt on the Two-Runtime Document</a> (8 sections)
+  <a href="essays/the-reader-has-no-conscience.doc.html" data-doc-pin="35048a3b815241792a5167c2c7c4f5546bd11c8b15cf70948daaea23c6d12d9e">The Reader Has No Conscience: A Counter-Receipt on the Two-Runtime Document</a> (8 sections)
   <span class="why">The reply, written from the runs: navigation held, and the reader misattributed what it found &mdash; the seam neither runtime guards. The project arguing with itself, in public, with the numbers on the table.</span>
 </div>
 <div class="shelf-entry">
-  <a href="essays/the-file-is-the-message.doc.html" data-doc-fold="990280f2421ddfea44c5a9a237e38c678fec1fffc6577ec3a242c8b4b291fde7">The File Is the Message</a> (7 sections)
+  <a href="essays/the-file-is-the-message.doc.html" data-doc-pin="990280f2421ddfea44c5a9a237e38c678fec1fffc6577ec3a242c8b4b291fde7">The File Is the Message</a> (7 sections)
   <span class="why">The dev-native argument: the browser was always the engine, GET and POST are enough, and a document is not a caller &mdash; a document is a request, and the successor document is the response.</span>
 </div>
 <div class="shelf-entry">
-  <a href="essays/the-format-is-smaller-than-it-looks.doc.html" data-doc-fold="d7f96883ba4052d1e6c2e5e50fed82ebfe9a52121edaf75770c9e149240e19dd">The Format Is Smaller Than It Looks: doc.html, Seen Whole</a> (9 sections)
+  <a href="essays/the-format-is-smaller-than-it-looks.doc.html" data-doc-pin="d7f96883ba4052d1e6c2e5e50fed82ebfe9a52121edaf75770c9e149240e19dd">The Format Is Smaller Than It Looks: doc.html, Seen Whole</a> (9 sections)
   <span class="why">The synthesis: the kernel stated in a breath, three offices, five laws each paid for by a run. Read this for what the format IS, whole, without the history.</span>
 </div>
 <div class="shelf-entry">
-  <a href="essays/the-format-among-its-ancestors.doc.html" data-doc-fold="2158c98230a8e753dbccf6bdce7c2cf33a097be6924a24e5badf1880c84d519c">The Format Among Its Ancestors: The Confluence, the Seam, and What It Must Still Build</a> (8 sections)
+  <a href="essays/the-format-among-its-ancestors.doc.html" data-doc-pin="2158c98230a8e753dbccf6bdce7c2cf33a097be6924a24e5badf1880c84d519c">The Format Among Its Ancestors: The Confluence, the Seam, and What It Must Still Build</a> (8 sections)
   <span class="why">The honest positioning: a confluence, not an invention &mdash; three lineages joined, the price of the join named, and the one corner still empty. The lineage backbone behind the library shelf.</span>
+</div>
+<div class="shelf-entry">
+  <a href="essays/the-wiki-that-witnesses-itself.doc.html" data-doc-pin="5c91142b3f02aa57af89b5ca6b87b47edc1c456c8bc297895a6e41a65d630e92">The Wiki That Witnesses Itself</a> (12 sections)
+  <span class="why">The probe behind this page: a real markdown LLM-wiki ported to witnessed leaves under a pinning root, and what the format makes intrinsic that markdown leaves a bolt-on &mdash; the shape's claims earned, bounded, and reviewed before they were published. The story behind the specification above.</span>
 </div>
 </section>
 
