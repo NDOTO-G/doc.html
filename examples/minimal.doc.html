@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <title>Minimal doc.html</title>
-<style>nav#manifest{font-family:system-ui}</style>
+<style>nav#manifest{font-family:system-ui}
+footer.about-file{font-size:.9em;color:#666;border-top:1px solid #ddd;padding-top:.6rem;margin-top:2rem}</style>
 </head>
 <body>
 <nav id="manifest">
@@ -18,5 +19,10 @@
 
 <section id="fold" data-witness="771feff3620a380e35e3fa970868af438c21223dd279aa3001851387b2647d91" data-char-count="75"><h1>The Fold</h1>
 <p>Memory is append-only; correction is supersession.</p></section>
+
+<footer class="about-file">
+<p>This is a <strong>doc.html</strong> — a single, self-describing HTML file. The <code>&lt;nav id="manifest"&gt;</code> above lists every section in this document; each entry&#39;s <code>data-witness</code> is the SHA-256 (hex) of that section&#39;s raw inner bytes, so any reader can verify any section with the file alone — no server, no JavaScript, no tooling. The full format definition is <a href="../SPEC.md">SPEC.md</a>, carried in the format&#39;s own body as <a href="../SPEC.doc.html">SPEC.doc.html</a>.</p>
+<p>Author: Georges Casseus (Ndoto Studios) · License: CC0 1.0 (public domain) · Built: 2026-08-01</p>
+</footer>
 </body>
 </html>

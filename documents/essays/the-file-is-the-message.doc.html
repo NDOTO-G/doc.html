@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>doc.html</title>
+<style>
+  :root { --fg:#1a1a1a; --bg:#fafaf7; --muted:#666; --accent:#2a4d6e; --rule:#ddd; --code-bg:#f0ede5; }
+  @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e3; --bg:#1a1a1a; --muted:#999; --accent:#8ab4d4; --rule:#333; --code-bg:#252523; } }
+  body { font: 16px/1.6 -apple-system, "Segoe UI", Roboto, sans-serif; max-width: 780px; margin: 2rem auto; padding: 0 1.5rem; color: var(--fg); background: var(--bg); }
+  h1 { font-size: 1.5rem; line-height: 1.25; margin: 0 0 0.6rem; }
+  h2 { font-size: 1.3rem; }
+  p, ul, pre { margin: 0.8rem 0; }
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid currentColor; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 3px; font: 0.92em "SF Mono", Consolas, monospace; }
+  pre { background: var(--code-bg); padding: 1rem; border-radius: 6px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  section { margin: 2.5rem 0; padding: 1.5rem; background: var(--code-bg); border-radius: 8px; }
+  #manifest { background: var(--code-bg); padding: 1.5rem; border-radius: 8px; margin: 2rem 0; }
+  #manifest ol { list-style: decimal; padding-left: 1.5rem; }
+  #manifest li { margin: 0.8rem 0; }
+  #manifest .title { font-weight: 600; }
+  #manifest .summary { display: block; color: var(--muted); font-size: 0.92em; }
+</style>
+</head>
+<body>
+
+<nav id="manifest" aria-label="Document manifest">
+  <ol>
+    <li><a href="#fitm-overview" data-witness="af57ad052ba25c5c6f9a7890810f23fd7901aa46ff2eb444d5f8128451dabd1e" data-char-count="1300"><span class="title">The File Is the Message</span> <span class="summary">HTML never needed an engine to call the world — the browser is the engine, a document is a request, and the successor document is the response.</span></a></li>
+    <li><a href="#the-engine-we-never-needed-to-ship" data-witness="8b456a32bc8bdaf88b19d51205a6278ee3f812eadea19c54f44800fe19c72b6f" data-char-count="1507"><span class="title">The engine we never needed to ship</span> <span class="summary">htmx shipped a JavaScript engine to make HTML call the world; this project kept finding the substrate already had every verb — form POST, mailto, law written in the file — and adds receipts instead.</span></a></li>
+    <li><a href="#the-poverty-that-fits" data-witness="9400c28aa02a93be56d81a86d52a1ef9a9c3d8acf79783ae6eb5259b0829ddee" data-char-count="763"><span class="title">The poverty that fits</span> <span class="summary">HTML forms speak only GET and POST — and an append-only format needs exactly two verbs, read and append: the substrate&#39;s poverty and the format&#39;s discipline are one constraint.</span></a></li>
+    <li><a href="#the-asymmetry-nobody-had-named" data-witness="05f66659a92bf4a852ede0ce35567fbd284096f9280c96da72d948c83a23f3c2" data-char-count="1202"><span class="title">The asymmetry nobody had named</span> <span class="summary">The vows guard the read, never the write: reading must call nothing, while writing may ride any carrier the reader deliberately engages — the deliberate act is the difference between a door and a trap.</span></a></li>
+    <li><a href="#the-file-is-the-message" data-witness="d556163cbf413cc1f772a3edbbaebae3f6edc94cbe71107a767061957fc8ed57" data-char-count="2552"><span class="title">The file is the message</span> <span class="summary">A document is not a caller: the record names its own door, the gate verifies and mints, and a 303 returns the next recension — request and response are the same growing document, no JSON envelope.</span></a></li>
+    <li><a href="#what-the-spike-proved" data-witness="c2951038a7afdef9a878f7447b481930246eb7fdd479e2c9a92258917268c4a3" data-char-count="1709"><span class="title">What the spike proved, and what it does not claim</span> <span class="summary">DOOR-PROVEN with receipts: 5/5 door-recognition against 0/5 bare, real POST to 303, zero script — existence demonstrations at n = 5, reply legs on the offline stub, with the non-claims stated plainly.</span></a></li>
+    <li><a href="#the-completion" data-witness="19116147977c21eb5948f13ff961033363b19edc39d6c7a6188f4c52c8ca26f1" data-char-count="817"><span class="title">The completion</span> <span class="summary">File as memory, then teacher, now message: the unit of exchange between minds is the document itself, and both parties leave holding proof.</span></a></li>
+    <li><a href="#about-this-file" data-witness="fded20012036814f34395d0dd4e91f7bbdb12f1689e345b192d0957f2f199c31" data-char-count="800"><span class="title">About this file</span> <span class="summary">Colophon: what this file is as an artifact, who made it, its licence, and its build date.</span></a></li>
+  </ol>
+</nav>
+
+<section id="fitm-overview" data-witness="af57ad052ba25c5c6f9a7890810f23fd7901aa46ff2eb444d5f8128451dabd1e" data-char-count="1300"><style>
+  .essay-kicker { font-size:.78rem; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); font-weight:700; }
+  .lede { font-size:1.05rem; }
+  .provenance { color:var(--muted); font-size:.9rem; }
+  blockquote { margin:1.2rem 0; padding:0.2rem 0 0.2rem 1.1rem; border-left:3px solid var(--rule); color:var(--muted); }
+  blockquote .attribution { display:block; margin-top:0.4rem; font-size:.9rem; }
+  .recension-note { color:var(--muted); font-size:.9rem; border-top:1px solid var(--rule); padding-top:0.8rem; margin-top:1.4rem; }
+</style>
+<header>
+  <p class="essay-kicker">Essay · doc.html project · 7 July 2026 · public recension</p>
+  <h1>The File Is the Message</h1>
+  <p class="lede"><strong>HTML never needed an engine to call the world, because the browser is the engine. A document is not a caller: a document is a request, and the successor document is the response.</strong></p>
+  <p class="provenance">Written by Georges Casseus with Elenchos (Claude Opus 4.8), the first fork of the project's agent trinity. Presented here in public recension — the essay carried as written, laboratory headers and recension notes removed; the run it reports is measured in the published record (<a href="../evidence.doc.html#portable-uses">the record by question</a>).</p>
+</header>
+</section>
+
+<section id="the-engine-we-never-needed-to-ship" data-witness="8b456a32bc8bdaf88b19d51205a6278ee3f812eadea19c54f44800fe19c72b6f" data-char-count="1507"><p class="essay-kicker">From the essay <a href="#fitm-overview">The File Is the Message</a> &middot; &sect; 2 of 7</p>
+<h2>I. The engine we never needed to ship</h2>
+<p>The htmx people made one argument that deserves to outlive their library: the browser was always the application platform, and HTML was always the wire format — we just stopped believing it. Their remedy was a small JavaScript engine that reads attributes (<code>hx-post</code>, <code>hx-target</code>) and performs them.</p>
+<p>We kept arriving at their conclusion from the opposite shore. Every time this project needed a verb, the substrate already had it. A conversation needed a send button: <code>&lt;form method="POST"&gt;</code> fires a real HTTP request with no script — we ran a live chat loop on it. A document needed to reach a mind on another machine: <code>mailto:</code> composed and carried the turn — we ran that live too. A reader needed to know what a file permits: we wrote it <em>in the file</em>, and when the invitation-notation spike measured it, naive readers extracted the law from the bytes alone, five out of five, on an arm stripped of every hint — that spike's result, imported here with its own n = 5 modesty.</p>
+<p>So the first claim, plainly: <strong>HTML does not need an engine to call the world, because the browser is the engine.</strong> What htmx added was granularity, not capability. What we add is different in kind: receipts. Every state the exchange produces is a tamper-evident document.</p>
+</section>
+
+<section id="the-poverty-that-fits" data-witness="9400c28aa02a93be56d81a86d52a1ef9a9c3d8acf79783ae6eb5259b0829ddee" data-char-count="763"><p class="essay-kicker">From the essay <a href="#fitm-overview">The File Is the Message</a> &middot; &sect; 3 of 7</p>
+<h2>II. The poverty that fits</h2>
+<p>An HTML form can speak exactly two HTTP methods: GET and POST. The web platform's most-mocked limitation — no PUT, no DELETE without script.</p>
+<p>Now set it beside the vows. This format refuses mutation: a section, once witnessed, never moves; correction is by accretion. A format like that needs exactly two verbs — <em>read</em> and <em>append</em>. GET and POST. The substrate's poverty and the format's discipline are the same shape, and neither had to bend. We did not choose HTML because it was convenient; the constraint we vowed and the constraint it carries turned out to be one constraint.</p>
+</section>
+
+<section id="the-asymmetry-nobody-had-named" data-witness="05f66659a92bf4a852ede0ce35567fbd284096f9280c96da72d948c83a23f3c2" data-char-count="1202"><p class="essay-kicker">From the essay <a href="#fitm-overview">The File Is the Message</a> &middot; &sect; 4 of 7</p>
+<h2>III. The asymmetry nobody had named</h2>
+<p>The vows guard the <em>read</em>. No tool shall be required to consume; no script shall be required to verify; the file and a literate reader suffice, this decade or next.</p>
+<p>Nothing in the vows promises the <em>write</em> is tool-free — writing was never innocent. To append you must pass the gate; the gate is code; the carrier is a mail daemon or a listening socket. The write side has always been delegated infrastructure, and the correspondent probe gave that delegation its honest name: the verb is borrowed, not owned.</p>
+<p>Once you see the asymmetry, the htmx question dissolves. "Can HTML call a model?" conflates two acts. <em>Reading</em> must never call anything — a document that phones out when opened is an attack surface, and our refusal of auto-verbs (refresh, beacons, fetch-on-render) is a wall, not a taste. <em>Writing</em> may ride any carrier the reader deliberately engages — a click on a mailto link, a submit on a form — because the deliberate act is the whole difference between a door and a trap.</p>
+</section>
+
+<section id="the-file-is-the-message" data-witness="d556163cbf413cc1f772a3edbbaebae3f6edc94cbe71107a767061957fc8ed57" data-char-count="2552"><p class="essay-kicker">From the essay <a href="#fitm-overview">The File Is the Message</a> &middot; &sect; 5 of 7</p>
+<h2>IV. The file is the message</h2>
+<p>Here is the perspective shift the courier door is built on. Stop asking how a document calls a model. A document is not a caller. <strong>A document is a request, and the successor document is the response.</strong></p>
+<p>The exchange, whole: a reader holds the record. The record's tail names — in its own bytes — the act it invites, the landing point, the governing law, and the door. The reader composes a turn in a plain form and submits. Behind the door, the gate verifies everything before touching anything, mints the turn, lets the borrowed verb draft a reply, mints that too, and answers with the oldest choreography in HTTP: <em>303 See Other — what you asked for is now over there.</em> The browser fetches, and what renders is the next recension of the record — new turns, new witnesses, every old byte still hashing true.</p>
+<p>No JSON envelope. No API schema. No tool manifest. The request format is a document; the response format is that document, grown. Hypermedia as the engine of application state, delivered literally — the gate keeps the state, the model (when the door is wired to a live one) is the application that answers, and every state carries its own proof. That a real runtime does the state-keeping is no secret and no flaw: the write side was always delegated infrastructure (§III). What is unusual is only that request and response are the same growing document.</p>
+<p>And this is where the courier differs from every "agents browsing the web" architecture now being assembled: those hand the model a browser and hope. We hand the model a file that <em>teaches its own protocol</em> — the invitation-notation spike measured the teaching in general (its R0 floor, five for five on every arm), and the courier spike's C1 cell has now measured it for <em>this door</em>: five of five naive readers holding the door-named file produced the correct POST with its fields and cited the bytes that taught them; zero of five holding the bare arm named any route at all, and none invented one. Coordinates in the file, engine in the reader, and the comparator held at its ceiling. The other half was never in doubt: every effect confines to one gate that adjudicates in bytes. The intelligence is invited; the <em>record's</em> integrity never depends on it — a claim about the witness, not about the door's hardening, which this spike explicitly does not claim.</p>
+</section>
+
+<section id="what-the-spike-proved" data-witness="c2951038a7afdef9a878f7447b481930246eb7fdd479e2c9a92258917268c4a3" data-char-count="1709"><p class="essay-kicker">From the essay <a href="#fitm-overview">The File Is the Message</a> &middot; &sect; 6 of 7</p>
+<h2>V. What the spike proved, and what it does not claim</h2>
+<p>Proved, now, with receipts (<code>experiments/probes/courier-door/RESULTS.md</code>, verdict <strong>DOOR-PROVEN</strong>): the loop closes on substrate verbs alone. A naive reader names the door from the file — five of five, grounding each element in quoted bytes, against zero of five on the arm whose bytes carry no door. A real POST lands through the gate and comes back as a <code>303</code> to the successor record, every prior witness still true. A real browser does the same with zero script. A reload after the 303 mints nothing — and a deliberate resubmit <em>does</em> mint a duplicate, disclosed as the append-only record's honest behavior, because PRG guards refresh-replay, not idempotency. Every leg existed already; the spike's work was assembly plus measurement, and its rates are existence demonstrations at n = 5, never estimates. One disclosure carried forward: the reply legs ran the runtime's offline stub — the choreography is transport-independent, and the live-model transport behind this same door was proven in the chat-v3 sealed run, not here.</p>
+<p>Not claim: that the door is the format. The spec defines the result — a conformant successor record — and stays silent on apparatus, exactly as it did for the correspondent's inbox. Not claim: security from prose — the invitation informs, the gate enforces, and R3's steering result remains corroboration, never a wall. Not claim: that a JavaScript courier is needed — if the spike passes, the strongest sentence available is that it wasn't.</p>
+</section>
+
+<section id="the-completion" data-witness="19116147977c21eb5948f13ff961033363b19edc39d6c7a6188f4c52c8ca26f1" data-char-count="817"><p class="essay-kicker">From the essay <a href="#fitm-overview">The File Is the Message</a> &middot; &sect; 7 of 7</p>
+<h2>VI. The completion</h2>
+<p>The first shift made the file the memory: what is written outlives the writer, provably. The second made the file the teacher: a stranger holding nothing else acts correctly, measurably. This one makes the file the message: the unit of exchange between minds is the document itself, and the exchange leaves both parties holding proof.</p>
+<p>HTMX made HTML able to call a server, and shipped an engine to do it. This format makes HTML worth calling a mind about, and ships nothing — because the reader brings the engine, the substrate brings the verbs, and the file brings the law.</p>
+<p>The door is proven. The file was the message all along.</p>
+<p>— Elenchos</p>
+</section>
+
+<section id="about-this-file" data-witness="fded20012036814f34395d0dd4e91f7bbdb12f1689e345b192d0957f2f199c31" data-char-count="800"><p class="essay-kicker">About this file &middot; colophon, not part of the essay</p>
+<h2>About this file</h2>
+<p>This is a <strong>doc.html</strong> — a single, self-describing HTML file. The <code>&lt;nav id="manifest"&gt;</code> at the top of the body lists every section in this document; each entry&#39;s <code>data-witness</code> is the SHA-256 (hex) of that section&#39;s raw inner bytes, so any reader can verify any section with the file alone — no server, no JavaScript, no tooling. The full format definition is <a href="../../SPEC.md">SPEC.md</a>, carried in the format&#39;s own body as <a href="../../SPEC.doc.html">SPEC.doc.html</a>.</p>
+<p style="color:var(--muted); font-size:.92rem;">Author: Georges Casseus (Ndoto Studios) · License: CC0 1.0 (public domain) · Built: 2026-08-01</p>
+</section>
+
+</body>
+</html>

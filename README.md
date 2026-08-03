@@ -2,36 +2,28 @@
 
 **AI knowledge that remains a document.**
 
-doc.html is a public-domain, web-native format for AI knowledge, memory, agents, and conversation. The idea in one sentence: **give the model a map, not a pile.** A doc.html carries its own visible table of contents (the manifest), stable section addresses, and a per-section integrity hash — so an agent can navigate a document far larger than its context window, load only the sections it needs, and check the bytes it read. The same file is still a normal HTML page: double-click it and read.
+doc.html is a public-domain, web-native format for AI knowledge, memory, agents, and conversation. The idea in one sentence: **give the model a map, not a pile.**
 
 **Human-readable. Agent-navigable. Integrity-witnessed. Public domain.**
 
-**Status:** v0.4.3 · first public release 2026-07-07 · updated 2026-07-25
-
-A `doc.html` is **one self-describing document**. Multiple documents link into **collections** — wikis, knowledge bases, memory archives, agent workspaces. Nothing here requires a proprietary reader, an external retrieval index, a JavaScript runtime, or a server: the file alone is the whole format.
+**Version:** v0.5.0 · updated 2026-08-02 · see [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
-## The problem
+## What it is
 
-If you build with AI, your knowledge is already scattered: prompts in one tool, memory in a vendor's database, sources chunked into an embedding index you can't inspect, conversations locked inside session history, agent instructions spread across files, frameworks, and vendors. Each piece works; none of it is *yours* the way a file is yours.
+A doc.html carries its own visible table of contents — the **manifest** — plus stable section addresses and a per-section integrity hash. An agent can therefore navigate a document far larger than its context window, load only the sections it needs, and check the bytes it read. The same file is still a normal HTML page: double-click it and read.
 
-doc.html keeps the operative knowledge in an artifact you can open, read, diff, version, archive, email, host, and hand to a different model next year.
+**Reading on GitHub:** github.com displays these files as source, not as pages. Read them rendered at [ndoto-g.github.io/doc.html/documents/wiki.doc.html](https://ndoto-g.github.io/doc.html/documents/wiki.doc.html) — that link opens the wiki shelf — or clone or download the repository and double-click any file. A doc.html needs nothing else.
 
-**The application may be temporary. The document can remain.**
+Your knowledge is otherwise scattered: prompts in one tool, memory in a vendor's database, sources chopped into an index you cannot inspect, conversations locked inside session history, agent instructions spread across files and platforms. Each piece works; none of it is *yours* the way a file is yours. **The application may be temporary. The document can remain.**
 
----
-
-## The mechanism
-
-**The document can be larger than the reader.**
+**The document can be larger than the reader.** A reader works in four motions:
 
 1. **Orient** — read the manifest.
 2. **Select** — choose the relevant sections.
 3. **Hydrate** — load only the selected material.
-4. **Verify** — check the address, witness, and citation.
-
-Don't make the model read everything. Give it a map.
+4. **Verify** — check the address, the witness, and the citation.
 
 This is what the map looks like — real grammar, from the smallest shipped example:
 
@@ -49,66 +41,54 @@ This is what the map looks like — real grammar, from the smallest shipped exam
 </section>
 ```
 
-That is most of the format. The manifest is the map; `data-witness` is the SHA-256 of the section's exact bytes — the proof the map tells the truth; the section is the payload. An agent reads the manifest first (a few KB even for a huge document), picks sections by id, hydrates only those, and can recompute any hash it cares about with a stock tool. No server, no JavaScript, no embedding index, no vendor.
+*(Witnesses shortened for display — a real `data-witness` is 64 lowercase hex characters.)*
+
+That is most of the format. The manifest is the map; the section is the payload; `data-witness` is the SHA-256 of the section's exact inner bytes — the proof that the section you hydrate is byte-for-byte the section the map named. (The witness certifies bytes; a manifest summary is authored routing.) An agent reads the manifest first (a few KB even for a huge document), picks sections by id, hydrates only those, and can recompute any hash it cares about with a stock tool. No proprietary reader, no JavaScript, no database, no server.
+
+One doc.html is one self-describing document. Documents link into **collections** — wikis, knowledge bases, memory archives, agent workspaces — where each page stays independently readable, addressable, and verifiable.
+
+**Two claims, and only one is made here.** The *read* loop is all-HTML: address, hydrate, verify, inherit, with nothing but the file, a browser, and SHA-256. The *write* loop — model call, key, disk write — is a platform action a scriptless page cannot perform, and the format does not pretend otherwise: it owns the result of the verb (a witnessed, appended section), not its execution.
 
 ---
 
-## What it can carry
-
-**A wiki.** Not one enormous file — a linked collection of self-describing pages, each a normal web page that also carries agent-readable navigation, stable addresses, and integrity hashes. An agent can walk the collection the way you browse it: follow a link, read the map, open only the page that answers the question. The measured wiki result lives in the public record ([uses](evidence.doc.html#portable-uses)).
-
-**Memory that belongs to you.** Project decisions, facts, corrections, and provenance in a file you can open, edit, archive, version, and give to another model — [`examples/memory.doc.html`](examples/memory.doc.html). Corrections supersede without erasing: current knowledge, history intact.
-
-**An agent's inheritance.** Instructions, procedures, memory, references, and unfinished work traveling together as one inspectable document. [`agents.html`](agents.html) is the dogfooded repository-memory case. The document carries the agent's inheritance, never its runtime: the model can change; the knowledge remains.
-
-**A conversation.** Turns as durable, witnessed sections a later reader can inherit — [`examples/chat.doc.html`](examples/chat.doc.html). This is normative, not experimental: the specification defines the append-oriented chat body — a sealed, witnessed head plus a writing-room tail for the live epoch — and v0.4 completes the surface with the fold motion, epoch-scoped verdicts, and sealed conformance vectors. The reference readers verify it. Close the interface; keep the conversation.
-
----
-
-## Try it in sixty seconds
+## Use one in sixty seconds
 
 1. Open [`examples/memory.doc.html`](examples/memory.doc.html) — a portable memory document.
-2. Give the file to any AI with: *“Read this document using the orientation it provides. Tell me what sections are available, then answer my question using only the relevant sections.”*
+2. Give the file to any AI with: *"Read this document using the orientation it provides. Tell me what sections are available, then answer my question using only the relevant sections."*
 3. Ask a question whose answer lives in one section.
-4. Check which section it chose — and optionally verify the bytes yourself:
+4. Check which section it chose — and, if you want, verify the bytes yourself:
 
 ```bash
-node verify.mjs examples/memory.doc.html
+node tools/verify.mjs examples/memory.doc.html
 ```
 
-Smallest possible document: [`examples/minimal.doc.html`](examples/minimal.doc.html). A conversation as a durable document: [`examples/chat.doc.html`](examples/chat.doc.html). Selective reading demonstrated: [`examples/selective-context-demo.doc.html`](examples/selective-context-demo.doc.html).
+Smaller still: [`examples/minimal.doc.html`](examples/minimal.doc.html), one section and one manifest entry — the whole grammar on one screen. Then read [`examples/README.md`](examples/README.md), which puts the exhibits in a reading order.
 
 ---
 
-## This repo runs on its own format
+## What you can build
 
-[`agents.html`](agents.html) is this repository's live memory organ — a conformant doc.html with an always-load steer section, a manifest, and witnessed hydrate-on-demand sections. Tell any agent to read `agents.html` first; it hydrates selectively through the manifest and can verify every byte it reads. The reading skill at [`.agents/skills/doc-html-reader/`](.agents/skills/doc-html-reader/) is the efficient path — but no skill is required: the file teaches its own reading protocol in-band.
+**A wiki.** Not one enormous file — a linked collection of self-describing pages, each a normal web page that also carries agent-readable navigation, stable addresses, and integrity witnesses. The root shelf links every page and pins it with a cross-file witness, so a reader can check that the page it opened is the page the shelf promised. Open [`documents/wiki.doc.html`](documents/wiki.doc.html) and walk it the way you browse: follow a link, read the map, open only the page that answers the question.
 
-Memory stored this way belongs to the user: open it, edit it, archive it, put it in Git, give it to another model. Corrections supersede earlier knowledge without deleting history — the record grows by inscription, not erasure.
+**Memory that belongs to you.** Project decisions, facts, corrections, and provenance in a file you can open, edit, diff, archive, version, and hand to a different model next year — [`examples/memory.doc.html`](examples/memory.doc.html). Corrections supersede without erasing: the current answer is current, and the history behind it stays readable.
 
----
+**An agent's inheritance.** Instructions, procedures, memory, references, and unfinished work travelling together as one inspectable document. [`agents.html`](agents.html) is this repository's own memory organ — the repo runs on it. Its steer core is always read; everything else waits behind the manifest until a task needs it. The document carries the agent's inheritance, never its runtime: the model can change; the knowledge remains.
 
-## What the record shows
-
-The headline: a sealed 72.5 MB document — 17,631 addressable sections — completed 480/480 navigation turns across Claude, GPT, and Kimi. Planted canaries were recovered 120/120, with a stricter folio check at 116/120, and 240/240 self-citations closed against sealed bytes. Four reader implementations — JavaScript, Python, and blind PowerShell and C#/.NET builds written from the spec alone — converge on the format's byte and refusal rules, and the shipped reader pair must agree by refusal on a ten-document forgery battery that travels with the bundle.
-
-The record keeps its limits on the same page: small documents can cost more to route selectively, the measured vector-RAG baseline used 20–50× fewer effective tokens while recovering less evidence, and deep live selection remains unresolved.
-
-Read the record by question: [overview](evidence.doc.html#evidence-overview), [readers](evidence.doc.html#conformance-and-readers), [scale](evidence.doc.html#scale-and-proof-of-read), [uses](evidence.doc.html#portable-uses), [integrity](evidence.doc.html#integrity-and-grounding), [cost and limits](evidence.doc.html#cost-and-limits), and [receipts](evidence.doc.html#receipts-and-reproduction).
+**A conversation that outlives the app.** Turns as durable, witnessed sections a later reader can inherit — [`examples/chat.doc.html`](examples/chat.doc.html). The specification defines the shape: a sealed, witnessed head plus a writing room for the turn still being written. Close the interface; keep the conversation.
 
 ---
 
-## Read more
+## Write one
 
-The design descends from named prior art — Certificate Transparency's witnessed logs, Knuth's literate programming, the single-file web (MHTML, TiddlyWiki), and the recent work on why models need maps (Recursive Language Models, context rot). The [library](evidence.doc.html#library-and-lineage) collects the papers and specifications that shaped the design, with the bounded claim about what is actually new here.
+**By hand.** The minimal grammar is about twenty lines — the sample above is nearly all of it. Write your sections, give each an `id`, list them in the manifest in document order, then compute each `data-witness` as the SHA-256 of the section's raw inner bytes (UTF-8, LF, untrimmed) and each `data-char-count` as its length in code points. Any language with a SHA-256 function can do it.
 
-The project's design essays are published whole on [the wiki of witnessed documents](wiki.doc.html) — a root doc.html whose shelf links each essay as a separate document and pins it with a cross-file witness (the doc-pin), the first public showing of the multi-document shape. The shape itself is specified in [`the-wiki-shape.doc.html`](the-wiki-shape.doc.html) — parts, rule, reading mechanism, receipts, and limits — so you can build and verify your own.
+**With the builder.** [`tools/build-doc.mjs`](tools/build-doc.mjs) takes sections from a JSON file or a directory of HTML fragments and emits a conformant document, witnesses computed for you:
 
----
+```bash
+node tools/build-doc.mjs sections.json out.doc.html
+```
 
-## Build one from scratch
-
-Hand the spec to any coding agent:
+**With a coding agent.** Hand it the specification:
 
 ```
 Read SPEC.md and build a conformant doc.html for the content in [your source].
@@ -117,63 +97,71 @@ Definition of Done (§11). The format requires no server, no JavaScript, and
 no tooling to read — the file alone is the whole format.
 ```
 
-The agent needs only `SPEC.md`. No other project context is required. A PowerShell stranger-proxy written blind from the then-current specification converged with the reference readers on clean, corrupted, and CRLF base fixtures. A later sealed extended battery used an amended specification and added a fresh blind C#/.NET reader; it matched the expected verdict in all 12 cases across nesting, comments, raw text, escaped markup, multibyte text, and CRLF. These were instruction-isolated blind implementations, not unrelated third-party adoption. A true unrelated outsider implementation remains open.
+The agent needs only `SPEC.md`. No other project context is required.
 
 ---
 
-## Reference and examples
+## Verify one
+
+Verification is optional for reading — the file is readable without it — but two reference readers ship with the bundle, one in each language. Either should PASS on any conforming document:
+
+```bash
+node tools/verify.mjs <file>
+```
+
+```bash
+python tools/verify.py <file>
+```
+
+Both implement the Validation Matrix (§10): shape detection, manifest parsing, per-section witness recompute over the raw inner span, character-count checking, and non-vacuity.
+
+A witness proves **content consistency** — the bytes you just read are the bytes the document promised, unchanged since it was written. It does not prove the content is true, and it does not tell you who wrote it.
+
+To verify a whole collection — the root plus every pinned document — two companion verifiers sit beside the readers. They delegate every per-document verdict to the readers above and own only the collection layer: shelf discovery over the root's serialized bytes, leaf existence, and pin comparison. A clean run prints the exact list of entries it checked.
+
+```bash
+python tools/verify_wiki.py documents/wiki.doc.html
+```
+
+```bash
+node tools/verify_wiki.mjs documents/wiki.doc.html
+```
+
+---
+
+## What is where
 
 | Path | What it is |
 |---|---|
+| [`README.md`](README.md) | This page — the front door. |
 | [`SPEC.md`](SPEC.md) | The complete, self-contained format specification. **This is normative.** |
-| [`MISSION.md`](MISSION.md) | Why the format exists — the two testimonies (human and AI) it answers to. |
-| [`VOWS.md`](VOWS.md) | The ten public promises: what the format will never do, what it will always do, and how each is kept. |
-| [`evidence.doc.html`](evidence.doc.html) | The public evidence record — positive, negative, and null results — itself a conforming doc.html. |
-| [`EVIDENCE.md`](EVIDENCE.md) | Compatibility pointer to the public evidence record. |
+| [`SPEC.doc.html`](SPEC.doc.html) | The same specification carried in the format's own body: a doc.html you can navigate and verify. |
+| [`CHANGELOG.md`](CHANGELOG.md) | What changed in each release, and what a version bump moves or breaks. |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | How to work on this repository without breaking a witness. Read before your first edit to a `.doc.html`. |
+| [`LICENSE`](LICENSE) | CC0 1.0. |
 | [`agents.html`](agents.html) | This repository's own memory organ — the live meta-example. |
-| [`.agents/skills/doc-html-reader/`](.agents/skills/doc-html-reader/) | The agent reading skill: manifest-first selective hydration + opt-in `--verify`. |
-| [`examples/minimal.doc.html`](examples/minimal.doc.html) | Smallest conforming document: one section, one manifest entry. |
-| [`examples/memory.doc.html`](examples/memory.doc.html) | Portable memory: multi-section, manifest-first, supersession-aware. |
-| [`examples/chat.doc.html`](examples/chat.doc.html) | A conversation as a durable, witnessed document. |
-| [`examples/selective-context-demo.doc.html`](examples/selective-context-demo.doc.html) | Selective-context reading demonstration. |
-| [`examples/`](examples/) | All exhibits — conforming and asserted-failing — plus the three shipped emitter scripts. See `examples/README.md`. |
-| [`build-doc.mjs`](build-doc.mjs) | Generalized builder: load sections from JSON or a directory of fragments and emit a conformant doc.html. |
-| [`tools/conformance.mjs`](tools/conformance.mjs) | Conformance harness: runs both readers over every example, asserts the pinned §13 reference vectors byte-exact, and asserts the negative battery — forged and malformed documents that BOTH readers must refuse. The battery ships with the bundle. |
+| [`documents/wiki.doc.html`](documents/wiki.doc.html) | The wiki root: a shelf that links and pins every page in the collection. |
+| [`documents/the-wiki-shape.doc.html`](documents/the-wiki-shape.doc.html) | The collection shape specified — parts, rule, reading mechanism, receipts, and limits — so you can build and verify your own. |
+| [`documents/evidence.doc.html`](documents/evidence.doc.html) | The record: what was measured, what held, what did not. |
+| [`documents/doc.html`](documents/doc.html) | The founding research corpus, pinned into the wiki as its research leaf. Historical where it disagrees with `SPEC.md`; `SPEC.md` is normative. Download it and open it in a browser — GitHub shows `.doc.html` files as source, not pages (and at roughly 800 KB this one is past previewing anyway). |
+| [`documents/essays/`](documents/essays/) | The design essays, each a pinned page of the wiki. |
+| [`documents/MISSION.md`](documents/MISSION.md) | Why the format exists — the two testimonies, human and AI, that it answers to. |
+| [`documents/VOWS.md`](documents/VOWS.md) | The makers' covenant: the ten promises we keep as we build this format — what we will never do, what we will always do, and how each is kept here. |
+| [`examples/`](examples/) | Conforming documents, ordered for a beginner, plus the scripts that emit them. Start at `examples/README.md`. |
+| [`tools/verify.mjs`](tools/verify.mjs) · [`tools/verify.py`](tools/verify.py) | The two reference readers for a single document. |
+| [`tools/verify_wiki.mjs`](tools/verify_wiki.mjs) · [`tools/verify_wiki.py`](tools/verify_wiki.py) | The two collection verifiers: root, leaves, and pins. |
+| [`tools/build-doc.mjs`](tools/build-doc.mjs) | The builder: JSON or a fragment directory in, conformant doc.html out. |
+| [`tools/agent-skill/doc-html-reader/`](tools/agent-skill/doc-html-reader/) | An agent reading skill — manifest-first selective hydration with opt-in verification. No skill is required: the format teaches its own reading protocol in-band. |
 
 ---
 
-## Verify a file
+## Going deeper
 
-Verification is optional for reading, but two reference readers ship with the bundle. Either should PASS on any conforming document:
+The design essays are published on the wiki itself — [`documents/wiki.doc.html`](documents/wiki.doc.html) is the shelf, and each essay is a separate document it links and pins. They cover what the format is for, where it comes from, what it refuses to do, and where it is thinner than it looks. The shape they demonstrate is specified in [`documents/the-wiki-shape.doc.html`](documents/the-wiki-shape.doc.html).
 
-```bash
-node verify.mjs <file>
-```
+Measurements, limits, and null results live in the record: [`documents/evidence.doc.html`](documents/evidence.doc.html).
 
-```bash
-python verify.py <file>
-```
-
-Both implement the Validation Matrix (§10): shape detection, manifest parsing, per-section witness recompute over the raw inner span, character-count checking, and non-vacuity. Integrity witnesses prove content consistency — the bytes you read are the bytes the document promised. They do not prove factual truth.
-
-To verify a whole wiki — the root plus every pinned document — two companion verifiers ship beside the readers. They delegate every document verdict to the readers above and own only the wiki layer (shelf discovery over the root's serialized bytes, leaf existence, pin comparison); a clean run prints the exact list of entries it checked, and states that whether an HTML reader presents them as live links was not checked:
-
-```bash
-python verify_wiki.py wiki.doc.html
-```
-
-```bash
-node verify_wiki.mjs wiki.doc.html
-```
-
----
-
-## Two claims — only one is made here
-
-The slogan "HTML is all you need" splits into two claims. This format makes only the first:
-
-- **Claim A** — the document is all-HTML inheritable memory (read, address, verify, hydrate selectively; no server, no JS). **This is what v0.4 specifies, and it is demonstrated at 72.5 MB scale.**
-- **Claim B** — the live loop is all-HTML (write + model-call + append in a bare browser). **Out of scope.** The *read* loop is all-HTML and server-free; the *run* leg — model call, key, disk write — is a platform action a scriptless `file://` page cannot perform. That leg is delegated to mature, general infrastructure — a shim over existing tools, **not a bespoke doc.html server.** The format owns the verb's *result* (a witnessed, appended section), not its *execution*.
+To implement the format — a reader, a writer, another collection — read [`SPEC.md`](SPEC.md). It is the normative text; everything else here is illustration.
 
 ---
 

@@ -4,9 +4,10 @@
 
 This is the complete, self-contained specification for the **doc.html** format. A reader
 holding only this file can build a conforming reader or producer in any language, without
-this repository. The reference materialization — [`doc.html`](doc.html) in this repo, which
-carries this same specification in-band — is an example, not a second source of truth. **This
-document is the source of truth.**
+this repository. Two materializations accompany it and neither is a second source of truth:
+[`SPEC.doc.html`](SPEC.doc.html) at the root carries this specification in the format's own
+body, and [`documents/doc.html`](documents/doc.html) is the founding corpus — historical
+wherever it disagrees with this file. **This document is the source of truth.**
 
 To build an implementation from this spec, hand it to a coding agent:
 
@@ -289,7 +290,7 @@ reference tooling derives gists from unit content and lints divergence; §8.4), 
 reader's trust in it is trust in the producer, not in a checked property of the file. Link
 text remains subject to §7.3's existing law, unchanged: "point, don't declare" already
 forbids every routing surface — manifest entries included — from declaring a verdict on
-the document's own truth, completeness, or verification status. This recension adds
+the document's own truth, completeness, or verification status. This disclosure adds
 nothing to that law, and no v0.3 document's conformance changes.
 
 ### 5.5 Vessel and image addressing
@@ -566,8 +567,7 @@ Sections it did not hydrate never enter its working memory. The manifest is boun
 count of sections, not their size, so a reader can navigate a document many times larger than
 it could hold — though the manifest's own size grows with the section count, a real cost at
 extreme scale (§12). The saving is relative to loading the document into context and depends on
-the harness and task; it is **not** a claim of token superiority over an external retrieval
-index.
+the harness and task.
 
 **Tail shape.** A tail document has no summary skim-layer. A reader discovers addressable units
 by scanning for `<article data-witness>` elements in document order (no manifest to read first).
@@ -607,7 +607,7 @@ this posture a reader MUST
 NOT present a unit as the current word on the edge's authority alone — the witnessed ground
 is the hydrated units themselves and whatever supersession statements their sealed content
 carries. v0.4 **discloses** this boundary rather than moving it; witnessing the edge
-in-span (so a retarget breaks a SHA-256) is a named candidate for a future recension, since
+in-span (so a retarget breaks a SHA-256) is a named candidate for a future version, since
 it changes the append grammar (§4 item 8).
 
 ### 7.2 The fold-confirmation checks
@@ -748,12 +748,12 @@ makes drift and tampering *visible*, never a conformance verdict, because an aut
 that diverges from the derivation is conforming routing under §5.4. The tools speak a
 **pinned verdict register** — `PASS` / `WARN` / `LINT` (qualified non-success), beyond
 the existing hard `FAIL` —
-forced with fixtures in the landing plan (§5 2a(vii)), so that "reported" has one
+each verdict forced by at least one fixture, so that "reported" has one
 machine-reproducible meaning across implementations. The default generator
 — `gist-v1`, a six-step byte-level extraction — is specified in the reference gate's
 documentation together with its measurements and its does-not-earn list; a future generator
 is a new documented tool version, and no generator version is ever a property of the
-document. Per the sealed Discernment (§2.5): *helpers may exist; they are not the format* —
+document. The governing rule: *helpers may exist; they are not the format* —
 and a checker that prints "verified" over a surface it did not check is a defect.
 
 ## 9. Reference algorithms (language-agnostic)
@@ -846,8 +846,8 @@ function verify_manifest_first(bytes, manifest):
     # contract (§7.2: "every prior consecrated witness still re-derives") does not carve
     # out nesting depth. A reader that recomputes only manifest-listed (top-level)
     # sections and treats a nested section's data-witness as decorative diverges from
-    # trials/scripts/verify_sections.py's isolation-mode checker, which recomputes every
-    # section it finds regardless of nesting depth.
+    # an isolation-mode checker, which recomputes every section it finds regardless
+    # of nesting depth.
     for sec in collect_all_sections(bytes):                    # includes nested, any depth
         id = read_attr_quote_aware(sec, "id")
         if id in seen_ids: continue                            # already verified above (top-level)
@@ -1012,7 +1012,7 @@ extension MUST satisfy that extension's rows.
 | V28 | Producer | both | A conforming Producer emits only the canonical serialization named in §9.2a (lowercase tags, zero-interior-whitespace close tags, double-quoted attributes, no duplicated attribute names, no unmasked section-/article-prefixed content element inside a witnessed span); a Producer emitting any other construct is non-conforming at the Producer profile. |
 | V29 | Core | manifest-first only | The manifest's link order and the body's top-level section document-order MUST name the identical id sequence (§9.1 order-bijection) → a manifest that lists the same id-set in a different order than the body → FAIL. Distinct from V7 (a manifest naming a section absent from the body) and V5 (dup-id): this row catches a same-id-set, wrong-order manifest. |
 | V30 | Core | both | The §6.1 dup-id check (§9.1 `check_global_dup_ids`) walks **every** opening tag in the document, not only addressable-unit opening tags — a duplicate `id` between a top-level section/article and a nested section, a manifest-anchor target, or an `id`-bearing `<img>` (§5.5) → FAIL closed, same as two top-level sections sharing an id (V5). |
-| V31 | Core | manifest-first only | A **nested** `<section data-witness>` (not reachable from the manifest's top-level link list, but present inside another witnessed unit's span) has its own witness recomputed and compared, exactly as a top-level section's is — a nested section's `data-witness` is never decorative. Closes the divergence between the root readers and `trials/scripts/verify_sections.py`'s isolation-mode checker (§9.1 nested-recompute clause). |
+| V31 | Core | manifest-first only | A **nested** `<section data-witness>` (not reachable from the manifest's top-level link list, but present inside another witnessed unit's span) has its own witness recomputed and compared, exactly as a top-level section's is — a nested section's `data-witness` is never decorative. Closes the divergence between a manifest-driven reader and an isolation-mode checker that recomputes every section it finds regardless of nesting depth (§9.1 nested-recompute clause). |
 | V32 | Producer | tail → manifest-first | The fold is total and fail-closed: a tail containing a grammar-invalid witness, a duplicate id, a self/forward/dangling `data-supersedes`, or zero addressable units folds to **nothing** — zero bytes written, non-zero exit (§8.4). |
 
 ## 11. Conformance profiles and Definition of Done
@@ -1123,7 +1123,13 @@ A conforming v0.4 reader MUST NOT require any of these:
 - **A selector grammar** — no CSS-selector or XPath addressing within sections.
 - **Web-app machinery** — no client-side framework, service worker, or dynamic rendering; no
   executing JavaScript is required to read, address, or verify.
-- **Cross-document addressing** — links across separate doc.html files are not defined.
+- **Cross-document addressing** — v0.4 Core defines no addressing across separate doc.html
+  files, and no Core reader is required to follow one. It is defined instead by a published
+  extension outside Core: documents may be gathered on a **shelf** (`wiki.doc.html`) whose
+  entries pin leaf documents by relative href plus a `data-doc-pin` — a SHA-256 over the
+  leaf's own manifest witness values in manifest order — checked by the shipped `verify_wiki`
+  tools and specified in `the-wiki-shape.doc.html`; the extension adds no Core conformance
+  requirement, and a document that never joins a shelf is unaffected by it.
 - **A binding commitment over the *set* of sections** — each witness binds one unit's bytes;
   v0.3 has no Merkle root or signed tree head binding the *collection*. An adversary who controls
   the file can drop or reorder whole sections (in a tail document, or by removing both a section
@@ -1151,7 +1157,7 @@ A conforming v0.4 reader MUST NOT require any of these:
   addressing is a candidate for a future version. A producer MUST measure the manifest's own cost
   at scale rather than assume it is unbounded. (Manifest-first shape.) A folded record (§8.4)
   inherits the flat manifest's linear-scan cost at scale — a record of thousands of turns reads
-  its gist column in one long pass, and this recension deliberately does not introduce a
+  its gist column in one long pass, and this version deliberately does not introduce a
   hierarchical manifest to remedy that (the exclusion stands).
 - **Selective skim for *unfolded* tail documents** — a live tail has no summary skim-layer;
   reading a large tail requires scanning it in order. v0.4 provides the remedy at the epoch
@@ -1316,10 +1322,11 @@ the implementation, not an ambiguity in this vector set.
 ### Vector set 4 — epoch-scoped tail verdicts (ORDINAL-ONLY, mixed-epoch, out-of-order, invalid grammar)
 
 This vector set names the required verdicts for the §7.3a epoch-scoping rules and the negative
-witness-grammar cases. Fixture files exercising these assertions are in `examples/` (positive and
-negative-adjacent exhibits) and `trials/scripts/fixtures/chat-v3/` (linter-family negatives),
-built by `examples/build-writing-room-examples.mjs` and
-`examples/build-negative-writing-room-fixtures.mjs` (P0.4).
+witness-grammar cases. Each row stands on its own: a conforming implementation MUST be able to
+construct a document exercising it, and MUST assert the stated verdict. The negative battery
+that forces these refusals in practice — deliberately malformed and forged documents — is
+maintained and run as a release gate outside the shipped tree; it is a quality bar on an
+implementation, never a substitute for the rows below.
 
 | Vector | Rule under test | Input shape (illustrative) | Required verdict |
 |---|---|---|---|
@@ -1328,7 +1335,7 @@ built by `examples/build-writing-room-examples.mjs` and
 | **Out-of-order writing-room** | §6.7/V15, Append profile only | Two writing-room articles where the second's timestamp is NOT strictly later than the first's | A Core reader (grammar-only) reports its ordinary epoch-scoped verdict (e.g. `ORDINAL-ONLY` if all-writing-room) — Core does not enforce ordering. An Append-profile reader (§11.1) MUST refuse, naming the ordering violation (V15) explicitly; it MUST NOT silently accept the mis-ordered pair. |
 | **Invalid witness grammar** | §6.7, V6 | A `data-witness` value matching neither the consecrated (64-hex) nor the writing-room (20-char timestamp) grammar | `FAIL`, both readers naming the same reason (a substring identifying "invalid witness grammar") — no silent drop of the offending article, no downgrade to a different verdict. |
 | **Placeholder witness grammar** | §6.7, V6 (a construction case of the row above) | A `data-witness` value that is the literal, un-filled template string `YYYY-MM-DDTHH:MM:SSZ` (the placeholder text itself, never substituted with real digits — it fails the writing-room grammar because `Y`/`M`/`D`/`H`/`S` are not the digits `\d` the grammar requires) | `FAIL`, with the **same named reason** as the invalid-witness-grammar row — a template leftover is an ordinary invalid-grammar refusal, not a special-cased silent pass or a distinct verdict. |
-| **Both-match impossibility** | §6.7 | (Unreachable by construction — no string can match both the 20-char timestamp grammar and the 64-char hex grammar, by the Disjointness Theorem, `experiments/probes/fold-test/witness_proof.py`) | An implementation MUST halt loudly (an uncaught assertion failure) if this branch is ever reached — it MUST NOT silently downgrade the value to `INVALID` or otherwise resolve it. Reaching this branch is a canon emergency, not a recoverable case. |
+| **Both-match impossibility** | §6.7 | (Unreachable by construction — no string can match both the 20-char timestamp grammar and the 64-char hex grammar: the two are formally disjoint in length and alphabet, §6.7) | An implementation MUST halt loudly (an uncaught assertion failure) if this branch is ever reached — it MUST NOT silently downgrade the value to `INVALID` or otherwise resolve it. Reaching this branch is a canon emergency, not a recoverable case. |
 
 A conforming implementation's fixture battery MUST include, at minimum, one document exercising
 each row above (except the unreachable both-match row, which is asserted at the classifier level,
@@ -1340,8 +1347,7 @@ A minimal two-turn writing-room tail (one supersession edge; turn 1 carries an *
 `data-gist`, turn 2 carries none and receives the minted default) and the **byte-exact record
 the reference fold emits** — byte-exact *as a vector*, not as a conformance claim on every
 fold, since minted link text is tool documentation, not spec law. Bytes generated by the
-reference tooling (`trials/scripts/gen_vector_set5.py` → `tools/chat_runtime.py fold_file`),
-deterministic, zero live calls.
+reference fold tooling, deterministic, zero live calls.
 
 **The tail (input):**
 
@@ -1411,15 +1417,13 @@ intended verdict; none is a refusal set:
    witnessed byte touched → **conforming under Core** for the same reason; the reference lint
    reports it (this exact vector passed all four checkers under r3's attribute-wins law,
    reproduced firsthand 2026-07-16 — it is the standing regression for derive-and-compare in
-   the tool batteries, `trials/scripts/check_fold_gist_law.py`).
+   the maintainers' tool batteries).
 3. **The `data-supersedes` edge retargeted** to another valid turn → **conforming under
    Core**, documented as un-certified routing — currency is disclosed at §7.1.
 
-The live exemplar is `experiments/chat-v3/Mnemon.chat.doc.html` on dev @ `8ab94cd`
-(sha256 `08859ce7f21b944cbff8f423199dc74dab6c29050d0fab0e864876c7b51f8a0d`). **The pin is
-final:** the record's carried gists are authored routing, conforming as they stand; any
-future re-fold under the gate's default generator is housekeeping at the Operator's
-discretion, not an obligation of this recension.
+A folded record's carried gists are authored routing (§5.4) and conform as they stand; a later
+re-fold under the reference gate's default generator is optional housekeeping, never an
+obligation of this specification.
 
 ## 14. Versioning policy
 

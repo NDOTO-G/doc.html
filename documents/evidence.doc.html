@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>doc.html</title>
+<style>
+  :root { --fg:#1a1a1a; --bg:#fafaf7; --muted:#666; --accent:#2a4d6e; --rule:#ddd; --code-bg:#f0ede5; }
+  @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e3; --bg:#1a1a1a; --muted:#999; --accent:#8ab4d4; --rule:#333; --code-bg:#252523; } }
+  body { font: 16px/1.6 -apple-system, "Segoe UI", Roboto, sans-serif; max-width: 780px; margin: 2rem auto; padding: 0 1.5rem; color: var(--fg); background: var(--bg); }
+  h1 { font-size: 1.5rem; line-height: 1.25; margin: 0 0 0.6rem; }
+  h2 { font-size: 1.3rem; }
+  p, ul, pre { margin: 0.8rem 0; }
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid currentColor; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 3px; font: 0.92em "SF Mono", Consolas, monospace; }
+  pre { background: var(--code-bg); padding: 1rem; border-radius: 6px; overflow-x: auto; }
+  pre code { background: none; padding: 0; }
+  section { margin: 2.5rem 0; padding: 1.5rem; background: var(--code-bg); border-radius: 8px; }
+  #manifest { background: var(--code-bg); padding: 1.5rem; border-radius: 8px; margin: 2rem 0; }
+  #manifest ol { list-style: decimal; padding-left: 1.5rem; }
+  #manifest li { margin: 0.8rem 0; }
+  #manifest .title { font-weight: 600; }
+  #manifest .summary { display: block; color: var(--muted); font-size: 0.92em; }
+</style>
+</head>
+<body>
+
+<nav id="manifest" aria-label="Document manifest">
+  <ol>
+    <li><a href="#evidence-overview" data-witness="637bf862c29d94f08550fb9ab6a005477c08f24447d560d7d07cf2e4d6310ef1" data-char-count="4540"><span class="title">Evidence for doc.html</span> <span class="summary">How to read the experimental record: the published claim, evidence statuses, and the boundary between byte integrity, model behavior, and factual truth.</span></a></li>
+    <li><a href="#conformance-and-readers" data-witness="c1f22c19c670c90f944974c1fcad8f6e5244db7079e3545ebb6111b8be8b64fd" data-char-count="5209"><span class="title">Conformance and independent readers</span> <span class="summary">Python, JavaScript, PowerShell, and C# readers converge on the specified byte and failure rules; the sealed reader pair agrees by refusal on a negative battery kept and run as a lab-side release gate; blind implementations exist, while unrelated outsider adoption remains open.</span></a></li>
+    <li><a href="#scale-and-proof-of-read" data-witness="47d4934c88d69cbfd7fd12e26c159bffc2d2db4cab8f1f42f764027e414fc10e" data-char-count="6464"><span class="title">Scale and proof of read</span> <span class="summary">A 72.5 MB, 17,631-section artifact completed 480/480 navigation turns across three model families, with 120/120 canaries, 116/120 strict proof-of-read, and 240/240 verified citations; flat-manifest latency remains real.</span></a></li>
+    <li><a href="#portable-uses" data-witness="2a0c24bc0425af6ef322e9c685e8cfcc203f565cb242026e810df6bf5e170264" data-char-count="4893"><span class="title">Portable memory, handoff, wikis, and conversation</span> <span class="summary">Portable memory, in-band handoff, linked wiki pages, and conversation — now a specified v0.4 surface — demonstrated at bounded scope; small-document cost, single-sample handoff, and the wiki’s inconclusive reader leg remain explicit.</span></a></li>
+    <li><a href="#integrity-and-grounding" data-witness="ee8063e1a65e6053a345e300f503f90605929a9a6180ca79d36ddb9c0f50154a" data-char-count="4421"><span class="title">Integrity and grounding</span> <span class="summary">Deterministic readers detect byte drift and unsupported citations, while models rarely verify hashes spontaneously; witnesses establish content consistency, not truth or authority.</span></a></li>
+    <li><a href="#cost-and-limits" data-witness="06f44d85e70033cf0a445c10c39488f691282943cdf2c3d27eb740480a854602" data-char-count="9937"><span class="title">Cost, fit, and known limits</span> <span class="summary">Selective reading saved tokens on one 759 KB baseline, inverted under another harness and on a tiny document, cost 20–50× more than vector RAG in one comparison, and exposed flat-manifest and deep-selection limits.</span></a></li>
+    <li><a href="#receipts-and-reproduction" data-witness="7191c7a023bb196bad3648564c7f155e969eaa57f161d2e1e7cdf4eb918a9409" data-char-count="6315"><span class="title">Receipts and reproduction</span> <span class="summary">Resolvable records of record, PRs, seals, grading methods, and reproduction classes for every experiment used here; raw populations remain in the laboratory repository.</span></a></li>
+    <li><a href="#library-and-lineage" data-witness="a1ae7e45abb66671306ee483d7c5e288b2b9c2944644629046e186be0db6989a" data-char-count="5332"><span class="title">The library: lineage and prior art</span> <span class="summary">The design descends from three named public lineages — witnessed logs, literate programming, and the single-file web — plus the recent case for giving models maps; every shelf item is an openable source, and the bounded novelty claim ships with its inherited limits.</span></a></li>
+    <li><a href="#about-this-file" data-witness="a196d085905c5e9ace5f891fe8b687d58943aa4e37cf7dfadc1631a761d8e176" data-char-count="774"><span class="title">About this file</span> <span class="summary">Colophon: what this file is as an artifact, who made it, its licence, and its build date.</span></a></li>
+  </ol>
+</nav>
+
+<section id="evidence-overview" data-witness="637bf862c29d94f08550fb9ab6a005477c08f24447d560d7d07cf2e4d6310ef1" data-char-count="4540"><style>
+  .evidence-kicker { font-size:.78rem; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); font-weight:700; }
+  .lede { font-size:1.08rem; line-height:1.55; }
+  .status-line { display:flex; flex-wrap:wrap; gap:.4rem; margin:.8rem 0 1.2rem; }
+  .badge { display:inline-block; border:1px solid var(--rule); border-radius:999px; padding:.18rem .55rem; font-size:.76rem; font-weight:700; letter-spacing:.035em; }
+  .callout { border-left:4px solid var(--accent); padding:.65rem .9rem; margin:1rem 0; background:color-mix(in srgb, var(--accent) 8%, transparent); }
+  .limits { border-left-color:var(--muted); }
+  table { width:100%; border-collapse:collapse; margin:1rem 0; font-size:.9rem; }
+  th, td { text-align:left; vertical-align:top; padding:.48rem .55rem; border-bottom:1px solid var(--rule); }
+  th { font-size:.78rem; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+  td.num { text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .compact td, .compact th { padding:.35rem .42rem; }
+  .two-col { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+  .proof-box { border:1px solid var(--rule); border-radius:8px; padding:.75rem .9rem; }
+  .proof-box h3 { margin-top:0; }
+  details { border-top:1px solid var(--rule); margin-top:1.1rem; padding-top:.7rem; }
+  summary { cursor:pointer; font-weight:700; }
+  .figure { width:100%; height:auto; margin:1rem 0; color:var(--fg); }
+  .figure .big { font-size:28px; font-weight:750; }
+  .figure .small { font-size:13px; fill:currentColor; opacity:.72; }
+  .source-note { font-size:.83rem; color:var(--muted); }
+  .nowrap { white-space:nowrap; }
+  @media (max-width:680px) { .two-col { grid-template-columns:1fr; } table { font-size:.82rem; } .figure .big { font-size:23px; } }
+</style>
+<header>
+  <p class="evidence-kicker">Public critical edition · 22 July 2026</p>
+  <h1>Evidence for doc.html</h1>
+  <p class="lede"><strong>This document states the strongest public results the project has earned, the limits that govern them, and the receipts that let another reader inspect the record.</strong> It is itself a manifest-first <code>doc.html</code>: a human can read it as an ordinary page, while an agent can orient from the manifest and hydrate only the section relevant to a question.</p>
+  <div class="status-line"><span class="badge">CURRENT PUBLIC EDITION</span><span class="badge">7 WITNESSED SECTIONS</span><span class="badge">CC0</span></div>
+</header>
+
+<h2>The claim being published</h2>
+<p>Version 0.4 claims an all-HTML <em>document and read path</em>: a file can carry its own map, stable fragment addresses, raw-byte witnesses, and readable content — including a durable, witnessed conversation — without requiring a server, JavaScript, or an external retrieval index. A reader may use ordinary computation or a helper to select, extract, and verify the relevant bytes. The stronger live-loop claim—performing a model call and persistent write from a bare scriptless <code>file://</code> page—is <strong>not</strong> claimed. Model invocation, credentials, and disk writes remain actions of an operating system, harness, or service; the format owns the witnessed result that is returned to the document.</p>
+
+<h2>How statuses should be read</h2>
+<p><strong>Deterministic</strong> means the same shipped inputs can be checked mechanically. <strong>Sealed</strong> means the measured instrument was frozen before the subject run. <strong>Live-model</strong> identifies results dependent on a hosted or subscription model. <strong>Qualified</strong>, <strong>negative</strong>, and <strong>null</strong> results remain part of the evidence rather than being edited out. A seal preserves the experimental record; it is not a declaration of universal truth.</p>
+
+<div class="callout"><strong>Witnesses establish byte consistency, not factual truth.</strong> A matching SHA-256 says that the bytes retrieved are the bytes named by the artifact. It does not prove that a claim is current, authoritative, correctly interpreted, faithfully paraphrased, or true.</div>
+
+<p><a href="../SPEC.md"><code>SPEC.md</code></a> is normative. This evidence document is explanatory and evidentiary. It is a concise public edition, not the laboratory archive: it does not reproduce every transcript, population directory, corpus, preliminary sweep, or superseded headline. The final records of record are identified in the receipt section as upstream development records not included in the public bundle.</p>
+</section>
+
+<section id="conformance-and-readers" data-witness="c1f22c19c670c90f944974c1fcad8f6e5244db7079e3545ebb6111b8be8b64fd" data-char-count="5209"><header>
+  <p class="evidence-kicker">Question 1 · Is this a format rather than one program?</p>
+  <h1>Conformance and independent readers</h1>
+  <p class="lede"><strong>The published core has a written specification, two reference readers, two collection verifiers, conforming examples, and deterministic vectors; the negative battery that exercises them is run as a release gate before every release.</strong></p>
+  <div class="status-line"><span class="badge">DETERMINISTIC</span><span class="badge">SEALED EXTENDED RUN</span><span class="badge">QUALIFIED INDEPENDENCE</span></div>
+</header>
+
+<h2>The standing mechanical foundation</h2>
+<p><a href="../SPEC.md"><code>SPEC.md</code></a> defines the two document shapes, stable identifiers, raw inner-byte boundaries, SHA-256 witnesses, character counts, fail-closed behavior, manifest-first selective hydration, and — as of v0.4 — the two-epoch conversation surface with its fold motion and epoch-scoped verdicts. The bundle ships a JavaScript reader (<a href="../tools/verify.mjs"><code>tools/verify.mjs</code></a>) and a Python reader (<a href="../tools/verify.py"><code>tools/verify.py</code></a>) — deliberately small, inspectable readers rather than a mandatory framework — plus the two collection verifiers (<a href="../tools/verify_wiki.mjs"><code>tools/verify_wiki.mjs</code></a>, <a href="../tools/verify_wiki.py"><code>tools/verify_wiki.py</code></a>) and public examples. Every document in this bundle, and the wiki that shelves them, can be verified with the copies inside the bundle. The negative battery is <em>not</em> shipped: the specification’s byte-exact pinned vectors, non-vacuity, the NIST SHA-256 value for <code>abc</code>, and ten forged and malformed documents that BOTH readers must refuse are maintained and run as a release gate before every release. The MUST-refuse rules such a battery asserts are stated normatively in <a href="../SPEC.md"><code>SPEC.md</code></a>, from which fixtures can be re-derived.</p>
+
+<h2>Two readers, agreeing by refusal</h2>
+<p>The two reference readers are built differently on purpose, so that a document must convince both. That collation earned its keep in the v0.4 cycle: a review of the Python reader found an attribute-reading path that could accept a forged witness planted in a decoy attribute — a document the JavaScript reader refused. The repair deleted the divergent tokenizer entirely rather than patching it, and the pair was re-sealed <em>as a unit</em>, with both readers’ shipped bytes pinned by hash in the seal record. The lesson is structural, not incidental: one reader can be fooled by its own blind spot; two differently-built readers agreeing by refusal is the property the format actually promises.</p>
+
+<h2>Reader-convergence evidence</h2>
+<p>The base convergence spike added a PowerShell/.NET “stranger-proxy” written blind from the then-current specification. JavaScript, Python, and PowerShell agreed on clean input, a one-byte corruption, and whole-file LF-to-CRLF conversion. They produced the same pass/fail direction and byte-identical hashes where reported.</p>
+
+<p>The later sealed battery added a fresh blind C#/.NET implementation written from the frozen amended specification. Four readers were compared over twelve cases covering clean and corrupt inputs, CRLF, same-tag nesting, comments, raw-text content, escaped markup, and multibyte text. The C# subject matched the expected verdict on all 12 cases; H1 and H2 were adjudicated <strong>PASS</strong>. One raw-text cell split the readers: the C# subject and JavaScript reader followed the amended rule, while the older Python sequential reader (<code>verify_sections.py --mode sequential</code>) and pre-amendment PowerShell proxy treated a token inside <code>&lt;textarea&gt;</code> as markup. The assay classified that split as named implementation debt, not ambiguity between spec-faithful readers.</p>
+
+<div class="two-col">
+  <div class="proof-box"><h3>What this supports</h3><p>Independent implementations can recover the specified byte boundaries, witnesses, character counts, and failure direction from a written contract. The extended result exercises substantially more than a happy-path fixture.</p></div>
+  <div class="proof-box"><h3>What it does not support</h3><p>This is not unrelated third-party adoption. Blindness was instruction-isolated and self-attested, the sample was small, the run was read-side only, and some readers intentionally represented older implementation states.</p></div>
+</div>
+
+<p class="source-note">The following laboratory paths and PR identifiers refer to the private upstream record and are not shipped as public links.</p>
+<details><summary>Receipts and scope</summary><ul>
+<li>Base record: <code>experiments/probes/reader-convergence/README.md</code>.</li>
+<li>Extended run: <code>experiments/probes/reader-convergence/runs/RESULTS.md</code> and authoritative <code>experiments/probes/reader-convergence/runs/ASSAY.md</code>.</li>
+<li>Seal: <code>16d33ff</code> / <code>prereg-reader-convergence-20260623</code> · PR #72.</li>
+<li>Reader-security repair and unit re-seal: issue #132 · PR #134 · seal <code>seal-readers-20260722-r2</code>.</li>
+</ul></details>
+</section>
+
+<section id="scale-and-proof-of-read" data-witness="47d4934c88d69cbfd7fd12e26c159bffc2d2db4cab8f1f42f764027e414fc10e" data-char-count="6464"><header>
+  <p class="evidence-kicker">Question 2 · Can the document be larger than the reader?</p>
+  <h1>Scale and proof of read</h1>
+  <p class="lede"><strong>A sealed 72.5 MB artifact with 17,631 addressable sections completed every navigation turn across Claude, GPT, and Kimi, while planted canaries distinguished retrieval from remembered knowledge.</strong></p>
+  <div class="status-line"><span class="badge">SEALED</span><span class="badge">LIVE MODEL</span><span class="badge">CROSS-MODEL</span></div>
+</header>
+
+<table aria-label="Headline scale results"><thead><tr><th>Measure</th><th class="num">Result</th></tr></thead><tbody>
+<tr><td>Artifact size</td><td class="num"><strong>72.5 MB</strong></td></tr>
+<tr><td>Addressable sections</td><td class="num"><strong>17,631</strong></td></tr>
+<tr><td>Navigation turns</td><td class="num"><strong>480/480</strong></td></tr>
+<tr><td>Canary-token recovery</td><td class="num"><strong>120/120</strong></td></tr>
+<tr><td>Strict folio discriminator</td><td class="num"><strong>116/120</strong></td></tr>
+<tr><td>Byte-verified self-citations</td><td class="num"><strong>240/240</strong></td></tr>
+<tr><td>Model families</td><td class="num"><strong>Claude · GPT · Kimi</strong></td></tr>
+</tbody></table>
+<svg class="figure metric-panel" viewBox="0 0 760 260" role="img" aria-labelledby="scale-figure-title scale-figure-desc">
+<title id="scale-figure-title">Scale and proof-of-read metric panel</title>
+<desc id="scale-figure-desc">Six verified metrics from the sealed Apparatus Memori run: 72.5 megabytes, 17,631 sections, 480 of 480 navigation turns, 120 of 120 canary recoveries, 116 of 120 strict folio-discriminator successes, and 240 of 240 byte-verified citations.</desc>
+<rect x="1" y="1" width="758" height="258" rx="14" fill="none" stroke="currentColor" opacity="0.24"/>
+<g font-family="system-ui, sans-serif" fill="currentColor">
+  <g transform="translate(24 30)"><text class="big" x="0" y="28">72.5 MB</text><text class="small" x="0" y="52">artifact</text></g>
+  <g transform="translate(270 30)"><text class="big" x="0" y="28">17,631</text><text class="small" x="0" y="52">sections</text></g>
+  <g transform="translate(516 30)"><text class="big" x="0" y="28">480/480</text><text class="small" x="0" y="52">navigation</text></g>
+  <line x1="24" y1="108" x2="736" y2="108" stroke="currentColor" opacity="0.18"/>
+  <g transform="translate(24 138)"><text class="big" x="0" y="28">120/120</text><text class="small" x="0" y="52">canary recovery</text></g>
+  <g transform="translate(270 138)"><text class="big" x="0" y="28">116/120</text><text class="small" x="0" y="52">strict folio check</text></g>
+  <g transform="translate(516 138)"><text class="big" x="0" y="28">240/240</text><text class="small" x="0" y="52">verified citations</text></g>
+</g>
+</svg>
+<p class="source-note">The adjacent values are the underlying data represented by the panel; no incompatible measurements share an axis.</p>
+
+<h2>Manifest, then drill</h2>
+<p>The format separates orientation from hydration. A reader first inspects compact manifest entries—stable fragment, title, summary, witness, and size—then extracts only the sections bearing on the task. The body therefore need not enter model context as one block. Selection is performed against the document’s own summaries and stable addresses, so the reader can show which route it took and which exact sections entered the answer surface. In Apparatus Memori, the same sealed <code>XL-trinity.doc.html</code> was used across three vendor/runtime routes, with 40 proof-of-read cells per family and a separate multi-turn self-citation leg.</p>
+
+<p>The planted canaries matter because the corpus otherwise includes familiar scripture and commentary that a model could recite from training. The canary token and fabricated Latin gloss existed only in the emitted artifact and were recovered 120/120. A stricter QXZV folio discriminator passed 116/120: two Kimi outputs changed uppercase theta to lowercase, while two Sonnet outputs faithfully reproduced decimal entities but double-escaped them for display. The stronger headline therefore carries both numbers. Canary recovery proves contact with planted bytes; it does not prove every factual answer or interpretation.</p>
+
+<p>All 480 navigation turns completed within the retry budget. Mean wall-clock by vendor and mode ranged from approximately <strong>8 to 34 seconds</strong>. The flat orientation layer had a real tail: one Kimi canary lookup took <strong>209.3 seconds</strong>. This is evidence that the flat manifest remained navigable at 17,631 sections, not evidence that navigation was instant or that flat orientation scales without cost.</p>
+
+<h2>A separate large-document result</h2>
+<p>A different run, Tracer Memory at Scale, built an approximately <strong>74 MB</strong>, <strong>17,627-section</strong> scholar-pastor library and measured 184 cells across Claude and GPT harnesses. On its XL headline task, the GPT condition reduced loaded bytes from <strong>850 KB to 549 KB</strong> and effective tokens from <strong>4.99M to 1.87M</strong>; the Claude condition reduced loaded bytes from <strong>360 KB to 142 KB</strong>, while effective tokens were nearly flat at <strong>1.43M to 1.41M</strong>. The run used one seed and recorded substantial model- and question-shape variance. These figures are not another description of the 72.5 MB corpus; they remain a separate artifact, design, and result.</p>
+
+<div class="two-col"><div class="proof-box"><h3>Supports</h3><p>A single HTML document can exceed practical model context and remain selectively navigable through an in-band map, across multiple model families, with direct proof that planted bytes were read.</p></div><div class="proof-box"><h3>Does not support</h3><p>Universal factual correctness, constant latency, a flat-manifest scaling law, or identical behavior across providers and harnesses.</p></div></div>
+
+<p class="source-note">The following laboratory paths and PR identifiers refer to the private upstream record and are not shipped as public links.</p>
+<details><summary>Receipts</summary><ul>
+<li>Apparatus Memori: <code>experiments/probes/apparatus-memori/SUMMARY.md</code> · PR #48 · seal <code>prereg-apparatus-memori-reseal2-2026-06-07</code> (recorded tag; ref unavailable) at <code>6240d283</code>.</li>
+<li>Separate at-scale run: <code>experiments/probes/tracer-memory-at-scale/SUMMARY.md</code> · PR #12.</li>
+</ul></details>
+</section>
+
+<section id="portable-uses" data-witness="2a0c24bc0425af6ef322e9c685e8cfcc203f565cb242026e810df6bf5e170264" data-char-count="4893"><header>
+  <p class="evidence-kicker">Question 3 · What can travel in the artifact?</p>
+  <h1>Portable memory, handoff, wikis, and conversation</h1>
+  <p class="lede"><strong>The same substrate has carried recoverable memory, always-load steering, cross-harness state, linked wiki pages, and durable conversation—at bounded and explicitly different levels of evidence.</strong></p>
+  <div class="status-line"><span class="badge">PUBLIC EXAMPLES</span><span class="badge">LIVE-MODEL USE CASES</span><span class="badge">BOUNDED SCOPE</span></div>
+</header>
+
+<h2>Portable memory and always-load steering</h2>
+<p>In the sealed <code>claude.html</code> efficacy probe, eight invented project facts were hidden from the manifest summaries. Selective recall recovered <strong>24/24</strong>; a capable whole-document/tool reader also recovered <strong>24/24</strong>; the no-document, no-tools control recovered <strong>0/24</strong>. The document carried the memory, and selective routing preserved recall quality. It did not reduce cost on this 118 KB corpus: selective recall used about <strong>38.7% more effective tokens</strong> than the competent comparison reader.</p>
+
+<p>A separate conduct task placed the same non-default authoring rule in different tiers. The always-load placement complied <strong>3/3</strong>; hiding the rule under a broad body heading complied <strong>0/3</strong>. When the rule sat under the task-obvious heading it returned to 3/3. The measured lesson is structural: information that must govern every action belongs in an always-load steering tier; selectively hydrated memory reaches behavior only when routing opens it.</p>
+
+<p>The public <a href="../examples/memory.doc.html"><code>memory.doc.html</code></a> demonstrates stable memory sections and append-only correction: an earlier SQLite decision remains addressable after PostgreSQL supersedes it. <a href="../agents.html"><code>agents.html</code></a> is repository dogfooding—an always-load steer core followed by witnessed, hydrate-on-demand project memory. It is a repository memory organ, not proof of a complete autonomous identity.</p>
+
+<h2>Artifact-led handoff</h2>
+<p>In Trinity Discipline, a second harness received no explicit document path, memory path, or hidden state from the first harness. It followed links present in the grown chat artifact and completed <strong>5/5</strong> required identifications, including discovery of the source and memory bodies. This is a single-sample, builder-evaluated, nonblind existence proof: the handoff can occur through the artifact, but it is not a production success rate.</p>
+
+<h2>Linked Wiki</h2>
+<p>The final adjudicated Wiki result treats the wiki correctly as multiple linked files. The doc.html port detected and localized knowledge-layer corruption that the comparison wiki’s shipped health tooling missed; preserved old and current values with witnesses; caught a leaf re-seal inconsistency at the multi-file fold; and allowed a leaf to verify in isolation. On the non-vacuous ordinary-retrieval questions, Markdown scored <strong>12/12</strong> and doc.html scored <strong>12/12</strong>. The preregistered M2 reader leg is <strong>inconclusive</strong> because its no-context vacuity guard fired. The propagate-versus-detect contrast remains exploratory, and the cross-file verifier is two-level rather than recursive.</p>
+
+<h2>Durable conversation</h2>
+<p>The public <a href="../examples/chat.doc.html"><code>chat.doc.html</code></a> shows turns as stable, witnessed history. The Chat v3 run produced a 28-turn live record and passed its existence proof; its final artifact is a writing-room-tail document — a shape v0.4 now specifies as lawful: a sealed, witnessed head plus a writing-room tail for the live epoch, with the fold motion and epoch-scoped verdicts defined normatively and covered by sealed conformance vectors the bundle ships. Conversation is a specified surface, no longer an experimental annex. The measured boundaries stay stated: long-chat token savings are not yet measured, and the document itself does not perform the model call.</p>
+
+<p class="source-note">The following laboratory paths and PR identifiers refer to the private upstream record and are not shipped as public links.</p>
+<details><summary>Receipts</summary><ul>
+<li>Memory and steering: <code>experiments/probes/claude-html/RESULTS.md</code> · PR #85 · <code>prereg-claude-html-20260628</code>.</li>
+<li>Handoff: <code>experiments/probes/trinity-discipline/SUMMARY.md</code> and <code>trials/results/T-HARNESS-HANDOFF.json</code> · PR #39.</li>
+<li>Wiki: <code>experiments/probes/llm-wiki-doc-html/RESULTS.md</code> · PR #87 · <code>prereg-llm-wiki-doc-html-20260630</code> (recorded tag; ref unavailable).</li>
+<li>Conversation: <code>plans/chat-v3/runs/RESULTS.md</code> · PR #91 · consecrated record commit <code>6e73af5</code>.</li>
+</ul></details>
+</section>
+
+<section id="integrity-and-grounding" data-witness="ee8063e1a65e6053a345e300f503f90605929a9a6180ca79d36ddb9c0f50154a" data-char-count="4421"><header>
+  <p class="evidence-kicker">Question 4 · What can be checked mechanically?</p>
+  <h1>Integrity and grounding</h1>
+  <p class="lede"><strong>Exact witnesses make named bytes independently verifiable, but the record also shows that models rarely perform that verification unless a deterministic reader is placed in the loop.</strong></p>
+  <div class="status-line"><span class="badge">INTEGRITY-WITNESSED</span><span class="badge">NEGATIVE MODEL-BEHAVIOR RESULT</span><span class="badge">MECHANICAL GROUNDING EXTENSION</span></div>
+</header>
+
+<table aria-label="Integrity and grounding results"><thead><tr><th>Test</th><th class="num">Result</th></tr></thead><tbody>
+<tr><td>Spontaneous model hash verification</td><td class="num"><strong>0/27</strong></td></tr>
+<tr><td>Prompted model hash accuracy</td><td class="num"><strong>59%</strong></td></tr>
+<tr><td>Deterministic helper aligned verdicts</td><td class="num"><strong>27/27</strong></td></tr>
+<tr><td>Genuine failures among attested citations</td><td class="num"><strong>8/206</strong></td></tr>
+<tr><td>Validated residue waves-through</td><td class="num"><strong>0/40</strong></td></tr>
+<tr><td>Writer survivability</td><td class="num"><strong>0.9944</strong></td></tr>
+</tbody></table>
+
+<h2>Exact SHA-256 and tamper discrimination</h2>
+<p>For a consecrated unit, the readers recompute SHA-256 over the raw, untrimmed inner UTF-8 bytes and compare it with the stored witness. Manifest-first documents require agreement between the manifest carrier, the body carrier, and the recomputed digest. The standing conformance harness checks the NIST <code>abc</code> vector and byte-exact test vectors; corruption fixtures show that a one-byte change produces a mismatch. The browser verifier demonstrates the same arithmetic in a page, but a scriptless page opened through <code>file://</code> cannot generally reread its own file bytes without user mediation. “No server required to read” does not mean “a browser automatically grants file-system access.”</p>
+
+<h2>Drift Defense: the affordance gap</h2>
+<p>Across Claude, GPT, and Kimi, models performed spontaneous hash verification in <strong>0/27</strong> cells. When prompted to hash manually, aggregate accuracy was <strong>10/17 ≈ 59%</strong>; the shared failure was choosing the wrong canonical byte slice. When the task supplied a deterministic helper, the models invoked it and relayed its verdict correctly in <strong>27/27</strong> cells. The integrity property is therefore operational with a deterministic verifier; the bundle ships two sealed reference readers, but verification is not an automatic model behavior. The same probe also observed two cases where a model quoted the artifact’s changed value and nevertheless answered from a familiar training prior—another reason to separate bytes from authority.</p>
+
+<h2>Apparatus Criticus: content-addressed citation</h2>
+<p>The citation extension attached witnesses to source links and required exact quotation containment. In 360 live cells, the sealed mechanical judge found <strong>8 genuine grounding failures among 206 attested citations</strong>—six non-contained quotations and two witness mismatches—and caught all eight. Writer survivability was <strong>358/360 = 0.9944</strong>. Against the later validated gold, the soft-panel residue leg recorded <strong>0/40</strong> waves-through; this is a bounded zero count, with a Wilson 95% upper bound of 8.8%, not proof that the true rate is zero.</p>
+
+<div class="callout limits"><strong>The boundary is deliberate.</strong> Exact-byte checks can establish identity, containment, and tamper discrimination. They do not settle whether a source is authoritative, a claim is current, a paraphrase preserves meaning, a translation is faithful, an interpretation is justified, or the underlying statement is true.</div>
+
+<p class="source-note">The following laboratory paths and PR identifiers refer to the private upstream record and are not shipped as public links.</p>
+<details><summary>Receipts</summary><ul>
+<li>Drift Defense: <code>experiments/probes/tracer-drift-defense/SUMMARY.md</code> · PR #11.</li>
+<li>Apparatus Criticus: <code>experiments/probes/apparatus-criticus/SUMMARY.md</code> · PR #44 · seal <code>apparatus-criticus-prereg-freeze</code> (recorded tag; ref unavailable).</li>
+<li>Core witness law: <a href="../SPEC.md"><code>SPEC.md §§6–7</code></a>.</li>
+</ul></details>
+</section>
+
+<section id="cost-and-limits" data-witness="06f44d85e70033cf0a445c10c39488f691282943cdf2c3d27eb740480a854602" data-char-count="9937"><header>
+  <p class="evidence-kicker">Question 5 · When does selective hydration pay?</p>
+  <h1>Cost, fit, and known limits</h1>
+  <p class="lede"><strong>The evidence rejects a universal token-saving claim. Selective hydration can save context in one measured setting, invert on small documents or another harness, trade substantially more tokens for evidence recall than vector RAG, and move its bottleneck into the orientation layer.</strong></p>
+  <div class="status-line"><span class="badge">POSITIVE + NULL + NEGATIVE</span><span class="badge">HARNESS-CONDITIONAL</span><span class="badge">OPEN HIERARCHY FRONTIER</span></div>
+</header>
+
+<h2>Whole-document comparison: positive at 759 KB</h2>
+<p>The baseline run used Claude Sonnet 4.6 over 63 graded cells. Relative to its whole-document/tool comparison, the manifest-first skill condition reported <strong>−52.9% median effective tokens</strong> (132,960 → 62,656), <strong>−65.5% median bytes loaded</strong> (57,421 → 19,809), and <strong>+1.19 mean quality</strong> (3.29 → 4.48). This is the result of run <code>20260521-002443</code>, not a format-wide guarantee. The repository audit disputes older prose that attached a clean version label to the corpus, so the run identity governs here.</p>
+
+<h2>Small-document results are harness- and run-specific</h2>
+<p>On the approximately 1 MB Torah corpus, the Claude SDK comparison reported about <strong>−16.9%</strong> effective tokens for the skill arm. Moving the same model, corpus, and questions to the pi-mono harness inverted the comparison to <strong>+135.7%</strong>; the preregistered cross-harness stability condition therefore failed. The −16.9% result is a measured cell, not a stable scale point.</p>
+
+<p>A separate earlier Tracer #11 cost derivation on an approximately 3 KB document reported effective input tokens increasing from 33,221 to 53,265—about <strong>+60.3%</strong>—while answer quality did not improve. The later audit-corrected Sweep 3 was a distinct run: all four arms scored 1.0 and its verdict was <strong>no significant difference</strong>. These records jointly show overhead on tiny documents; they are not one pooled experiment.</p>
+
+<svg class="figure" viewBox="0 0 760 300" role="img" aria-labelledby="cost-figure-title cost-figure-desc">
+<title id="cost-figure-title">Cost depends on document and harness</title>
+<desc id="cost-figure-desc">Two separate result cards, not a common quantitative axis. The 759 kilobyte baseline reported 52.9 percent fewer effective tokens. A separate approximately 3 kilobyte derivation reported 60.3 percent more effective input tokens.</desc>
+<rect x="1" y="1" width="758" height="298" rx="14" fill="none" stroke="currentColor" opacity="0.24"/>
+<g font-family="system-ui, sans-serif" fill="currentColor">
+  <text x="24" y="34" font-weight="700">Two measurements with different corpora and accounting</text>
+  <rect x="24" y="58" width="338" height="184" rx="10" fill="currentColor" opacity="0.06"/>
+  <text x="44" y="90" font-weight="650">759 KB baseline</text>
+  <text x="44" y="137" font-size="34" font-weight="750">−52.9%</text>
+  <text x="44" y="164" class="small">median effective tokens</text>
+  <text x="44" y="205" class="small">63 cells · Claude Sonnet 4.6</text>
+  <rect x="398" y="58" width="338" height="184" rx="10" fill="currentColor" opacity="0.06"/>
+  <text x="418" y="90" font-weight="650">≈3 KB historical derivation</text>
+  <text x="418" y="137" font-size="34" font-weight="750">+60.3%</text>
+  <text x="418" y="164" class="small">effective input tokens</text>
+  <text x="418" y="205" class="small">distinct Tracer #11 run</text>
+  <text x="24" y="278" class="small">No shared axis: bar length, area, and distance do not encode magnitude.</text>
+</g>
+</svg>
+<p class="source-note">The cards deliberately avoid a common axis because the experiments used different accounting and harness conditions. They are evidence of conditionality, not a fitted scaling curve.</p>
+
+<h2>Vector RAG: recall up, token economy down</h2>
+<p>Tracer #9 compared a 7.80 MB, 619-section doc.html condition with vanilla Chroma and Titan Text Embeddings v2. On overflow questions, selective hydration reached median evidence recall <strong>0.875</strong> versus <strong>0.25</strong> for top-k=8 RAG. But the selective condition used roughly <strong>20–50× more effective tokens</strong> across the measured strata; the overflow aggregate was about 677K versus 20K. Hand-authored summaries on 32 likely cited sections were part of the condition. A four-cell auto-summary diagnostic was too narrow to separate structure from summary authorship generally. The verdict was <strong>NARROWS</strong>: stronger evidence recall in this setup, no token-cost victory, and no claim against stronger RAG systems.</p>
+
+<h2>The flat-manifest failure</h2>
+<p>Tracer #10 attempted to auto-load a thin mirror for a <strong>619-section</strong> corpus. The estimated orientation layer was <strong>74,446 tokens</strong> against a <strong>12,000-token hard cap</strong>—about 6.2× over—so the large cells failed during staging before an agent was invoked. A flat manifest can still be navigated through tools, as the 17,631-section live run shows, but its 209.3-second tail establishes that navigable is not free.</p>
+
+<h2>Hierarchy frontier: bounded surfaces, unresolved live selection</h2>
+<svg class="figure" viewBox="0 0 760 390" role="img" aria-labelledby="hierarchy-figure-title hierarchy-figure-desc">
+<title id="hierarchy-figure-title">Hierarchy frontier, run-01 and run-02 kept separate</title>
+<desc id="hierarchy-figure-desc">Run-01 had a deterministic peak of 2,612, oracle accuracy of 72 of 72, live selection of 0.361, and an undischarged envelope. Run-02 ran 1,344 live cells, with tier peaks of 4,343, 4,993, and 5,715, completion of 85.98 percent against a 90 percent threshold, and live selection of 0.50 against 0.80. Both live selectors failed conservatively.</desc>
+<rect x="1" y="1" width="758" height="388" rx="14" fill="none" stroke="currentColor" opacity="0.24"/>
+<g font-family="system-ui, sans-serif" fill="currentColor">
+  <text x="24" y="36" font-weight="700">Run-01 — deterministic surface bounded; selector limited</text>
+  <rect x="24" y="58" width="712" height="112" rx="10" fill="currentColor" opacity="0.06"/>
+  <text x="46" y="91" font-weight="700">2,612</text><text x="46" y="113" class="small">deterministic peak</text>
+  <text x="230" y="91" font-weight="700">72/72</text><text x="230" y="113" class="small">oracle</text>
+  <text x="400" y="91" font-weight="700">0.361</text><text x="400" y="113" class="small">live selection</text>
+  <text x="570" y="91" font-weight="700">UNDISCHARGED</text><text x="570" y="113" class="small">E(N) envelope</text>
+  <text x="46" y="148" class="small">Mechanical verdict: envelope missing. Live misses: refusal, not wrong answers.</text>
+
+  <text x="24" y="214" font-weight="700">Run-02 — walls held; completion and selection thresholds missed</text>
+  <rect x="24" y="236" width="712" height="126" rx="10" fill="currentColor" opacity="0.06"/>
+  <text x="46" y="270" font-weight="700">1,344</text><text x="46" y="292" class="small">live cells</text>
+  <text x="190" y="270" font-weight="700">4,343 / 4,993 / 5,715</text><text x="190" y="292" class="small">S / M / XL peaks</text>
+  <text x="500" y="270" font-weight="700">85.98% &lt; 90%</text><text x="500" y="292" class="small">completion</text>
+  <text x="46" y="334" font-weight="700">0.50 &lt; 0.80 selection</text>
+  <text x="300" y="334" font-weight="700">0 answered wrong</text>
+  <text x="500" y="334" font-weight="700">capacity walls held</text>
+</g>
+</svg>
+<p><strong>Run-01</strong> kept the deterministic D4 peak flat at approximately <strong>2,612</strong> across a 64× archive increase and achieved <strong>72/72</strong> oracle recall. Its mechanical verdict remained NOT-BOUNDED because the preregistered E(N) envelope had never been sealed. The substantive negative result was live selection: <strong>0.361</strong> against 0.80, despite a reachable 1.0 oracle. Forty-six answerable tasks were wrongly refused; false authority remained zero.</p>
+
+<p><strong>Run-02</strong> sealed the envelope before the run and executed <strong>1,344 live cells</strong>. Tier peaks were <strong>4,343 / 4,993 / 5,715</strong>; peak and cumulative envelopes and hard caps held. The mechanical boundedness verdict still failed because completion was <strong>227/264 = 85.98%</strong> against 90%, largely from absent-class exhaustion under a zero-slack route cap. Live selection was <strong>0.50</strong> against 0.80, with <strong>zero answered-but-wrong</strong>. Capacity held; the completion rule and selector did not clear their thresholds.</p>
+
+<div class="callout"><strong>Practical conclusion:</strong> the measured record supports a scale-, task-, model-, and harness-conditioned portability/evidence tradeoff—not a universal token optimization or a fitted scaling law. The crossover is unmeasured. For tiny files, read the file. For low-cost retrieval, vector RAG may be the better tool. For deep hierarchies, bounded working surfaces exist, but reliable live selection remains open.</div>
+
+<p class="source-note">The following laboratory paths and PR identifiers refer to the private upstream record and are not shipped as public links.</p>
+<details><summary>Receipts</summary><ul>
+<li>Baseline: <code>experiments/results/report_20260521-002443.md</code> · PR #1.</li>
+<li>One-megabyte harness comparison: <code>tracer-pi-cross-harness/SUMMARY.md</code> · PR #8.</li>
+<li>Tiny-document cost derivation and final null: <code>promotion/EVIDENCE_MAP.md</code>; <code>SWEEP_3_CERTIFICATE.md</code> · PR #34.</li>
+<li>RAG comparison: <code>tracer-rag-comparison/SUMMARY.md</code> · PR #13.</li>
+<li>Flat mirror: <code>AUDIT_DOC_HTML_AS_MEMORY.md</code> · PR #29.</li>
+<li>Bounded Return: run-01 · PR #103; run-02 · PR #114.</li>
+</ul></details>
+</section>
+
+<section id="receipts-and-reproduction" data-witness="7191c7a023bb196bad3648564c7f155e969eaa57f161d2e1e7cdf4eb918a9409" data-char-count="6315"><header>
+  <p class="evidence-kicker">Question 6 · Where are the receipts?</p>
+  <h1>Receipts and reproduction</h1>
+  <p class="lede"><strong>This publication points to records of record rather than copying the complete laboratory into the public artifact.</strong></p>
+  <div class="status-line"><span class="badge">PROVENANCE INDEX</span><span class="badge">NO RAW POPULATIONS SHIPPED</span></div>
+</header>
+
+<p>The public bundle links only to files it actually ships. Laboratory result paths, pull-request numbers, commits, seals, and tags below are plain provenance identifiers for maintainers in the private upstream repository; they are not public links and the raw populations are not included downstream.</p>
+
+<div style="overflow-x:auto"><table class="compact" aria-label="Experiment receipt ledger"><thead><tr><th>Experiment</th><th>Final status</th><th>Record of record</th><th>PR</th><th>Seal or tag</th><th>Grading</th><th>Reproduction class</th></tr></thead><tbody>
+<tr><td>v0.4 core</td><td>CURRENT · DETERMINISTIC</td><td><a href="../SPEC.md"><code>SPEC.md</code></a>; <code>conformance.mjs</code> (lab-side release gate, not shipped)</td><td>89; 115; 130</td><td>readers sealed as a unit: <code>seal-readers-20260722-r2</code></td><td>mechanical</td><td>exact deterministic reproduction</td></tr>
+<tr><td>Reader-security repair</td><td>SEALED · CLOSED</td><td>issue #132 record</td><td>134</td><td><code>seal-readers-20260722-r2</code></td><td>two-reader collation</td><td>mechanical re-verification</td></tr>
+<tr><td>Reader convergence</td><td>SEALED · QUALIFIED PASS</td><td><code>ASSAY.md</code></td><td>72</td><td><code>16d33ff</code>; <code>prereg-reader-convergence-20260623</code></td><td>oracle + assay</td><td>mechanical re-verification</td></tr>
+<tr><td>Apparatus Memori</td><td>SEALED · LIVE · PASS</td><td><code>SUMMARY.md</code></td><td>48</td><td><code>6240d283</code>; <code>prereg-apparatus-memori-reseal2-2026-06-07</code> (recorded; ref unavailable)</td><td>sealed evaluators + review</td><td>comparable live-model rerun</td></tr>
+<tr><td>Memory at Scale</td><td>LIVE · QUALIFIED</td><td><code>SUMMARY.md</code></td><td>12</td><td>none stated</td><td>mechanical + rubric</td><td>comparable live-model rerun</td></tr>
+<tr><td>Baseline cost</td><td>LIVE · SUPPORTED</td><td><code>report_…md</code></td><td>1</td><td>run <code>20260521-002443</code></td><td>manual quality + metrics</td><td>comparable live-model rerun</td></tr>
+<tr><td>Cross-harness cost</td><td>LIVE · QUALIFIED/INVERTED</td><td><code>SUMMARY.md</code></td><td>8</td><td>plan frozen 2026-05-23</td><td>178-cell analysis</td><td>comparable live-model rerun</td></tr>
+<tr><td>Tracer #11 tiny doc</td><td>HISTORICAL COST · FINAL NULL</td><td><code>EVIDENCE_MAP.md</code>; <code>certificate</code></td><td>34</td><td><code>prereg-tracer-11-sweep-3-20260526</code></td><td>derived metric; blind grade</td><td>historical receipt only</td></tr>
+<tr><td>Memory + steering</td><td>SEALED · LIVE · PASS</td><td><code>RESULTS.md</code></td><td>85</td><td><code>e40abf0</code>; <code>prereg-claude-html-20260628</code></td><td>mechanical strings</td><td>comparable live-model rerun</td></tr>
+<tr><td>Trinity handoff</td><td>SINGLE-SAMPLE · PASS</td><td><code>T-HARNESS-HANDOFF.json</code></td><td>39</td><td><code>PRE-REG-handoff-v1</code></td><td>builder assertions</td><td>historical receipt only</td></tr>
+<tr><td>Multi-file Wiki</td><td>SEALED · SURVIVES (BOUNDED)</td><td><code>RESULTS.md</code></td><td>87</td><td><code>b33d842</code>; <code>prereg-llm-wiki-doc-html-20260630</code> (recorded; ref unavailable)</td><td>mechanical + corrected adjudication</td><td>mechanical re-verification</td></tr>
+<tr><td>Chat v3</td><td>SEALED · EXISTENCE PASS</td><td><code>RESULTS.md</code></td><td>91</td><td><code>6e73af5</code></td><td>sealed rules + deterministic grade</td><td>historical receipt only</td></tr>
+<tr><td>Drift Defense</td><td>LIVE · NEGATIVE/QUALIFIED</td><td><code>SUMMARY.md</code></td><td>11</td><td>none stated</td><td>cell analysis</td><td>comparable live-model rerun</td></tr>
+<tr><td>Apparatus Criticus</td><td>SEALED · VALIDATED WITH CAVEATS</td><td><code>SUMMARY.md</code></td><td>44</td><td><code>apparatus-criticus-prereg-freeze</code> (recorded; ref unavailable)</td><td>sealed judge + validated gold</td><td>mechanical re-verification</td></tr>
+<tr><td>RAG comparison</td><td>SEALED · NARROWS</td><td><code>SUMMARY.md</code></td><td>13</td><td><code>6463d73</code>; <code>prereg-tracer-9-iw</code></td><td>mechanical + double grade</td><td>comparable live-model rerun</td></tr>
+<tr><td>Flat mirror</td><td>STAGING FAILURE</td><td><code>AUDIT_…md</code></td><td>29</td><td>corpus lock <code>e6429d0</code></td><td>mechanical staging gate</td><td>mechanical re-verification</td></tr>
+<tr><td>Bounded Return run-01</td><td>SELECTOR-LIMITED; ENVELOPE UNDISCHARGED</td><td><code>seal05/RESULTS.md</code></td><td>103</td><td><code>f5ff001</code></td><td>deterministic + live adjudication</td><td>historical receipt only</td></tr>
+<tr><td>Bounded Return run-02</td><td>NOT-BOUNDED (COMPLETION); WALLS HELD</td><td><code>RESULTS.md</code></td><td>114</td><td><code>SEAL.json</code> SHA <code>b8091467…</code>; producer <code>fe5b479</code></td><td>deterministic + live adjudication</td><td>historical receipt only</td></tr>
+</tbody></table></div>
+
+<p>The artifact omits raw populations, transcripts, and large corpora. “Exact deterministic reproduction” reruns pinned computation; “mechanical re-verification” checks preserved artifacts; a “comparable live-model rerun” cannot promise identical hosted-model output; “historical receipt only” preserves a sealed event whose live environment is not claimed reproducible.</p>
+
+<h2>Verify this document</h2>
+<pre><code>node tools/verify.mjs documents/evidence.doc.html
+python tools/verify.py documents/evidence.doc.html</code></pre>
+<p>A PASS means the manifest and body agree on every witnessed byte span. It does not rerun the live-model studies.</p>
+
+<div class="callout limits"><strong>The final record governs.</strong> The Wiki’s bounded adjudication replaces its earlier headline; Tracer #11 Sweep 3 replaces earlier quality verdicts without erasing the separate historical cost derivation; and Bounded Return run-01 remains distinct from run-02.</div>
+</section>
+
+<section id="library-and-lineage" data-witness="a1ae7e45abb66671306ee483d7c5e288b2b9c2944644629046e186be0db6989a" data-char-count="5332"><header>
+  <p class="evidence-kicker">Question 7 · Where does the design come from?</p>
+  <h1>The library: lineage and prior art</h1>
+  <p class="lede"><strong>doc.html invents no cryptography and no document theory. Every primitive it uses is decades old, public, and openable from this shelf; the contribution is the join.</strong></p>
+  <div class="status-line"><span class="badge">PUBLIC SOURCES</span><span class="badge">ADOPT, NOT INVENT</span></div>
+</header>
+
+<p>The format holds three properties at once — a per-section integrity witness, a document that carries its own readable specification, and a single server-free file. Each descends from a different lineage, and each lineage ships its property only by relaxing the other two: the witnessed-log tradition needs a log server, literate programming carries no witness, the single-file tradition carries neither spec nor witness. The design work was not invention but recombination under constraint — and the shelf below is where each constraint was learned.</p>
+
+<h2>The witness — tamper-evident logs</h2>
+<ul>
+<li><a href="https://doi.org/10.1007/3-540-48184-2_32">R. Merkle, hash trees (1979/1987)</a> — the primitive under every integrity claim here.</li>
+<li><a href="https://datatracker.ietf.org/doc/html/rfc6962">RFC 6962</a> / <a href="https://datatracker.ietf.org/doc/html/rfc9162">RFC 9162</a>, Certificate Transparency — the append-only witnessed log; doc.html's closest formal kin, a tree head minus the signature and the log operator.</li>
+<li><a href="https://www.schneier.com/academic/archives/1998/01/cryptographic_suppor.html">Schneier &amp; Kelsey (1998)</a> · <a href="https://static.usenix.org/event/sec09/tech/full_papers/crosby.pdf">Crosby &amp; Wallach (2009)</a> — why the honest ceiling is tamper-<em>evident</em>, never tamper-proof.</li>
+<li>Fork consistency (Mazières &amp; Shasha, 2002) and <a href="https://www.scs.stanford.edu/~dm/home/papers/li:sundr.pdf">SUNDR (Li, Krohn, Mazières &amp; Shasha, 2004)</a> — the equivocation boundary a server-free format inherits and must name rather than claim to close.</li>
+</ul>
+
+<h2>The document is the spec — legibility</h2>
+<ul>
+<li><a href="https://doi.org/10.1093/comjnl/27.2.97">D. Knuth, <em>Literate Programming</em> (1984)</a> — one source that is both specification and document, so the two cannot drift.</li>
+<li><a href="https://www.w3.org/History/1989/proposal.html">T. Berners-Lee, <em>Information Management: A Proposal</em> (CERN, 1989)</a> — “generality and portability are more important than fancy graphics techniques and complex extra facilities.”</li>
+</ul>
+
+<h2>The single file — portability</h2>
+<ul>
+<li><a href="https://datatracker.ietf.org/doc/html/rfc2557">RFC 2557, MHTML (1999)</a> · <a href="https://tiddlywiki.com">TiddlyWiki (2004)</a> · <a href="https://github.com/gildas-lormeau/SingleFile">SingleFile</a> — the one-file shape is old and viable; doc.html adds what each lacks.</li>
+</ul>
+
+<h2>The second reader — why now</h2>
+<ul>
+<li><a href="https://arxiv.org/abs/2512.24601">Zhang, Kraska &amp; Khattab, <em>Recursive Language Models</em> (2025)</a> — keep the corpus as environment and hydrate by handle; the scale pressure doc.html answers in-band, without a runtime.</li>
+<li><a href="https://www.trychroma.com/research/context-rot">Chroma, <em>Context Rot</em></a> — the empirical case that stuffing a model's window degrades the reader; the reason a document should carry a map.</li>
+</ul>
+
+<h2>The contrast set — what doc.html deliberately is not</h2>
+<ul>
+<li><a href="https://c2pa.org/specifications/specifications/2.4/specs/C2PA_Specification.html">C2PA</a> · PAdES/eIDAS signed documents — integrity carried as opaque binary manifests and PKI. Strong provenance, no legibility: a reader cannot follow the integrity rule by eye. The seam doc.html sits on is exactly here — the witness stays a readable hex string checked by a stock hash tool.</li>
+</ul>
+
+<div class="callout limits"><strong>The claim stays bounded.</strong> A sealed adversarial prior-art spike went looking for the counterexample: at the breadth searched, every surveyed format that carries a witness carries no in-band spec, and every one that is its own spec carries no witness. “Nothing found at the join” is an absence, not a proof of novelty — and the join has a price: no server means no gossip channel, so split-view detection is delegated to an external anchor (an honest git remote, N copies), exactly as the fork-consistency literature drew the boundary.</div>
+
+<p>A selection of the project's design essays — why a document built for two readers, the format seen whole, where it sits among its ancestors — now sits on the shelf of <a href="wiki.doc.html">the wiki of witnessed documents</a>: a root document that links each essay as a whole doc.html of its own and pins it with a cross-file witness.</p>
+
+<p class="source-note">The following laboratory paths refer to the private upstream record and are not shipped as public links.</p>
+<details><summary>Receipts</summary><ul>
+<li>Prior-art survey and adversarial confluence spike: <code>experiments/probes/confluence-join/{PREREG.md, RESULTS.md, RECEIPTS.md}</code> · seal <code>c751e44</code>.</li>
+<li>Lineage survey: <code>experiments/peer-review-research/DOC1_lineage_priorart_advances.md</code>.</li>
+</ul></details>
+</section>
+
+<section id="about-this-file" data-witness="a196d085905c5e9ace5f891fe8b687d58943aa4e37cf7dfadc1631a761d8e176" data-char-count="774"><p class="evidence-kicker">About this file &middot; colophon</p>
+<h2>About this file</h2>
+<p>This is a <strong>doc.html</strong> — a single, self-describing HTML file. The <code>&lt;nav id="manifest"&gt;</code> at the top of the body lists every section in this document; each entry&#39;s <code>data-witness</code> is the SHA-256 (hex) of that section&#39;s raw inner bytes, so any reader can verify any section with the file alone — no server, no JavaScript, no tooling. The full format definition is <a href="../SPEC.md">SPEC.md</a>, carried in the format&#39;s own body as <a href="../SPEC.doc.html">SPEC.doc.html</a>.</p>
+<p style="color:var(--muted); font-size:.92rem;">Author: Georges Casseus (Ndoto Studios) · License: CC0 1.0 (public domain) · Built: 2026-08-01</p>
+</section>
+
+</body>
+</html>

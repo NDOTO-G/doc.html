@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mixed-epoch tail — doc.html v0.3 scoped-verdict exhibit</title>
+<style>
+  footer.about-file { font-size: .9em; color: #666; border-top: 1px solid #ddd; padding-top: .6rem; margin-top: 2rem; }
+  footer.about-file h2 { font-size: 1.05rem; color: inherit; }
+</style>
 </head>
 <body>
 
@@ -48,6 +52,12 @@
     <p>The verdict states its scope explicitly: PASS (verified=2, ordinal=2) &mdash; two recomputed consecrated bytes, two grammar-valid ordinal witnesses. The two registers are never folded into one undifferentiated count.</p>
   </div>
 </article>
+
+<footer class="about-file">
+  <h2>About this file</h2>
+  <p>This is a <strong>doc.html</strong> — a single, self-describing HTML file. This one carries the writing-room-tail shape: there is no <code>&lt;nav id="manifest"&gt;</code>, and the addressable units are the <code>&lt;article&gt;</code> elements above, read in document order; each unit&#39;s <code>data-witness</code> is the SHA-256 (hex) of its raw inner bytes once the unit is consecrated, or a UTC timestamp while it is still live — so any reader can verify any consecrated unit with the file alone, no server, no JavaScript, no tooling. The full format definition is <a href="../SPEC.md">SPEC.md</a>, carried in the format&#39;s own body as <a href="../SPEC.doc.html">SPEC.doc.html</a>.</p>
+  <p>Author: Georges Casseus (Ndoto Studios) · License: CC0 1.0 (public domain) · Built: 2026-08-01</p>
+</footer>
 
 </body>
 </html>

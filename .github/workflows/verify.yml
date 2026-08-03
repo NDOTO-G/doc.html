@@ -1,0 +1,57 @@
+# Positive-only CI: it checks that the bundle works.
+#
+# Every shipped document verifies on BOTH reference readers, and the collection verifies on
+# both collection verifiers. That is the whole job. There is no scorecard here and no test
+# report — a green run means exactly one thing, which is the thing a stranger cares about:
+# clone this repository, and every document in it verifies with the copies inside it.
+name: verify
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      # What ships is defined in exactly one place — the export-ignore rules in
+      # .gitattributes — so ask git for the shipped tree rather than hard-coding a list.
+      # A document is any file the readers take: `*.doc.html`, plus the two shipped
+      # documents whose names do not match that glob (`documents/doc.html`, `agents.html`).
+      - name: Enumerate the shipped documents
+        run: |
+          set -euo pipefail
+          git archive HEAD | tar -tf - \
+            | grep -E '(^|/)([^/]+\.)?doc\.html$|(^|/)agents\.html$' \
+            | sort > shipped-documents.txt
+          cat shipped-documents.txt
+
+      - name: Every document verifies on both readers
+        run: |
+          set -euo pipefail
+          count=0
+          while IFS= read -r doc; do
+            node   tools/verify.mjs "$doc" > /dev/null
+            python tools/verify.py  "$doc" > /dev/null
+            echo "PASS  $doc"
+            count=$((count + 1))
+          done < shipped-documents.txt
+          test "$count" -gt 0
+          echo "$count documents PASS on both readers"
+
+      - name: The collection verifies on both collection verifiers
+        run: |
+          set -euo pipefail
+          python tools/verify_wiki.py  documents/wiki.doc.html
+          node   tools/verify_wiki.mjs documents/wiki.doc.html

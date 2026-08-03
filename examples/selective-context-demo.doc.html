@@ -25,19 +25,21 @@
   #manifest li { margin: 0.8rem 0; }
   #manifest .title { font-weight: 600; }
   #manifest .summary { display: block; color: var(--muted); font-size: 0.92em; }
+  .about-file { color: var(--muted); font-size: 0.9em; border-top: 1px solid var(--rule); padding-top: 0.8rem; margin-top: 2.5rem; }
+  .about-file h2 { font-size: 1.05rem; color: var(--fg); }
 </style>
 </head>
 <body>
 
 <header>
   <h1 style="border:none;">Zephyr Stream API Reference</h1>
-  <p class="header-meta">doc.html v0.3 &middot; 2026-06-15 &middot; 152 sections &middot; 75,214 chars &middot; self-verifying (node verify.mjs &lt;this file&gt;)</p>
+  <p class="header-meta">doc.html v0.3 &middot; 2026-08-01 &middot; 152 sections &middot; 75,299 chars &middot; self-verifying (node tools/verify.mjs &lt;this file&gt;)</p>
   <p>Fictional reference corpus for the doc.html v0.3 selective-context demonstration. Read the manifest below; drill to any section by its <code>#id</code>.</p>
 </header>
 
 <nav id="manifest" aria-label="Document manifest">
   <ol>
-    <li><a href="#about-this-document" data-witness="4c27598eb7edfa3d4f5ecedb4b3528f4ca0689649500f2e3d81fea3c6fa9539d" data-char-count="1700"><span class="title">About this document — read the manifest, not the file</span> <span class="summary">Why this body is large on purpose: 200 sections, many thousands of characters — loading all of it is wasteful. Read the manifest, drill by #id, load only what you need. Scaling note included.</span></a></li>
+    <li><a href="#about-this-document" data-witness="79e7e9f0766257fdff437445d87eb2651121826e295e23c0e4ac35884f852a5e" data-char-count="1779"><span class="title">About this document — read the manifest, not the file</span> <span class="summary">Why this body is large on purpose: 200 sections, many thousands of characters — loading all of it is wasteful. Read the manifest, drill by #id, load only what you need. Scaling note included.</span></a></li>
     <li><a href="#resource-streams" data-witness="3a9015d6fa7c0c28aca26d048501e4590b71cd6107f623f1f7525515c3cdeeb6" data-char-count="453"><span class="title">Streams resource</span> <span class="summary">Create, list, get, and delete named streams. A stream is the top-level container for an ordered log of events.</span></a></li>
     <li><a href="#resource-producers" data-witness="2ed59d7569684ef3fa6e176af05de9b458fae4b8db030797f698d9355122f407" data-char-count="471"><span class="title">Producers resource</span> <span class="summary">Register and manage producers. A producer holds credentials and rate-limit state for a publishing client.</span></a></li>
     <li><a href="#resource-consumers" data-witness="bf02ce05268b8473880e39771c5a9e8849eb071c48afffb4aecc567a3a434bc5" data-char-count="561"><span class="title">Consumers resource</span> <span class="summary">Manage consumer registrations and offset checkpoints. Consumers track their own read position independently.</span></a></li>
@@ -186,18 +188,18 @@
     <li><a href="#guide-versioning" data-witness="8069c6f29f7ab4b04949fea3d823d95c5f648d01e5a1d09f1956a88e85cae972" data-char-count="723"><span class="title">API versioning policy</span> <span class="summary">How Zephyr versions its API and what changes are considered breaking.</span></a></li>
     <li><a href="#guide-quotas" data-witness="d56d011aa32cde56aea986da1b21e55e543aceb81c937ed4b9ac62f9be23e7d8" data-char-count="908"><span class="title">Account quotas and limits</span> <span class="summary">Default per-account quotas for streams, schemas, retained bytes, and partition counts.</span></a></li>
     <li><a href="#guide-sdks" data-witness="ec89703b31468b9f26d457730387ec1d47c9c8cc9faaf9242015d951c9900bbf" data-char-count="987"><span class="title">Client SDKs</span> <span class="summary">Officially supported client libraries for the Zephyr Stream API.</span></a></li>
-    <li><a href="#guide-openapi" data-witness="3ffed65fb5de1b64d8408130a2e2e334883d838d7fc86d4b6e1c49eace209de7" data-char-count="785"><span class="title">OpenAPI specification</span> <span class="summary">Where to find the machine-readable API description and how to generate client code from it.</span></a></li>
+    <li><a href="#guide-openapi" data-witness="18fdaabde233a70586b0a2b00172c962e9c1ea2c74a5ac81860fd1d5e22f442b" data-char-count="791"><span class="title">OpenAPI specification</span> <span class="summary">Where to find the machine-readable API description and how to generate client code from it.</span></a></li>
     <li><a href="#guide-changelog" data-witness="f51cdb428e3e6faf33ea5d05217cac466dd77f3d361b25e1b58a725a149a262d" data-char-count="1149"><span class="title">API changelog (fictional)</span> <span class="summary">A representative changelog showing the history of v1 API changes.</span></a></li>
     <li><a href="#guide-support" data-witness="3304d8966ac27f35fe71bafb19a0f7b2a53776e3e1ade0353501cb8871ce91b4" data-char-count="818"><span class="title">Support and SLAs</span> <span class="summary">How to contact support, escalation paths, and the published uptime SLAs for the Zephyr API.</span></a></li>
   </ol>
 </nav>
 
-<section id="about-this-document" data-witness="4c27598eb7edfa3d4f5ecedb4b3528f4ca0689649500f2e3d81fea3c6fa9539d" data-char-count="1700"><h1>About this document</h1>
+<section id="about-this-document" data-witness="79e7e9f0766257fdff437445d87eb2651121826e295e23c0e4ac35884f852a5e" data-char-count="1779"><h1>About this document</h1>
 <p>This file is a <strong>doc.html v0.3</strong> document. The format itself is the only dependency: no framework, no build system beyond a single Node script, no server required to read it.</p>
-<p>It holds the <em>Zephyr Stream API Reference</em> — a fictional real-time data-streaming platform used here as a synthetic corpus. The corpus was chosen deliberately large: it contains <strong>152 sections</strong> totalling <strong>75,229 characters</strong> of section content. Loading all of it into a context window at once is wasteful when a reader needs only two or three sections at a time.</p>
+<p>It holds the <em>Zephyr Stream API Reference</em> — a fictional real-time data-streaming platform used here as a synthetic corpus. The corpus was chosen deliberately large: it contains <strong>152 sections</strong> totalling <strong>75,314 characters</strong> of section content. Loading all of it into a context window at once is wasteful when a reader needs only two or three sections at a time.</p>
 <p>That wastefulness is the point. The <strong>manifest</strong> (the <code>&lt;nav id="manifest"&gt;</code> element below) lists every section with its title, summary, SHA-256 witness hash, and character count. A reader that consults the manifest first can identify exactly which sections are relevant, fetch only those by <code>#id</code>, and verify each one&#39;s integrity against its witness — never loading the rest.</p>
 <p><strong>Known scaling limit:</strong> this manifest is flat — one entry per section. At 200 sections it is already hundreds of lines. A hierarchical manifest (chapter → section → subsection) would compress the navigation surface dramatically and is the obvious next step. That is future work; it is noted here honestly so readers can plan around it.</p>
-<p>The format spec lives at <a href="#format-spec-pointer">format-spec-pointer</a>. The witness law: SHA-256 over the raw UTF-8 inner bytes of each section; char-count is Unicode code points (<code>Array.from(inner).length</code>). Both are checkable offline with no network access.</p></section>
+<p>The format spec lives beside this file, at <a href="../SPEC.md">SPEC.md</a> — and in the format&#39;s own body at <a href="../SPEC.doc.html">SPEC.doc.html</a>. The witness law: SHA-256 over the raw UTF-8 inner bytes of each section; char-count is Unicode code points (<code>Array.from(inner).length</code>). Both are checkable offline with no network access.</p></section>
 
 <section id="resource-streams" data-witness="3a9015d6fa7c0c28aca26d048501e4590b71cd6107f623f1f7525515c3cdeeb6" data-char-count="453"><h1>Streams resource</h1>
 <p>Create, list, get, and delete named streams. A stream is the top-level container for an ordered log of events.</p>
@@ -1453,12 +1455,12 @@
 </table>
 <p>All SDKs expose the same conceptual interface: a <code>ZephyrClient</code> that wraps authentication, pagination, retries, and rate-limit backoff. Community-maintained libraries for other languages are listed in the project registry (not covered here).</p></section>
 
-<section id="guide-openapi" data-witness="3ffed65fb5de1b64d8408130a2e2e334883d838d7fc86d4b6e1c49eace209de7" data-char-count="785"><h1>OpenAPI specification</h1>
+<section id="guide-openapi" data-witness="18fdaabde233a70586b0a2b00172c962e9c1ea2c74a5ac81860fd1d5e22f442b" data-char-count="791"><h1>OpenAPI specification</h1>
 <p>The Zephyr API is described by a machine-readable <strong>OpenAPI 3.1</strong> specification available at:</p>
 <pre><code>https://api.zephyrstream.io/v1/openapi.json</code></pre>
 <p>The spec includes all endpoints, request/response schemas, error codes, and security schemes.</p>
 <h2>Generating client code</h2>
-<p>Use <a href="#sdks">official SDKs</a> when available. For unsupported languages, generate from the spec with <code>openapi-generator-cli</code>:</p>
+<p>Use <a href="#guide-sdks">official SDKs</a> when available. For unsupported languages, generate from the spec with <code>openapi-generator-cli</code>:</p>
 <pre><code>npx openapi-generator-cli generate   -i https://api.zephyrstream.io/v1/openapi.json   -g &lt;language&gt;   -o ./zephyr-client</code></pre>
 <p>The generated client will not include Zephyr-specific retry or rate-limit logic — add that layer manually or use an official SDK.</p></section>
 
@@ -1504,6 +1506,12 @@
 </tbody>
 </table>
 <p>SLA credits are applied as account balance. Consult your service agreement for credit calculation details.</p></section>
+
+<footer class="about-file">
+  <h2>About this file</h2>
+  <p>This is a <strong>doc.html</strong> — a single, self-describing HTML file. The <code>&lt;nav id="manifest"&gt;</code> at the top of the body lists every section in this document; each entry&#39;s <code>data-witness</code> is the SHA-256 (hex) of that section&#39;s raw inner bytes, so any reader can verify any section with the file alone — no server, no JavaScript, no tooling. The full format definition is <a href="../SPEC.md">SPEC.md</a>, carried in the format&#39;s own body as <a href="../SPEC.doc.html">SPEC.doc.html</a>.</p>
+  <p>Author: Georges Casseus (Ndoto Studios) · License: CC0 1.0 (public domain) · Built: 2026-08-01</p>
+</footer>
 
 </body>
 </html>

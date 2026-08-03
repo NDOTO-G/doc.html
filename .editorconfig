@@ -1,0 +1,28 @@
+# EditorConfig — https://editorconfig.org
+#
+# These are not style preferences. Every `.doc.html` in this repository carries SHA-256
+# witnesses over its own raw bytes (UTF-8, LF, untrimmed), so encoding and line endings are
+# part of the content: a CRLF checkout or a helpfully trimmed trailing space is a broken
+# document, not a formatting nit. See CONTRIBUTING.md.
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# Witnessed bytes. Never let an editor tidy a document: a trailing space inside a witnessed
+# span is hashed like any other byte, and removing it invalidates that section's witness.
+[*.html]
+trim_trailing_whitespace = false
+
+[*.py]
+indent_size = 4
+
+# Markdown gives two trailing spaces a meaning — a hard line break.
+[*.md]
+trim_trailing_whitespace = false
