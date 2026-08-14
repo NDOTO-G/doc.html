@@ -408,6 +408,32 @@ function contentProfileCheck(openEnd, closeIdx) {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
+// §6.1 id production — ONE definition, shared by every path that addresses a
+// unit by id: the tail path's <article id>, the manifest-first path's link
+// fragment, and the nested-recompute loop. The production is a property of
+// the format, not of a shape, so it must not be re-inlined per call site
+// (parity with verify.py's _valid_id).
+//
+// §6.1: MUST begin with a letter (Unicode category L) or an underscore; MUST
+// continue with zero or more letters, digits (category Nd), hyphens,
+// underscores, periods, or colons.
+//
+// Spelled with \p{L} / \p{Nd} property escapes under /u, NOT with \w: JS's \w
+// is ASCII-only ([A-Za-z0-9_]) and the /u flag does NOT change that, while
+// Python's \w IS Unicode-aware — so any \w-based production would silently
+// disagree across the two readers (`café`). Property escapes require /u and
+// name the exact categories §6.1 names, which verify.py matches via
+// unicodedata.category(). `$` without /m matches only at end of input (no
+// trailing-newline laxity — the trap on the Python side), so `abc\n` fails
+// here and there alike.
+// ────────────────────────────────────────────────────────────────────────────
+const VALID_ID_RE = /^[\p{L}_][\p{L}\p{Nd}\-.:_]*$/u;
+
+function validId(idStr) {
+  return VALID_ID_RE.test(idStr);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 // Full §6.2/§6.4a witnessed-bytes pipeline: depth-walk, count guard,
 // content-profile check. openerStarts is the full sorted list of every
 // same-tag opener's char index in the whole document (document order), used
@@ -556,7 +582,7 @@ if (!navFound) {
       continue;
     }
     // §6.1 id production check
-    if (!/^[A-Za-z_][\w\-.:]*$/.test(id)) {
+    if (!validId(id)) {
       console.error(`FAIL: invalid id production: ${id}`);
       mismatch++;
       continue;
@@ -668,6 +694,13 @@ for (const m of navInner.matchAll(A_TAG_RE)) {
   const sha256 = a["data-witness"] || "";
   if (!href.startsWith("#") || !sha256) continue;
   const id = href.slice(1);
+  // §6.1 id production — the manifest link's fragment IS the addressable
+  // unit's id, so it is held to the same production the tail path holds an
+  // <article id> to; an off-grammar id must never verify clean.
+  if (!validId(id)) {
+    console.error(`FAIL: invalid id production: ${id}`);
+    process.exit(1);
+  }
   const manifestCharCount = a["data-char-count"] != null ? parseInt(a["data-char-count"], 10) : null;
   sections.push({ id, sha256, manifestCharCount });
 }
@@ -870,10 +903,24 @@ for (const s of sections) {
 let nestedOk = 0, nestedMismatch = 0;
 for (const { openEnd, attrs: a, depth, parentClose } of openers) {
   if (depth === 0) continue; // top-level — already verified above
+  // ABSENT and VALUELESS are different, and the difference is a verdict.
+  // Absent -> non-witnessed structural nesting; skip. Present but valueless
+  // (`<section data-witness>`) -> a witness that cannot be classified, which
+  // classifyWitness reports as invalid grammar rather than a skip. This test
+  // comes FIRST: whether the unit is addressable at all is decided by the
+  // witness, not by the id — a witnessed unit missing its id is a verdict.
+  if (!("data-witness" in a)) continue; // non-witnessed structural nesting — not addressable
   const nid = a.id;
-  if (nid == null || seenIds.has(nid)) continue;
+  if (!nid) {
+    console.error("FAIL: nested <section data-witness> with no id");
+    process.exit(1);
+  }
+  if (!validId(nid)) {
+    console.error(`FAIL: invalid id production: ${nid}`);
+    process.exit(1);
+  }
+  if (seenIds.has(nid)) continue;
   const ndw = a["data-witness"];
-  if (ndw == null) continue; // non-witnessed structural nesting — not addressable
   seenIds.add(nid); // dup-id already enforced globally (§9.1)
 
   // A nested unit's count-guard scope MUST NOT extend past its own immediate

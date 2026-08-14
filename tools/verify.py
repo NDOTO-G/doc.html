@@ -12,6 +12,7 @@ Exit code 0 = PASS, nonzero = FAIL.
 import hashlib
 import re
 import sys
+import unicodedata
 from pathlib import Path
 
 # ─── Witness grammar (§6.7, classify_grammar inlined) ────────────────────────
@@ -416,11 +417,43 @@ def _content_profile_check(inner: bytes, inner_start: int, inert_masks: list) ->
 
 
 # ─── Shared helpers ───────────────────────────────────────────────────────────
-_VALID_ID_RE = re.compile(r'^[A-Za-z_][\w\-.:]*$')
+_ID_PUNCT = '-_.:'  # §6.1 continuation punctuation: hyphen, underscore, period, colon
 
 
 def _valid_id(id_str: str) -> bool:
-    return bool(_VALID_ID_RE.match(id_str))
+    """The §6.1 id production, spelled from Unicode general categories.
+
+    §6.1: an id MUST begin with a letter (Unicode category L) or an
+    underscore, and MUST continue with zero or more letters, digits (category
+    Nd), hyphens, underscores, periods, or colons.
+
+    Written against unicodedata rather than a regex for two reasons, both
+    parity ones (two implementations MUST agree — §6 preamble):
+
+      1. Python's stdlib `re` cannot express \\p{L} / \\p{Nd} at all, and its
+         `\\w` is Unicode-aware while JavaScript's `\\w` is ASCII-only even
+         under the /u flag. A `\\w`-based production therefore CANNOT be
+         identical across the two readers: `café` would pass here and fail in
+         verify.mjs. verify.mjs spells the same production as
+         /^[\\p{L}_][\\p{L}\\p{Nd}\\-.:_]*$/u — property escapes, which /u
+         does honour — so both readers test the identical category sets.
+      2. Python's `$` matches before a trailing newline, so a regex ending
+         `...$` accepts `abc\\n`, which §6.1 forbids (whitespace) and which
+         JavaScript's `$` (no /m) rejects. Walking the string has no such
+         edge.
+    """
+    if not id_str:
+        return False
+    first = id_str[0]
+    if first != '_' and not unicodedata.category(first).startswith('L'):
+        return False
+    for ch in id_str[1:]:
+        if ch in _ID_PUNCT:
+            continue
+        cat = unicodedata.category(ch)
+        if not (cat.startswith('L') or cat == 'Nd'):
+            return False
+    return True
 
 
 def _witnessed_bytes(html: bytes, opener_end: int, opener_starts: list, tag: str,
@@ -669,6 +702,12 @@ def _verify_manifest_first(html: bytes, inert_masks: list) -> int:
         if not href.startswith('#') or not dw:
             continue
         sid = href[1:]
+        # §6.1 id production — the manifest link's fragment IS the addressable
+        # unit's id, so it is held to the same production the tail path holds
+        # an <article id> to; an off-grammar id must never verify clean.
+        if not _valid_id(sid):
+            print(f"FAIL: invalid id production: {sid}")
+            return 1
         cc = None
         cc_str = a.get('data-char-count')
         if cc_str is not None:
@@ -879,14 +918,22 @@ def _verify_manifest_first(html: bytes, inert_masks: list) -> int:
     for open_start, open_end, a, opener_depth, parent_close in openers:
         if opener_depth == 0:
             continue  # top-level — already verified above
-        nid = a.get('id')
-        if nid is None or nid in seen_ids:
-            continue
         # Same absent/valueless split as the article walk above: absent means
         # non-witnessed structural nesting, valueless is a witness verify.mjs
-        # refuses as invalid grammar.
+        # refuses as invalid grammar. This test comes FIRST: whether the unit
+        # is addressable at all is decided by the witness, not by the id — a
+        # witnessed unit missing its id is a verdict, not a skip.
         if 'data-witness' not in a:
             continue  # non-witnessed structural nesting — not addressable
+        nid = a.get('id')
+        if not nid:
+            print("FAIL: nested <section data-witness> with no id")
+            return 1
+        if not _valid_id(nid):
+            print(f"FAIL: invalid id production: {nid}")
+            return 1
+        if nid in seen_ids:
+            continue
         ndw = a['data-witness']
         seen_ids.add(nid)  # dup-id already enforced globally (§9.1)
 
