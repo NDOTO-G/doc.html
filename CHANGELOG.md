@@ -12,6 +12,39 @@ path breaks every link that pointed at it.
 
 ---
 
+## v0.6.0 — 2026-08-22
+
+**The one-grammar recension: format v0.4 → v0.5.** Both reference readers and `SPEC.md` are
+replaced by the bytes sealed as `seal-readers-20260822` in the maker's repository. No shipped
+path moves; every document in this bundle verifies unchanged (16/16, both readers, exit 0).
+
+**Why.** Adversarial validation of a community-reported defect (issues #1 and #2, PR #3) found
+the real disease: the two readers evaluated their engines' own character classes (`\w`, `\s`,
+`\d`, `bytes.isspace()`) and non-full-string anchors, so there existed documents one reader
+verified and the other refused — over the same bytes. v0.5 removes every engine-defined class
+from the grammar: ids are an explicit ASCII production, counts an explicit grammar, attribute
+separators are HTML5's five whitespace bytes, every match is full-string, and previously silent
+skips (nameless nested witnessed sections, malformed manifest links, unclosed manifests,
+duplicate attributes, ill-formed UTF-8) are now identical refusals on both readers.
+
+**Boundary (call-out).** v0.5 narrows what the readers accept at the margins: non-ASCII ids and
+exotic separator codepoints that the old readers (inconsistently) tolerated are refused. No
+document in this bundle, and no document known to the maker's 360-document corpus, is affected;
+every verdict that moved in either direction is declared, fixture-pinned, and gate-verified in
+the maker's repository (`DEV_BASELINE.tsv`, 71 rows).
+
+**Known-stale, disclosed:** `SPEC.doc.html` still carries v0.4 prose in-band (it verifies clean
+under the new readers — the witness law is unchanged for its content); its re-fold to v0.5 text
+ships in a follow-up.
+
+Decision record: `RECKONING_ONE_GRAMMAR_FOR_TWO_READERS.md` in the maker's repository, sealed as
+tag `seal-readers-20260822` with pins
+`verify.py = ed7aa071e38c5d77d0d097d3feff1cf4448c4e930aaf3138935a52aaed3dc198` and
+`verify.mjs = 359954d3f19c020a358a5de6946957e14bc3a9200697f2ad3baed7f58ba71561`.
+Finding credited: issues #1/#2 and PR #3, closed as superseded by this recension.
+
+---
+
 ## v0.5.0 — 2026-08-02
 
 The repository is reorganized around **use**: how the format works, how to write one, how to

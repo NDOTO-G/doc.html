@@ -17,8 +17,30 @@ from pathlib import Path
 # ─── Witness grammar (§6.7, classify_grammar inlined) ────────────────────────
 # Two disjoint regular languages; length and alphabet arguments guarantee
 # no string matches both (Disjointness Theorem, witness_proof.py).
-_CONSECRATED_RE = re.compile(r'^[0-9a-f]{64}$')
-_WRITING_ROOM_RE = re.compile(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$')
+#
+# R8 follow-up (post-round-4-validation item 1, grep sweep): `_WRITING_ROOM_RE`
+# used `\d`, which in Python STR-mode regex (this pattern is `r'...'`, not
+# `rb'...'`) is UNICODE-AWARE by default — it matches any Unicode decimal
+# digit (category Nd), not only ASCII 0-9: `re.match(r'\d', '１')` (fullwidth
+# U+FF11) is True. verify.mjs's `WRITING_ROOM_RE` was already written with
+# the explicit ASCII class `[0-9]`. Confirmed empirically: a witness value
+# shaped like a timestamp but spelled in fullwidth digits classified as
+# WRITING_ROOM (a live epoch, not recomputed) on verify.py and as INVALID
+# (refused) on verify.mjs — the exact same class of engine/language-versioned
+# character class R1 already revoked for the id production and R3 already
+# excluded from the count grammar, found here on a third digit-bearing
+# grammar. Fixed the same way: the explicit ASCII digit class, no `\d`.
+#
+# R9 — full-string match, not bare `^...$` + `.match(`: Python's `$` also
+# matches immediately BEFORE a trailing newline (`re.match`, not `re.search`
+# or `re.fullmatch`), so `data-witness="2026-01-01T00:00:00Z\n"` wrongly
+# satisfied `_WRITING_ROOM_RE.match(...)` here while verify.mjs's un-flagged
+# `$` (true end of string, no /m) correctly refused it — same class of
+# parity trap as R1's id production and SPEC.md §9.1's `valid_id`/
+# `parse_count` amendment (round 7). Fixed identically: no `^...$` in the
+# pattern, and `.fullmatch(...)` (not `.match(...)`) at the call site below.
+_CONSECRATED_RE = re.compile(r'[0-9a-f]{64}')
+_WRITING_ROOM_RE = re.compile(r'[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z')
 
 # Epoch sentinels
 _CONSECRATED  = "consecrated"
@@ -28,8 +50,8 @@ _INVALID      = "invalid"
 
 def _classify_witness(value: str) -> str:
     """Return _CONSECRATED, _WRITING_ROOM, or _INVALID based on form alone."""
-    is_sha = bool(_CONSECRATED_RE.match(value))
-    is_ts  = bool(_WRITING_ROOM_RE.match(value))
+    is_sha = bool(_CONSECRATED_RE.fullmatch(value))
+    is_ts  = bool(_WRITING_ROOM_RE.fullmatch(value))
     if is_sha and is_ts:
         # Unreachable under Disjointness Theorem.
         raise AssertionError(
@@ -47,17 +69,43 @@ def _classify_witness(value: str) -> str:
 # tests/test_verify_py_canonical.py). Reading stays double-quote-only here;
 # non-canonical quoting on a witnessed-unit opening tag is refused separately
 # by _refuse_noncanonical_attrs (§6.4, V24/V25) rather than silently ignored.
-# JS `\s` — the character class verify.mjs's tokenizer skips. verify.mjs reads
-# the document as a UTF-8 STRING, so its separators are Unicode whitespace
-# characters, not ASCII bytes. A byte-level model swallows a U+2028 separator's
-# bytes into the attribute NAME, loses the carrier, and falsely refuses a record
-# both sealed readers accept (round-seven-c fleet, T17).
-_JS_WS = frozenset('\t\n\x0b\x0c\r \xa0\u1680'
-                   + ''.join(chr(c) for c in range(0x2000, 0x200b))
-                   + '\u2028\u2029\u202f\u205f\u3000\ufeff')
+# ─── §6.4 ATTRIBUTE-SEPARATOR set (R8, RULED by the Operator 2026-08-22) ─────
+# The set that separates one attribute from the next inside a start tag. It is
+# HTML5's five whitespace codepoints and nothing else:
+#
+#     U+0009 TAB, U+000A LF, U+000C FF, U+000D CR, U+0020 SPACE
+#
+# R8's first pass froze this set as the JS engine's `\s` — 25 codepoints — so
+# that neither reader borrowed a live, unpinned engine table. That freeze closed
+# the cross-READER skew but left a reader-vs-BROWSER gap: the WHATWG tokenizer's
+# before-attribute-name state treats only TAB/LF/FF/SPACE as whitespace (CR is
+# folded to LF by input-stream normalization before the tokenizer ever sees it),
+# so the other twenty codepoints of the JS class — NBSP, the
+# General-Punctuation space run, LINE/PARAGRAPH SEPARATOR, IDEOGRAPHIC SPACE,
+# the BOM, and VT (U+000B, which JS `\s` matches and HTML5 does NOT) — each
+# BEGIN the following attribute NAME in a browser. A reader accepting them as
+# separators verifies bytes a browser reads differently, and what is verified
+# must be what is read (the V4 Discernment). RULED 2026-08-22: narrowed to
+# HTML5's five. A codepoint outside this set, sitting inside a tag where a
+# separator was intended, is NOT a separator — it is absorbed into the adjacent
+# attribute NAME, exactly as a browser absorbs it.
+#
+# The constant is named for what it holds. It is no longer JS `\s` and must
+# never again be spelled as though it were.
+#
+# NOTE the relationship with §6.2's boundary-token OPEN set
+# (`_BOUNDARY_NEXT` / `_classify_boundary_token`, below). It rested on SIX bytes
+# — the five here plus 0x0B VT — until the SECOND Operator ruling of 2026-08-22
+# dropped VT from it too, for the identical reason it is absent here: a browser's
+# tag-name state APPENDS VT to the tag NAME, so `<section\x0b…>` yields no
+# `<section>` element at all. The two sets answer different questions at
+# different positions — what may FOLLOW a tag name (§6.2) versus what SEPARATES
+# two attributes (§6.4) — but their whitespace ground is now ONE ground, HTML5's
+# five, and the earlier inversion is closed.
+_ATTR_SEP = frozenset('\t\n\x0c\r ')
 
 
-def _attrs(tag_inner: bytes) -> dict:
+def _attrs(tag_inner: bytes, dup_names: list = None) -> dict:
     """Quote-aware attribute tokenizer (§6.4) — the reader's single value scan.
 
     Behavioural port of verify.mjs:47 `parseTagAttrs`, and structurally the same
@@ -71,29 +119,41 @@ def _attrs(tag_inner: bytes) -> dict:
     non-canonical quoting on a witnessed-unit opening tag is the separate
     document-level law enforced by `_refuse_noncanonical_attrs`); a valueless
     attribute records None. Last occurrence wins, matching the Node reader.
+
+    If *dup_names* (a list) is given, every attribute name that this SAME
+    tokenization sees more than once is appended to it, in document order, the
+    first time each repeat is seen (§6.4/§9.1 R6c — the whole-document walk's
+    own duplicate-attribute-name refusal, `_find_global_id_fault`). Detecting
+    duplicates from inside this exact tokenizer — rather than a second,
+    separately-written scan — guarantees the walk's dup-name check and its
+    last-wins VALUE resolution can never disagree about where one attribute
+    name ends and the next begins. Omitted (the default), this costs nothing:
+    every other call site is unaffected.
     """
     s = tag_inner.decode('utf-8', 'replace')
     attrs = {}
     n = len(s)
     i = 0
     while i < n:
-        while i < n and s[i] in _JS_WS:
+        while i < n and s[i] in _ATTR_SEP:
             i += 1
         if i >= n:
             break
         name_start = i
-        while i < n and s[i] not in _JS_WS and s[i] not in ('=', '"', "'"):
+        while i < n and s[i] not in _ATTR_SEP and s[i] not in ('=', '"', "'"):
             i += 1
         if i == name_start:
             i += 1
             continue
         name = s[name_start:i].lower()
+        if dup_names is not None and name in attrs:
+            dup_names.append(name)
         j = i
-        while j < n and s[j] in _JS_WS:
+        while j < n and s[j] in _ATTR_SEP:
             j += 1
         if j < n and s[j] == '=':
             j += 1
-            while j < n and s[j] in _JS_WS:
+            while j < n and s[j] in _ATTR_SEP:
                 j += 1
             if j < n and s[j] in ('"', "'"):
                 quote = s[j]
@@ -106,7 +166,7 @@ def _attrs(tag_inner: bytes) -> dict:
                     j += 1
             else:
                 val_start = j
-                while j < n and s[j] not in _JS_WS:
+                while j < n and s[j] not in _ATTR_SEP:
                     j += 1
                 attrs[name] = s[val_start:j]
             i = j
@@ -162,31 +222,190 @@ def _build_inert_mask(html: bytes) -> list:
     return spans
 
 
-# ─── §6.1 whole-document dup-id scan (V5/V30) ────────────────────────────────
+# ─── §6.1 whole-document id scan: production + uniqueness (V5/V30/V33) ───────
 # A "live element" is ANY element carrying an id= attribute — top-level
-# section/article units, nested sections, manifest <a> link targets, and any
-# id-bearing <img> (§5.5) or other element. §6.1's uniqueness rule is a
-# property of the whole document's id space, not a per-tag-name rule, so this
-# scan walks every opening tag in the document (outside inert regions), not
-# only addressable-unit opening tags.
-_ANY_OPEN_TAG_RE = re.compile(rb'<([a-zA-Z][\w-]*)((?:\s+[^<>]*)?)>')
+# section/article units, nested sections (witnessed or not), manifest <a> link
+# targets, and any id-bearing <img> (§5.5), append-anchor, or other element.
+# §6.1's rules are properties of the whole document's id space, not per-tag-name
+# rules, so this scan walks every opening tag in the document (outside inert
+# regions), not only addressable-unit opening tags.
+#
+# BOTH §6.1 laws are enforced here, in one pass, in document order: the id
+# PRODUCTION (V33 — the scope clause binds every live element, not only the
+# elements an addressing path happens to reach) and UNIQUENESS (V30). Because
+# this walk runs before shape dispatch, an off-grammar id anywhere in the
+# document — a manifest-first body section, a nested structural section, an
+# <img>, an append-anchor — is refused with the same verdict at the same point
+# in the output on both readers, whatever shape the document turns out to be.
+#
+# QUOTE-AWARE tag-end scan (round-eight-a fleet, BLOCKER B): the attrs blob
+# (group 2) is a repetition of THREE alternatives — a double-quoted span, a
+# single-quoted span, or a single byte that is none of `< > ' "`. A literal
+# `>` INSIDE a quoted value (`id="ok>evil"`) is consumed by the quoted
+# alternative and can never end the match early; only a real, unquoted `>`
+# closes the tag. The previous `[^<>]*` capture could not tell a quoted `>`
+# from the tag's own terminator and truncated the tag there, handing the
+# tokenizer `id="ok` — a shared fail-open both readers accepted as PASS.
+#
+# NO SEPARATOR REQUIREMENT and NO `\s` anywhere in this pattern (round-eight-a
+# fleet, BLOCKER A): the previous pattern required a literal `\s+` between the
+# tag name and the attrs blob, and Python's BYTES-mode `\s` is ASCII-only while
+# JS's STRING-mode `\s` also matches U+00A0 NBSP and other Unicode space
+# characters — a cross-reader divergence (`<span\xa0id="bad id">` PASSED on
+# verify.py, FAILED on verify.mjs). Requiring an explicit ASCII separator here
+# does not fix that divergence — it would make BOTH readers silently DROP the
+# malformed tag instead (neither would even see its `id`), which is worse, not
+# safer. The catch-all alternative `[^<>'"]` already contains every ASCII
+# whitespace byte (space, tab, LF, FF, CR) AND NBSP AND any other non-special
+# byte, with no whitespace-vs-not decision made here at all: the blob is
+# captured whole and handed to `_attrs` below, whose OWN separator handling
+# (`_ATTR_SEP`, §6.4) is the enumerated set pinned identically in both readers
+# (see the comment at `_ATTR_SEP`'s definition) — so the real
+# whitespace-recognition decision is made exactly ONCE, in code already proven
+# cross-reader-identical, not re-decided here in a second, differently-behaved
+# class. Since the 2026-08-22 ruling that set is HTML5's five, so NBSP here is
+# absorbed into the attribute NAME rather than treated as a separator — on both
+# readers alike, which is what this comment's `<span\xa0id="bad id">` example
+# now does (the tag parses, its only "attribute" is named `\xa0id`, and no `id`
+# carrier is visible to the walk — identically on py and mjs).
+_ANY_OPEN_TAG_RE = re.compile(
+    rb'<([a-zA-Z][\w-]*)'
+    rb'((?:"[^"]*"|\'[^\']*\'|[^<>\'"])*)'
+    rb'>'
+)
+
+# ─── §6.1 BLOCKER (round-eight-b): the unterminated-quote hole in the outer
+# tag regex ITSELF (post-R6 review) ───────────────────────────────────────────
+# _ANY_OPEN_TAG_RE has no fallback when a quote opens with no reachable close.
+# `<b id="bad id>` (or the single-quote twin) makes the anchored match at that
+# tag's own '<' FAIL: the quoted-span alternative needs a matching close quote
+# and finds none it can pair with all the way to a legal '>', the catch-all
+# alternative categorically excludes the bare quote byte, and no other
+# alternative can consume it either. Under a document-wide `finditer` (the
+# prior implementation), a failed match at one position is simply INVISIBLE —
+# the engine silently retries at the next byte and resyncs at whatever tag
+# DOES parse later in the document. `<b id="bad id>` was therefore never seen
+# by this scan at all: both readers PASSED it, and V30's dup-id defense rode
+# the identical hole (an id repeated only inside an invisible tag's own
+# invisible attribute can never collide with anything).
+#
+# THE FIX replaces the blind `finditer` with an EXPLICIT walk over every
+# candidate tag-start position — a '<' immediately followed by an ASCII letter
+# (`_TAG_START_RE`; `<!--`, `<!DOCTYPE`, `</...>`, and `<?...` never qualify,
+# since none of them has a letter immediately after '<') — and, at each one
+# outside an inert region, attempts _ANY_OPEN_TAG_RE ANCHORED exactly there
+# (`.match(html, start)`, not `.search`). A candidate that matches is handled
+# exactly as before (production, then uniqueness) and the walk resumes at the
+# match's own end. A candidate that does NOT match needs one more question
+# answered before it can be refused: WHY did it fail?
+#
+# Plain body text can ALSO start with '<letter' with no fallback in sight —
+# `a<b` in prose, `<b` immediately followed by another real tag with nothing
+# in between — and that failure carries NO quote at all; it was invisible
+# before this fix and MUST stay invisible now (refusing it would turn ordinary
+# prose into a false-positive FAIL, which is not what BLOCKER 1 is about). The
+# discriminator: consume the tag name, then as much plain (non-`< > ' "`)
+# content as the quote-FREE catch-all alone would consume
+# (`_TAG_NAME_ONLY_RE` + `_ATTR_PLAIN_RE`). If the byte immediately after that
+# is a quote, an attribute value was OPENED and never reachably closed — THAT
+# is BLOCKER 1's fault, refused at the byte offset of the tag's own '<'
+# (0-based, raw file bytes — identical arithmetic to `_in_mask`/byte-offset use
+# elsewhere in this reader, since `html` is already `bytes`). If it is
+# anything else ('<', or end of file — a bare '>' cannot occur here: reaching
+# '>' via the quote-free scan alone would have meant _ANY_OPEN_TAG_RE's own
+# catch-all alternative could reach it too, so the anchored match would have
+# already succeeded, contradicting that this branch is even reached), no quote
+# was ever opened — this "<letter" was never a real tag attempt, and the walk
+# simply resumes one byte later, exactly as invisible as it always was.
+_TAG_START_RE = re.compile(rb'<[a-zA-Z]')
+_TAG_NAME_ONLY_RE = re.compile(rb'<[a-zA-Z][\w-]*')
+_ATTR_PLAIN_RE = re.compile(rb"[^<>'\"]*")
 
 
-def _find_global_dup_id(html: bytes, masks: list) -> str:
-    """Return the first id value seen twice across every opening tag in the
-    document (quote-aware, inert-region-masked), or None if all ids are
-    unique. Document order (first-to-second occurrence)."""
+def _find_global_id_fault(html: bytes, masks: list):
+    """Return (kind, value) for the FIRST §6.1 id fault in document order —
+    kind is 'production' (off-grammar id), 'duplicate' (id seen twice),
+    'dup-attr' (an opening tag carries the same attribute NAME twice; value is
+    (name, byte offset of that tag's own '<')), or 'malformed' (an unterminated
+    attribute quote made a tag unparseable; value is the byte offset of that
+    tag's own '<') — or None if every live element's id is well-formed and
+    unique and every candidate tag parses cleanly and without a duplicated
+    attribute name.
+
+    Order matters and is deterministic: each element is tested for the
+    production before it is entered into the uniqueness set, so an id that is
+    both off-grammar and repeated is reported as a production fault at its
+    FIRST occurrence, identically on both readers. A malformed tag is likewise
+    reported at its own document-order position, ahead of any production or
+    duplicate fault found on a LATER tag (fail-closed on the earliest problem).
+
+    R6c (post-R6/R6-refinement review): a tag carrying the SAME attribute name
+    twice — `<img id="ok" id="bad id">`, `<div id="ok" id="append-anchor">`,
+    two `class=` on one tag — is resolved by `_attrs`'s tokenizer to a single
+    (last-wins) value with no trace that a second occurrence ever existed, so
+    the off-grammar or duplicate id inside it was never seen: BOTH readers
+    PASSED such a tag identically. `<section>`/`<article>` unit openers were
+    incidentally protected by the SEPARATE downstream V25 refusal
+    (`_refuse_noncanonical_attrs`), but that check never runs on `<img>`, an
+    append-anchor, or any other non-unit live element. THE FIX: `_attrs` is
+    asked, via its optional `dup_names` parameter, to report every repeated
+    name it sees while tokenizing THIS SAME tag — so the dup-name check can
+    never disagree with `_attrs` about where one attribute name ends and the
+    next begins — and a duplicate found on ANY opening tag the walk visits
+    (id-bearing or not, matching V37's identical breadth) is refused BEFORE
+    that tag's `id` is ever read, at the tag's own '<' (consistent with V37's
+    offset rule; not the offset of the duplicate occurrence, which is what the
+    pre-existing, unit-opener-only V25 refusal reports).
+
+    A VALUELESS `id` attribute (`<div id>`) records None from the §6.4
+    tokenizer — but it is PRESENT (`'id' in a`), and F4 (post-round-4-
+    validation) resolves it the same way §5.4 resolves a valueless
+    `data-witness`: presence-with-no-value coalesces to the empty string and
+    is held to the production exactly as `id=""` is, both returning
+    ('production', ''). Only an id attribute that was never written at all
+    (`'id' not in a`) is invisible to this walk, as it always was."""
     seen = set()
-    for m in _ANY_OPEN_TAG_RE.finditer(html):
-        if _in_mask(m.start(), masks):
+    pos = 0
+    n = len(html)
+    while pos < n:
+        sm = _TAG_START_RE.search(html, pos)
+        if not sm:
+            break
+        start = sm.start()
+        if _in_mask(start, masks):
+            pos = start + 1
             continue
-        a = _attrs(m.group(2))
-        id_val = a.get('id')
-        if id_val is None:
+        m = _ANY_OPEN_TAG_RE.match(html, start)
+        if m:
+            dup_names = []
+            a = _attrs(m.group(2), dup_names)
+            if dup_names:
+                return ('dup-attr', (dup_names[0], start))
+            if 'id' in a:
+                # A VALUELESS `id` (`<div id>`) tokenizes to None here — same
+                # as `id=""` after the `or ''` coalesce, and different from an
+                # id attribute that was never written at all (`'id' not in
+                # a`, which is not tested here and stays invisible to this
+                # walk, exactly as before). F4: a valueless id IS an id
+                # attribute, just an empty one — it is not skipped, it is
+                # held to the same production as `id=""`.
+                id_val = a.get('id') or ''
+                if not _valid_id(id_val):
+                    return ('production', id_val)
+                if id_val in seen:
+                    return ('duplicate', id_val)
+                seen.add(id_val)
+            pos = m.end()
             continue
-        if id_val in seen:
-            return id_val
-        seen.add(id_val)
+        # The anchored match failed. Discriminate an unterminated attribute
+        # quote (refuse) from ordinary text that merely LOOKS like a tag start
+        # (stay invisible, as always) — see the BLOCKER comment above.
+        name_m = _TAG_NAME_ONLY_RE.match(html, start)
+        plain_m = _ATTR_PLAIN_RE.match(html, name_m.end())
+        plain_end = plain_m.end()
+        if plain_end < n and html[plain_end:plain_end + 1] in (b'"', b"'"):
+            return ('malformed', start)
+        pos = start + 1
     return None
 
 
@@ -213,56 +432,95 @@ def _refuse_noncanonical_attrs(tag_inner: bytes, tag_inner_start: int) -> None:
     unquoted values are NON-CANONICAL (V24) — and no attribute name may
     appear twice (V25). Both refusals carry a required byte offset.
     ``tag_inner_start`` is the byte offset of ``tag_inner`` in the document.
+
+    R8 follow-up (post-round-4-validation item 1): this function used to scan
+    *tag_inner* as raw BYTES, one byte at a time, via ``bytes.isspace()`` —
+    Python's C-locale byte-whitespace test (6 ASCII bytes: TAB LF VT FF CR
+    SPACE), unable in principle to recognize a MULTI-byte UTF-8 separator
+    (NBSP, U+FEFF, any of the General-Punctuation spaces) as a single unit at
+    all — while verify.mjs's sibling `refuseNonCanonicalAttrs` scanned the
+    ALREADY-DECODED string with the running engine's own `/\\s/`. Two
+    DIFFERENT unpinned separator predicates on two supposedly-identical
+    functions — exactly what R8 exists to close. THE FIX: decode once (UTF-8,
+    `errors='replace'`, matching how `_attrs` already reads every other
+    attribute blob in this reader) and scan the resulting STRING using
+    `_ATTR_SEP`, the SAME enumerated separator set `_attrs` uses (HTML5's
+    five since the 2026-08-22 ruling) — one
+    separator predicate, shared by every tokenizer in this reader, not two.
+    Byte offsets (required by NON-CANONICAL, §6.2) are recovered from char
+    indices via `_byte_off`, re-encoding the decoded prefix — tag_inner is a
+    single opening tag's attribute blob, never large enough for this to
+    matter. A side effect, not a new behavior: the duplicate-name error
+    message now shows the attribute name's REAL Unicode characters (as
+    verify.mjs's message always has) instead of `ascii`-decoding it back to
+    U+FFFD replacement characters for any non-ASCII byte — the OLD
+    byte-mode message was itself an unpinned, ASCII-only rendering choice.
     """
+    s = tag_inner.decode('utf-8', 'replace')
+    n = len(s)
+
+    def _byte_off(char_idx: int) -> int:
+        return tag_inner_start + len(s[:char_idx].encode('utf-8'))
+
     seen = set()
-    n = len(tag_inner)
     i = 0
     while i < n:
-        while i < n and tag_inner[i:i + 1].isspace():
+        while i < n and s[i] in _ATTR_SEP:
             i += 1
         if i >= n:
             break
         name_start = i
-        while (i < n and not tag_inner[i:i + 1].isspace()
-               and tag_inner[i:i + 1] not in (b'=', b'"', b"'")):
+        while i < n and s[i] not in _ATTR_SEP and s[i] not in ('=', '"', "'"):
             i += 1
         if i == name_start:
             i += 1
             continue
-        name = tag_inner[name_start:i].lower()
+        name = s[name_start:i].lower()
         if name in seen:
             raise NonCanonical(
-                f"duplicate attribute name '{name.decode('ascii', 'replace')}' "
+                f"duplicate attribute name '{name}' "
                 "on a witnessed-unit opening tag (§6.4, V25)",
-                tag_inner_start + name_start)
+                _byte_off(name_start))
         seen.add(name)
         j = i
-        while j < n and tag_inner[j:j + 1].isspace():
+        while j < n and s[j] in _ATTR_SEP:
             j += 1
-        if j < n and tag_inner[j:j + 1] == b'=':
+        if j < n and s[j] == '=':
             j += 1
-            while j < n and tag_inner[j:j + 1].isspace():
+            while j < n and s[j] in _ATTR_SEP:
                 j += 1
-            if j < n and tag_inner[j:j + 1] == b'"':
+            if j < n and s[j] == '"':
                 j += 1
-                while j < n and tag_inner[j:j + 1] != b'"':
+                while j < n and s[j] != '"':
                     j += 1
                 if j < n:
                     j += 1
             else:
-                form = ('single-quoted' if j < n and tag_inner[j:j + 1] == b"'"
-                        else 'unquoted')
+                form = 'single-quoted' if j < n and s[j] == "'" else 'unquoted'
                 raise NonCanonical(
                     f"{form} value for attribute "
-                    f"'{name.decode('ascii', 'replace')}' "
+                    f"'{name}' "
                     "on a witnessed-unit opening tag (§6.4, V24)",
-                    tag_inner_start + min(j, n - 1 if n else 0))
+                    _byte_off(min(j, n - 1 if n else 0)))
             i = j
         else:
             i = j  # valueless attribute — V24 governs valued attributes only
 
 
 # ─── §6.2 boundary-token grammar (normative, exact) ──────────────────────────
+# §6.2 BOUNDARY-TOKEN OPEN set (RULED by the Operator, 2026-08-22 — the second
+# ruling of that sitting). A byte sequence is an open token for TAG iff it is
+# `<` + TAG followed by exactly one of these bytes. The whitespace members are
+# HTML5's five — 0x09 TAB, 0x0A LF, 0x0C FF, 0x0D CR, 0x20 SPACE — plus `/` and
+# `>`. 0x0B VT was a member until the ruling and is NOT one now: a browser's
+# tag-name state appends VT to the tag NAME, so `<section\x0bid="x">` opens an
+# element named `section\x0b` and NO `<section>` element is ever produced. A
+# reader that called it an open token was reading bytes a browser reads
+# differently — what is verified must be what is read (the V4 Discernment) — so
+# under the ruling the element is invisible to this reader exactly as it is
+# invisible to a browser. Identical, member for member, to verify.mjs's
+# `WS_SLASH_GT`, and resting on the same five bytes as §6.4's `_ATTR_SEP`.
+_BOUNDARY_NEXT = frozenset((b' ', b'\t', b'\n', b'\r', b'\f', b'/', b'>'))
 # A boundary-adjacent scan: find every '<' + TAG occurrence (open-ish) and every
 # '</' + TAG occurrence (close-ish), case-sensitive lowercase per §6.2, and
 # classify each as: exact open token, exact close token, NON-CANONICAL close
@@ -287,7 +545,7 @@ def _classify_boundary_token(m, tag_b: bytes):
     """
     if m.group('open_next') is not None:
         nxt = m.group('open_next')
-        if nxt in (b' ', b'\t', b'\n', b'\r', b'\f', b'\v', b'/', b'>'):
+        if nxt in _BOUNDARY_NEXT:
             return ('open', m.end('open_next'))
         return ('content', None)
     else:
@@ -300,6 +558,15 @@ def _classify_boundary_token(m, tag_b: bytes):
         # not a near-miss close token, and MUST NOT be reported as NON-CANONICAL
         # under §6.2 (it is not a boundary token of any kind).
         first = tail[:1]
+        # NOT `_BOUNDARY_NEXT`, and deliberately still SIX bytes wide (0x0B
+        # VT included). This set does not decide what a boundary IS; it
+        # decides whether a close-tag-SHAPED token that is not canonical is a
+        # near-miss worth refusing as NON-CANONICAL or a longer tag name that
+        # is ordinary content. Keeping VT here keeps `</section\x0b>` a
+        # refusal rather than a silent skip — the fail-closed direction — and
+        # it is byte-identical on both trial readers AND on the sealed dev
+        # pair. The 2026-08-22 VT ruling names the OPEN set; this position is
+        # recorded in SPEC.md §6.2 as its own residual, not folded in silently.
         if first and first not in (b' ', b'\t', b'\n', b'\r', b'\f', b'\v', b'>'):
             return ('content', None)
         return ('noncanonical', m.start())
@@ -416,11 +683,59 @@ def _content_profile_check(inner: bytes, inner_start: int, inert_masks: list) ->
 
 
 # ─── Shared helpers ───────────────────────────────────────────────────────────
-_VALID_ID_RE = re.compile(r'^[A-Za-z_][\w\-.:]*$')
+# §6.1 id production — ONE definition, called from every path that holds an id
+# to the grammar: the whole-document live-element walk (_find_global_id_fault),
+# the tail path's <article id>, the manifest link's fragment, and the
+# nested-recompute loop. The production is a property of the format, not of a
+# shape or a call site, so it MUST NOT be re-inlined anywhere.
+#
+#     id    := start cont*
+#     start := [A-Za-z_]
+#     cont  := [A-Za-z0-9_.:-]
+#
+# ASCII, spelled byte-exact — NOT Unicode general categories. A stranger with a
+# text editor and SHA-256 must be able to evaluate the production without a
+# versioned Unicode table (V6), and §9.2a's byte-scanner must reach the same
+# answer as this reader. `\w` is deliberately not used: Python's `\w` is
+# Unicode-aware while JavaScript's is ASCII-only even under /u, so a
+# `\w`-spelled production could never be identical across the two readers.
+#
+# `re.fullmatch`, NOT `re.match` with a trailing `$`: Python's `$` also matches
+# immediately BEFORE a trailing newline, so `re.match(r'^...$', 'abc\n')`
+# succeeds while verify.mjs's un-flagged `$` (end of input, no /m) refuses it.
+# fullmatch has no such hole, so the two readers agree byte for byte.
+_ID_PRODUCTION_RE = re.compile(r'[A-Za-z_][A-Za-z0-9_.:-]*')
 
 
-def _valid_id(id_str: str) -> bool:
-    return bool(_VALID_ID_RE.match(id_str))
+def _valid_id(id_str) -> bool:
+    """True iff *id_str* is a string matching the §6.1 ASCII id production."""
+    return isinstance(id_str, str) and _ID_PRODUCTION_RE.fullmatch(id_str) is not None
+
+
+# §6.6 count-value grammar — ONE definition, called from every path that turns
+# a `data-char-count` attribute STRING into a number (tail article, manifest
+# link, top-level section attribute, nested section attribute).
+#
+#     count := "0" | [1-9][0-9]*
+#
+# No sign, no leading zeros, no separators, no surrounding whitespace, no hex,
+# no underscores, no fullwidth digits, no junk suffix. Anything else is a
+# refusal — never a best-effort parse (`int('120abc')` does not raise for the
+# reason people expect, and `parseInt('120abc', 10)` cheerfully returns 120)
+# and never a silent skip. `fullmatch` for the same trailing-newline reason as
+# the id production above.
+_COUNT_PRODUCTION_RE = re.compile(r'0|[1-9][0-9]*')
+
+
+def _parse_count(raw):
+    """Return the decimal value of a `data-char-count` STRING, or None after
+    printing the refusal verdict when the string is off-grammar. Callers return
+    1 on None; the verdict string lives here and nowhere else."""
+    if not isinstance(raw, str) or _COUNT_PRODUCTION_RE.fullmatch(raw) is None:
+        print(f"FAIL: invalid char-count grammar: "
+              f"{raw if isinstance(raw, str) else ''}")
+        return None
+    return int(raw)
 
 
 def _witnessed_bytes(html: bytes, opener_end: int, opener_starts: list, tag: str,
@@ -502,7 +817,26 @@ def _verify_tail(html: bytes, inert_masks: list) -> int:
 
     for idx, (open_start, open_end) in enumerate(openers):
         opener_bytes = html[open_start:open_end]
-        inner_attrs_match = re.match(rb'<article\s*([^>]*)>', opener_bytes)
+        # R8 RULING (Operator, 2026-08-22) — NO `\s` at the tag-name/attrs
+        # join. This pattern used to spell the join `\s*`, and that is a
+        # SEPARATOR decision made outside the one pinned separator predicate:
+        # Python's BYTES-mode `\s` is the six ASCII whitespace bytes (VT
+        # included) while verify.mjs's STRING-mode `\s` was the 25-codepoint
+        # Unicode class. While `_ATTR_SEP` still held all 25 the two agreed by
+        # accident — whatever one regex left behind, the other reader's tokenizer
+        # skipped anyway. Narrowing `_ATTR_SEP` to HTML5's five breaks that
+        # accident: `<article \xa0id="x">` would leave py the blob
+        # `\xa0id=...` (name mangled, no `id` visible) and mjs the blob
+        # `id=...` (id visible) — a live cross-reader divergence, confirmed by
+        # probe before this line was changed. The fix is the shape
+        # `_ANY_OPEN_TAG_RE` (the whole-document id walk) already carries and
+        # R8/BLOCKER A already ruled correct: capture the blob whole, make no
+        # whitespace decision here at all, and let `_attrs`/`_refuse_noncanonical_
+        # attrs` — the single pinned `_ATTR_SEP` predicate, identical in both
+        # readers — decide what a separator is. Group 1 now begins at the §6.2
+        # boundary byte itself; the byte-offset arithmetic below is unchanged
+        # (`.start(1)` moves earlier by exactly what the tokenizer then skips).
+        inner_attrs_match = re.match(rb'<article([^>]*)>', opener_bytes)
         # §6.4 V24/V25 — in tail shape the top-level <article> openers are
         # what unit-discovery addresses; serialization must be canonical.
         if inner_attrs_match:
@@ -567,20 +901,20 @@ def _verify_tail(html: bytes, inert_masks: list) -> int:
 
         # §6.6 char-count (optional). Read via .get() and test for None:
         # the §6.4 tokenizer records a VALUELESS attribute as None (Node
-        # parity), so a presence test alone would hand None to int().
+        # parity), so a presence test alone would hand None to the parser.
+        # A PRESENT value is held to the §6.6 count grammar — off-grammar is a
+        # refusal, not a best-effort parse and not a skip.
         cc_str = a.get('data-char-count')
         if cc_str is not None:
-            try:
-                claimed_cc = int(cc_str)
-            except ValueError:
-                claimed_cc = None
-            if claimed_cc is not None:
-                actual_cc = len(inner.decode('utf-8', errors='strict'))
-                if actual_cc != claimed_cc:
-                    print(f"FAIL article id={id_val}: "
-                          f"char-count claimed={claimed_cc} actual={actual_cc}")
-                    mismatch += 1
-                    continue
+            claimed_cc = _parse_count(cc_str)
+            if claimed_cc is None:
+                return 1
+            actual_cc = len(inner.decode('utf-8', errors='strict'))
+            if actual_cc != claimed_cc:
+                print(f"FAIL article id={id_val}: "
+                      f"char-count claimed={claimed_cc} actual={actual_cc}")
+                mismatch += 1
+                continue
 
         if epoch == _WRITING_ROOM:
             ordinal_count += 1
@@ -629,9 +963,11 @@ def _verify_tail(html: bytes, inert_masks: list) -> int:
 # ─── Manifest-first path (§5.3 / §9.1 verify_manifest_first) ─────────────────
 _NAV_OPEN_RE     = re.compile(rb'<nav\b([^>]*)>', re.IGNORECASE)
 _A_TAG_RE        = re.compile(rb'<a\b([^>]*)>', re.IGNORECASE)
-_HREF_RE         = re.compile(rb'href="([^"]*)"')
-_DW_RE           = re.compile(rb'data-witness="([^"]*)"')
-_CC_RE           = re.compile(rb'data-char-count="([^"]*)"')
+# _HREF_RE / _DW_RE / _CC_RE removed (post-round-4-validation cleanup): zero
+# call sites — href, data-witness, and data-char-count are all read via the
+# quote-aware `_attrs` tokenizer everywhere in this reader, not by these
+# standalone regexes; they were dead code. No mjs twin ever existed for any
+# of the three.
 
 
 def _verify_manifest_first(html: bytes, inert_masks: list) -> int:
@@ -645,7 +981,23 @@ def _verify_manifest_first(html: bytes, inert_masks: list) -> int:
         a = _attrs(m.group(1))
         if a.get('id') == 'manifest':
             nav_start = m.end()
-            nav_end_idx = html.find(b'</nav>', nav_start)
+            # R4b: find the first `</nav>` at or after nav_start that is NOT
+            # itself inside an inert region (§12) — the same `_in_mask` test
+            # already used to locate the `<nav id="manifest">` opener above.
+            # A `</nav>` written inside an HTML comment INSIDE the manifest
+            # (e.g. a commented-out usage example) is not the manifest's
+            # real close and must not truncate it.
+            search_pos = nav_start
+            nav_end_idx = -1
+            while True:
+                candidate = html.find(b'</nav>', search_pos)
+                if candidate < 0:
+                    break
+                if _in_mask(candidate, inert_masks):
+                    search_pos = candidate + 1
+                    continue
+                nav_end_idx = candidate
+                break
             if nav_end_idx < 0:
                 print("FAIL: <nav id=\"manifest\"> is unterminated")
                 return 1
@@ -660,22 +1012,48 @@ def _verify_manifest_first(html: bytes, inert_masks: list) -> int:
     # Collect manifest links
     sections = []
     for m in _A_TAG_RE.finditer(nav_inner):
+        # §12 inert regions (comments etc.) are invisible to every check —
+        # mirrors the adjacent nav-locating scan's mask idiom above. An <a>
+        # written inside an HTML comment inside nav#manifest is not a live
+        # manifest entry (a commented-out example, say); skip it rather than
+        # refusing the document over dead markup. m.start() is relative to
+        # nav_inner, so the mask lookup needs the ABSOLUTE offset (nav_start
+        # + m.start()) — inert_masks is built over the whole document.
+        if _in_mask(nav_start + m.start(), inert_masks):
+            continue
         a = _attrs(m.group(1))
         # `or ''` / `is not None`, not a .get() default: a VALUELESS attribute
         # is recorded as None by the §6.4 tokenizer (Node parity), and the
         # default only fires when the key is absent entirely.
         href = a.get('href') or ''
         dw   = a.get('data-witness') or ''
-        if not href.startswith('#') or not dw:
-            continue
+        # §5.4 already REQUIRES `href="#id"` and `data-witness` on a manifest
+        # entry. A malformed entry was previously a silent `continue` — the
+        # entry simply vanished from the list, and with it the unit it was
+        # supposed to address, so a document could shed a section from the
+        # verified set by malforming its own link. That is a refusal, not a
+        # drop. The gate is `<a>` inside `<nav id="manifest">`; anchors
+        # elsewhere in the document are untouched by this rule.
+        if not href.startswith('#'):
+            print(f"FAIL: manifest link href is not a fragment: {href}")
+            return 1
+        if not dw:
+            print(f"FAIL: manifest link missing data-witness: {href}")
+            return 1
         sid = href[1:]
+        # §6.1 id production — the manifest link's fragment IS the addressable
+        # unit's id, so it is held to the same production every other live
+        # element's id is held to. Reachable here for a fragment that names no
+        # element at all (`href="#"`), which the whole-document walk cannot see.
+        if not _valid_id(sid):
+            print(f"FAIL: invalid id production: {sid}")
+            return 1
         cc = None
         cc_str = a.get('data-char-count')
         if cc_str is not None:
-            try:
-                cc = int(cc_str)
-            except ValueError:
-                pass
+            cc = _parse_count(cc_str)
+            if cc is None:
+                return 1
         sections.append({'id': sid, 'witness': dw, 'manifest_cc': cc})
 
     if not sections:
@@ -719,7 +1097,26 @@ def _verify_manifest_first(html: bytes, inert_masks: list) -> int:
         if kind == 'open':
             tag_end = html.index(b'>', val)
             open_start, open_end = m.start(), tag_end + 1
-            tag_match = re.match(rb'<section\s*([^>]*)>', html[open_start:open_end])
+            # R8 RULING (Operator, 2026-08-22) — NO `\s` at the tag-name/attrs
+            # join. This pattern used to spell the join `\s*`, and that is a
+            # SEPARATOR decision made outside the one pinned separator predicate:
+            # Python's BYTES-mode `\s` is the six ASCII whitespace bytes (VT
+            # included) while verify.mjs's STRING-mode `\s` was the 25-codepoint
+            # Unicode class. While `_ATTR_SEP` still held all 25 the two agreed by
+            # accident — whatever one regex left behind, the other reader's tokenizer
+            # skipped anyway. Narrowing `_ATTR_SEP` to HTML5's five breaks that
+            # accident: `<article \xa0id="x">` would leave py the blob
+            # `\xa0id=...` (name mangled, no `id` visible) and mjs the blob
+            # `id=...` (id visible) — a live cross-reader divergence, confirmed by
+            # probe before this line was changed. The fix is the shape
+            # `_ANY_OPEN_TAG_RE` (the whole-document id walk) already carries and
+            # R8/BLOCKER A already ruled correct: capture the blob whole, make no
+            # whitespace decision here at all, and let `_attrs`/`_refuse_noncanonical_
+            # attrs` — the single pinned `_ATTR_SEP` predicate, identical in both
+            # readers — decide what a separator is. Group 1 now begins at the §6.2
+            # boundary byte itself; the byte-offset arithmetic below is unchanged
+            # (`.start(1)` moves earlier by exactly what the tokenizer then skips).
+            tag_match = re.match(rb'<section([^>]*)>', html[open_start:open_end])
             # §6.4 V24/V25 — every <section> (any depth) is a witnessed unit
             # in v0.3; its opening tag must be canonically serialized.
             if tag_match:
@@ -845,10 +1242,9 @@ def _verify_manifest_first(html: bytes, inert_masks: list) -> int:
         sec_cc_str = section_attrs.get('data-char-count')
         sec_cc = None
         if sec_cc_str is not None:
-            try:
-                sec_cc = int(sec_cc_str)
-            except ValueError:
-                pass
+            sec_cc = _parse_count(sec_cc_str)
+            if sec_cc is None:
+                return 1
 
         if sec_cc is not None and sec_cc != actual_cc:
             print(f"FAIL {sid}: char-count section-attr={sec_cc} actual={actual_cc}")
@@ -879,14 +1275,29 @@ def _verify_manifest_first(html: bytes, inert_masks: list) -> int:
     for open_start, open_end, a, opener_depth, parent_close in openers:
         if opener_depth == 0:
             continue  # top-level — already verified above
-        nid = a.get('id')
-        if nid is None or nid in seen_ids:
-            continue
         # Same absent/valueless split as the article walk above: absent means
         # non-witnessed structural nesting, valueless is a witness verify.mjs
-        # refuses as invalid grammar.
+        # refuses as invalid grammar. This test comes FIRST: whether the unit is
+        # addressable at all is decided by the WITNESS, not by the id — so a
+        # witnessed unit missing its id is a verdict, not a skip.
         if 'data-witness' not in a:
             continue  # non-witnessed structural nesting — not addressable
+        nid = a.get('id')
+        # §5.2 REQUIRES an id on an addressable unit, and a nested <section>
+        # carrying data-witness IS one. Refuse rather than skip. This also
+        # retires the latent `seen_ids.add(None)` — under the old ordering an
+        # id-less witnessed nested section fell through to the dup guard, so
+        # the FIRST one was silently skipped and every later one was skipped
+        # again as a "duplicate" of None. An all-zeros witness on such a
+        # section is now refused, never passed.
+        if not nid:
+            print("FAIL: nested <section data-witness> with no id")
+            return 1
+        if not _valid_id(nid):
+            print(f"FAIL: invalid id production: {nid}")
+            return 1
+        if nid in seen_ids:
+            continue
         ndw = a['data-witness']
         seen_ids.add(nid)  # dup-id already enforced globally (§9.1)
 
@@ -928,16 +1339,15 @@ def _verify_manifest_first(html: bytes, inert_masks: list) -> int:
 
         ncc_str = a.get('data-char-count')
         if ncc_str is not None:
-            try:
-                ncc = int(ncc_str)
-                nactual_cc = len(ninner.decode('utf-8', errors='strict'))
-                if ncc != nactual_cc:
-                    print(f"FAIL nested section id={nid}: "
-                          f"char-count claimed={ncc} actual={nactual_cc}")
-                    nested_mismatch += 1
-                    continue
-            except ValueError:
-                pass
+            ncc = _parse_count(ncc_str)
+            if ncc is None:
+                return 1
+            nactual_cc = len(ninner.decode('utf-8', errors='strict'))
+            if ncc != nactual_cc:
+                print(f"FAIL nested section id={nid}: "
+                      f"char-count claimed={ncc} actual={nactual_cc}")
+                nested_mismatch += 1
+                continue
 
         nested_ok += 1
 
@@ -954,6 +1364,48 @@ def _verify_manifest_first(html: bytes, inert_masks: list) -> int:
 # ─── Entry point ─────────────────────────────────────────────────────────────
 def main(file_path: str) -> int:
     html = Path(file_path).read_bytes()
+
+    # ─── R7: whole-document UTF-8 well-formedness — the FIRST check, before any
+    # other, including the id scan ─────────────────────────────────────────────
+    # Pre-existing on the sealed baseline: invalid UTF-8 anywhere in the
+    # document diverges the two readers. verify.py either PASSes silently
+    # (an off-grammar byte outside any `errors='strict'` decode site is never
+    # even looked at) or raises an unhandled UnicodeDecodeError — a Python
+    # traceback, not a "FAIL: ..." verdict — depending on WHERE the bad byte
+    # falls; verify.mjs reads the file via `fs.readFileSync(path, "utf8")`,
+    # which never throws and instead silently substitutes U+FFFD per invalid
+    # byte, so it reports whatever downstream mismatch that substitution
+    # happens to cause rather than the real defect. Two different failure
+    # shapes for the identical input is a divergence R5 (same-reason parity)
+    # forbids, so this trial closes it as a new fail-closed rule (R7): both
+    # readers validate the ENTIRE raw file is well-formed UTF-8 before doing
+    # anything else with it — no shape detection, no id scan, no masking.
+    #
+    # `bytes.decode('utf-8', 'strict')` raises UnicodeDecodeError whose
+    # `.start` is the byte offset of the first byte of the ill-formed
+    # subsequence (CPython's decoder follows the Unicode Standard's Table 3-7
+    # "well-formed UTF-8 byte sequences" restricted-second-byte table, which is
+    # exactly what rules out overlong encodings, encoded surrogates
+    # (U+D800..U+DFFF), and codepoints above U+10FFFF — not merely "is this
+    # byte in 0x00-0xFF", which would accept all three). verify.mjs's twin
+    # (`firstInvalidUtf8Offset`) is a hand-written scanner over the same table,
+    # proven to agree with this on every probe case in the fixture battery
+    # (truncated multibyte at EOF, overlong, surrogate, stray continuation
+    # byte, invalid lead byte) — see that function's own comment for the table.
+    #
+    # A UTF-8 BOM (`EF BB BF`) at offset 0 is NOT rejected here: it is a
+    # legal, well-formed UTF-8 encoding of U+FEFF, so `errors='strict'` does
+    # not raise on it, and empirically neither reader's behavior on a
+    # BOM-prefixed document differs from the same document without one (the
+    # BOM sits in the prelude before any witnessed span or checked construct,
+    # so it is inert to every downstream check on both readers) — no
+    # divergence exists to close, so this rule adds none.
+    try:
+        html.decode('utf-8', 'strict')
+    except UnicodeDecodeError as e:
+        print(f"FAIL: invalid UTF-8 at byte offset {e.start}")
+        return 1
+
     # One mask set for the whole reader: the inert regions of §12 — HTML
     # comments AND <script>/<style> raw-text content. Boundary-token matching
     # (§6.2), unit discovery (§9.1), the count guard, shape detection, the
@@ -963,14 +1415,24 @@ def main(file_path: str) -> int:
     # a boundary or be counted anywhere.
     inert_masks = _build_inert_mask(html)
 
-    # §6.1/§9.1 whole-document dup-id check — runs BEFORE shape dispatch, over
-    # every live element's id (not only addressable-unit ids; V5/V30). Uses
-    # inert_masks (comments + <script>/<style> raw-text content, §12) so a
-    # literal id-shaped substring inside JS/CSS text is not mistaken for a
-    # real element's id.
-    dup_id = _find_global_dup_id(html, inert_masks)
-    if dup_id is not None:
-        print(f"FAIL: duplicate id: {dup_id}")
+    # §6.1/§9.1 whole-document id check — runs BEFORE shape dispatch, over
+    # every live element's id (not only addressable-unit ids; V5/V30/V33): the
+    # id PRODUCTION and then uniqueness, in document order. Uses inert_masks
+    # (comments + <script>/<style> raw-text content, §12) so a literal
+    # id-shaped substring inside JS/CSS text is not mistaken for a real
+    # element's id.
+    id_fault = _find_global_id_fault(html, inert_masks)
+    if id_fault is not None:
+        kind, val = id_fault
+        if kind == 'production':
+            print(f"FAIL: invalid id production: {val}")
+        elif kind == 'duplicate':
+            print(f"FAIL: duplicate id: {val}")
+        elif kind == 'dup-attr':  # R6c: duplicate attribute NAME on any tag
+            name, offset = val
+            print(f"FAIL: duplicate attribute name '{name}' in tag at byte offset {offset}")
+        else:  # 'malformed' — BLOCKER 1: unterminated attribute quote
+            print(f"FAIL: unterminated attribute quote in tag at byte offset {val}")
         return 1
 
     # Shape detection (§5.0)
