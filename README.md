@@ -6,7 +6,7 @@ doc.html is a public-domain, web-native format for AI knowledge, memory, agents,
 
 **Human-readable. Agent-navigable. Integrity-witnessed. Public domain.**
 
-**Version:** v0.5.0 · updated 2026-08-02 · see [CHANGELOG.md](CHANGELOG.md)
+**Version:** v0.6.0 · updated 2026-08-23 · see [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
@@ -80,7 +80,7 @@ Smaller still: [`examples/minimal.doc.html`](examples/minimal.doc.html), one sec
 
 ## Write one
 
-**By hand.** The minimal grammar is about twenty lines — the sample above is nearly all of it. Write your sections, give each an `id`, list them in the manifest in document order, then compute each `data-witness` as the SHA-256 of the section's raw inner bytes (UTF-8, LF, untrimmed) and each `data-char-count` as its length in code points. Any language with a SHA-256 function can do it.
+**By hand.** The minimal grammar is about twenty lines — the sample above is nearly all of it. Write your sections, give each an `id` (plain ASCII: `[A-Za-z_][A-Za-z0-9_.:-]*`, unique in the document), list them in the manifest in document order, then compute each `data-witness` as the SHA-256 of the section's raw inner bytes (UTF-8, LF, untrimmed) and each `data-char-count` as its length in code points. Any language with a SHA-256 function can do it.
 
 **With the builder.** [`tools/build-doc.mjs`](tools/build-doc.mjs) takes sections from a JSON file or a directory of HTML fragments and emits a conformant document, witnesses computed for you:
 
@@ -135,7 +135,7 @@ node tools/verify_wiki.mjs documents/wiki.doc.html
 |---|---|
 | [`README.md`](README.md) | This page — the front door. |
 | [`SPEC.md`](SPEC.md) | The complete, self-contained format specification. **This is normative.** |
-| [`SPEC.doc.html`](SPEC.doc.html) | The same specification carried in the format's own body: a doc.html you can navigate and verify. |
+| [`SPEC.doc.html`](SPEC.doc.html) | The specification carried in the format's own body: a doc.html you can navigate and verify. Currently the **v0.4** text in-band (it verifies clean under the v0.5 readers); the v0.5 re-fold ships separately. |
 | [`CHANGELOG.md`](CHANGELOG.md) | What changed in each release, and what a version bump moves or breaks. |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | How to work on this repository without breaking a witness. Read before your first edit to a `.doc.html`. |
 | [`LICENSE`](LICENSE) | CC0 1.0. |
