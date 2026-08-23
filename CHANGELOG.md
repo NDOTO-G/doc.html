@@ -12,6 +12,57 @@ path breaks every link that pointed at it.
 
 ---
 
+## v0.6.0 — 2026-08-23
+
+**The one-grammar recension: format v0.4 → v0.5.** Both reference readers and `SPEC.md` are
+replaced by the bytes sealed as `seal-readers-20260822` in the maker's repository. No shipped
+path moves; every HTML document in this bundle verifies unchanged (17/17, both readers, exit 0,
+zero cross-reader splits). The mirror's `SPEC.md` differs from the seal's text in
+layout/pointer prose only — the maker's repository-internal pointers are replaced by
+layout-neutral wording and the root-materialization paragraph names this bundle's files;
+every normative row, production, and verdict string is the seal's.
+
+**Why.** Adversarial validation of a community-reported defect (issues #1 and #2, PR #3) found
+the real disease: the two readers evaluated their engines' own character classes (`\w`, `\s`,
+`\d`, `bytes.isspace()`) and non-full-string anchors, so there existed documents one reader
+verified and the other refused — over the same bytes. v0.5 removes the engine-defined classes
+from the grammar: ids are an explicit ASCII production, counts an explicit grammar, attribute
+separators are HTML5's five whitespace bytes, every match is full-string, and previously silent
+skips (nameless nested witnessed sections, malformed manifest links, unclosed manifests,
+duplicate attributes, ill-formed UTF-8) are now identical refusals on both readers. **One
+engine-defined operation remains and is tracked:** attribute-NAME case-folding still uses the
+runtime's Unicode lowercase (`.lower()` / `.toLowerCase()`) where the spec says ASCII — on
+non-ASCII attribute names the two readers can disagree when their Unicode tables differ (found
+in review of this release; no shipped document has such a name). See the open issues.
+
+**Boundary (call-out).** v0.5 narrows what the readers accept at the margins: non-ASCII ids and
+exotic separator codepoints that the old readers (inconsistently) tolerated are refused. No
+document in this bundle, and no document known to the maker's 360-document corpus, is affected;
+every verdict the maker's gate corpus exercises that moved in either direction is declared,
+fixture-pinned, and gate-verified in the maker's repository (`DEV_BASELINE.tsv`, 71 rows).
+
+**Known-stale, disclosed:** `SPEC.doc.html` still carries v0.4 prose in-band (it verifies clean
+under the new readers — the witness law is unchanged for its content); its re-fold to v0.5 text
+ships in a follow-up. `documents/evidence.doc.html`'s provenance index still names the
+superseded `seal-readers-20260722-r2` as current (a witnessed, shelf-pinned document — an owed
+rebuild, not a one-line edit). The wiki companions `tools/verify_wiki.py` / `verify_wiki.mjs`
+still carry v0.4 manifest semantics (a raw `</nav>` search and an unmasked `<a>` scan — the two
+behaviours the Core pair moved in v0.5; and the older 25-codepoint separator set): no shipped
+leaf has a comment inside its manifest, so the shipped shelf is unaffected, but a leaf that does
+would be read differently by the two pairs until the companions are brought into lockstep in a
+follow-up.
+
+Decision record: `RECKONING_ONE_GRAMMAR_FOR_TWO_READERS.md` in the maker's repository, sealed as
+tag `seal-readers-20260822` with pins
+`verify.py = ed7aa071e38c5d77d0d097d3feff1cf4448c4e930aaf3138935a52aaed3dc198` and
+`verify.mjs = 359954d3f19c020a358a5de6946957e14bc3a9200697f2ad3baed7f58ba71561`.
+Finding credited: issues #1/#2 and PR #3, superseded by this recension (the issues close with
+its merge). Four further reader/spec defects found in review of this release are filed as issues #5,
+#6, #7, #8 for the next recension, credited to their finders (the Codex review; Elenchos for
+the Unicode-16 split in #7).
+
+---
+
 ## v0.5.0 — 2026-08-02
 
 The repository is reorganized around **use**: how the format works, how to write one, how to
