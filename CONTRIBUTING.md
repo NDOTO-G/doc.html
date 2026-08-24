@@ -116,7 +116,7 @@ a wiki certifies only files beside or below itself, never above.
 
 [`SPEC.md`](SPEC.md) is **normative**. [`SPEC.doc.html`](SPEC.doc.html) is the
 specification carried in the format's own body, so that the format's own reader can navigate
-and verify it (currently the v0.4 text in-band; the v0.5 re-fold ships separately).
+and verify it (currently the v0.4 text in-band; the re-fold to the current text ships separately).
 
 They are kept consistent by hand. **A change to one is a change to both** — and the
 `SPEC.doc.html` half is a witnessed-document change, so it follows section 4. A pull-worthy

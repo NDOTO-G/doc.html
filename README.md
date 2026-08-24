@@ -6,7 +6,7 @@ doc.html is a public-domain, web-native format for AI knowledge, memory, agents,
 
 **Human-readable. Agent-navigable. Integrity-witnessed. Public domain.**
 
-**Version:** v0.6.0 · updated 2026-08-23 · see [CHANGELOG.md](CHANGELOG.md)
+**Version:** v0.7.0 · updated 2026-08-24 · see [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
@@ -135,7 +135,7 @@ node tools/verify_wiki.mjs documents/wiki.doc.html
 |---|---|
 | [`README.md`](README.md) | This page — the front door. |
 | [`SPEC.md`](SPEC.md) | The complete, self-contained format specification. **This is normative.** |
-| [`SPEC.doc.html`](SPEC.doc.html) | The specification carried in the format's own body: a doc.html you can navigate and verify. Currently the **v0.4** text in-band (it verifies clean under the v0.5 readers); the v0.5 re-fold ships separately. |
+| [`SPEC.doc.html`](SPEC.doc.html) | The specification carried in the format's own body: a doc.html you can navigate and verify. Currently the **v0.4** text in-band (it verifies clean under the v0.6 readers); the re-fold to the current text ships separately. |
 | [`CHANGELOG.md`](CHANGELOG.md) | What changed in each release, and what a version bump moves or breaks. |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | How to work on this repository without breaking a witness. Read before your first edit to a `.doc.html`. |
 | [`LICENSE`](LICENSE) | CC0 1.0. |

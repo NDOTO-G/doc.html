@@ -12,6 +12,64 @@ path breaks every link that pointed at it.
 
 ---
 
+## v0.7.0 — 2026-08-24
+
+**The second one-grammar recension: format v0.5 → v0.6.** Both reference readers and `SPEC.md`
+are replaced by the bytes sealed as `seal-readers-20260824` in the maker's repository. No shipped
+path moves; every HTML document in this bundle verifies unchanged (17/17, both readers, exit 0,
+zero cross-reader splits).
+
+**Why.** The review round of the previous release filed issues #5–#8, and the recension cut to
+answer them found three further defects no issue had named — all instances of the same disease
+v0.5 was cut for, in organs it did not reach. All are closed here:
+
+- **#7 closed — the one tracked engine-defined operation is removed.** Attribute-NAME folding is
+  ASCII `A–Z` only in both readers; no engine `lower()`/`toLowerCase()` remains anywhere on a
+  verdict path. The Unicode-16 cross-reader split disclosed in v0.6.0 is gone.
+- **#6 closed** — the discovery scans (manifest, articles, links) run under the quote-aware,
+  exact-ASCII-tag-name grammar: a conforming manifest link with `>` inside a quoted attribute is
+  no longer falsely refused; `<a-widget>` is no longer swept in by a word-boundary match;
+  `<NAV id="manifest">` is no longer accepted against the spec's case-sensitive rule.
+- **#5 closed** — a valueless `data-char-count` is present-with-empty-value and is refused,
+  identically to `data-char-count=""`, on all four carriers.
+- **#8 closed** — the spec's root-materialization paragraph is layout-neutral in the maker's own
+  text, so this mirror no longer adapts it (the re-fold that makes a current-text `SPEC.doc.html`
+  shippable is still owed, below).
+- **Found by the recension's own review:** the raw-text close-tag search folded with the engine
+  (index-shifting splits both directions, including a false refusal of honest Turkish prose); the
+  raw-text scan resumed past an unclosed opener (a fail-open one reader had and the other
+  didn't); and the byte after a tag name was captured by each engine's `.`, whose newline
+  exclusions differ — **a Prettier-formatted conforming document was refused by both v0.5
+  readers** and now verifies.
+- **Ruled at the sitting:** raw text wins over comments, like a browser (`<style><!-- </style>`
+  ends the raw text; the fail-open shape that hid an invalid id from both readers now refuses);
+  and the tail verdict's `articles:` denominator counts **witnessed** articles in both readers —
+  the two readers no longer PASS the same document while disagreeing about how many units it
+  contains.
+
+**Boundary (call-out).** v0.6 narrows at the margins: valueless `data-char-count`, uppercase
+`<NAV>` manifests, `<nav-*>`/`<a-*>` custom-element shapes in discovery positions, and
+comment-in-raw-text concealment are now refused; Prettier/CRLF-formatted tag boundaries and
+quoted-`>` manifest links are now accepted. No document in this bundle is affected; every verdict
+the maker's gate corpus exercises that moved in either direction is declared, fixture-pinned, and
+gate-verified in the maker's repository (`DEV_BASELINE.tsv`, 30 rows over 129 fixtures; corpus
+narrowing pin 0).
+
+**Known-stale, carried forward from v0.6.0:** `SPEC.doc.html` still carries v0.4 prose in-band
+(verifies clean under the new readers); `documents/evidence.doc.html`'s provenance index still
+names `seal-readers-20260722-r2`; the wiki companions `tools/verify_wiki.py` / `verify_wiki.mjs`
+still carry v0.4 manifest semantics and now lag the Core pair by two recensions — no shipped leaf
+is affected, and the companions' lockstep fix remains owed.
+
+Decision record: `RECKONING_THE_SAME_DISEASE_IN_DEEPER_ORGANS.md` in the maker's repository,
+sealed as tag `seal-readers-20260824` with pins
+`verify.py = 9d2224835c19b251ace65e0b2f69e2b20560f3c2be6b911bcaa7f563a8edd652` and
+`verify.mjs = e51e3455369bee51ba2f932cf612cddf2368ba9420fe49228cef85e40e9226cc`.
+Finding credited: the Codex review on PR #4 (issues #5, #6, #7, #8) and Elenchos (the live
+Unicode-16 split in #7; the three defects no issue named). The issues close with this merge.
+
+---
+
 ## v0.6.0 — 2026-08-23
 
 **The one-grammar recension: format v0.4 → v0.5.** Both reference readers and `SPEC.md` are
