@@ -1,13 +1,13 @@
 # doc.html — Format Specification
 
-**Status:** v0.5 (language-agnostic) · Public domain
+**Status:** v0.6 (language-agnostic) · Public domain
 
 This is the complete, self-contained specification for the **doc.html** format. A reader
 holding only this file can build a conforming reader or producer in any language, without
-this repository. Two materializations accompany it and neither is a second source of truth:
-[`SPEC.doc.html`](SPEC.doc.html) at the root carries this specification in the format's own
-body, and [`documents/doc.html`](documents/doc.html) is the founding corpus — historical
-wherever it disagrees with this file. **This document is the source of truth.**
+this repository. Where a bundle ships one, a reference materialization — a doc.html carrying this
+same specification in-band — accompanies this file as an example, under whatever name and path
+that bundle's layout gives it; it is never a second source of truth, and this file does not
+depend on its presence. **This document is the source of truth.**
 
 To build an implementation from this spec, hand it to a coding agent:
 
@@ -83,7 +83,7 @@ The slogan "HTML is all you need" splits into two claims. This specification mak
 first**:
 
 - **Claim A — the document is all-HTML inheritable memory** (read / address / verify / hydrate
-  selectively, no server, no JS). **This is what v0.5 specifies.**
+  selectively, no server, no JS). **This is what v0.6 specifies.**
 - **Claim B — the live *loop* is all-HTML** (write + model-call + append in a bare browser).
   **Out of scope.** The *read* loop is all-HTML and needs no server; the *run* leg — call a
   model, hold a key, write the bytes back — is a platform action a scriptless `file://` page
@@ -145,6 +145,47 @@ NOT require a full HTML parse or a constructed DOM tree to perform shape detecti
 that locates the `<nav id="manifest">` or `<article data-witness>` opening tag is the same
 class of operation as the boundary-token matching in §6.2 — an exact-tag-name, quote-aware token
 scan, never a substring search.
+
+**What "exact tag name" excludes, and what "quote-aware" excludes (normative; row V44).** The
+discovery scan for `nav`, for `article`, and for the manifest's `<a>` descendants (§5.3) locates a
+candidate opening tag by a **flat forward scan over the document's bytes**, and then reads that
+tag under §6.2's boundary-token grammar and §6.4's quote-aware tokenizer, with no third, looser
+grammar between them. Concretely, and each of these is a MUST:
+
+- **The tag name is compared byte for byte and is case-sensitive**, exactly as §6.2's open/close
+  tokens are (§6.4 restates this where it rules that attribute NAMES, by contrast, *are* folded).
+  `<NAV id="manifest">` is not a `nav` element to a conforming reader and does not make a
+  document manifest-first; `<A href="#x" …>` inside the manifest is not a manifest link;
+  `<ARTICLE data-witness="…">` does not make a document a tail.
+- **The tag name must END where the grammar says it ends** — the byte after it MUST be one of
+  §6.2's OPEN set (the five whitespace bytes `0x09 0x0A 0x0C 0x0D 0x20`, or `/`, or `>`). A
+  longer tag name that merely shares the prefix is a different element: `<a-widget>` is not an
+  anchor, `<nav-widget id="manifest">` is not the manifest, `<article-widget data-witness="…">`
+  is not an addressable unit and does not make a document a tail. A reader MUST NOT use a
+  word-boundary assertion here, which holds before `-` and admits all three.
+- **A `>` inside a quoted attribute value does not end the tag** (§6.4). The scan runs to the
+  tag's own terminating `>`, skipping quoted spans, so attribute ORDER cannot decide whether a
+  document verifies: `<a title="x>y" href="#intro" data-witness="…">` and
+  `<a href="#intro" data-witness="…" title="x>y">` are the same manifest link.
+
+**What the discovery scan is NOT, stated so the paragraph above is not read as promising more
+than it delivers (residual, disclosed and NOT ruled).** Quote-awareness governs the bytes *after*
+the tag name the scan has matched. It does **not** make the scan structure-aware: the scan does
+not tokenize the enclosing document, so a `<nav …>` or an `<a …>` written inside **another
+element's quoted attribute value** is still found, because the outer element's opening tag is
+never parsed at all. Both reference readers do this, before and after row V44, and both
+consequences are false refusals of conforming documents:
+
+- `<p title="<nav id='manifest'></nav>">` placed before the real manifest is found first and the
+  document is refused `FAIL: <nav id="manifest"> has no <a> entries`.
+- `<p title="<a href='#ghost' data-witness='…'>">` inside `nav#manifest` contributes a ghost entry
+  and the document is refused for naming a section it does not contain.
+
+Closing these requires the discovery scans to run over a tokenized document rather than over raw
+bytes — a change to this section's scan model, not a repair to a pattern — and is not taken here.
+A conforming document is not affected by either shape unless it writes markup inside an attribute
+value, which nothing in this specification requires; the limit is recorded so it is not
+discovered as a surprise.
 
 **The two shapes can be two epochs of one lifecycle.** For a document that folds (the
 conversation-record lifecycle this section's tail shape was built for), the tail is the
@@ -221,9 +262,9 @@ document (§5.3b) carries no manifest; none of these rules apply to it.
 | Element | MUST be a `<nav id="manifest">`, placed at the top of `<body>`, before any `<section data-witness>`. |
 | `id` value | MUST be the literal string `manifest`. No other value conforms. |
 | Cardinality | In a manifest-first document, there MUST be exactly one `<nav id="manifest">`. |
-| Discovery | A conforming reader MUST discover it by querying for `<nav id="manifest">`. No other discovery mechanism is defined. A styled, human-facing table of contents elsewhere is **not** the manifest unless it is this element. |
+| Discovery | A conforming reader MUST discover it by querying for `<nav id="manifest">`, under §5.0's discovery grammar (row V44) — an element whose tag name is **exactly** `nav`, case-sensitively, ending at one of §6.2's OPEN-set bytes, read quote-aware to its own `>`. No other discovery mechanism is defined. `<NAV id="manifest">` and `<nav-widget id="manifest">` are **not** the manifest. A styled, human-facing table of contents elsewhere is **not** the manifest unless it is this element. |
 | Contents | MUST hold a single `<ol>`; each `<li>` contains exactly one `<a>` link, one per addressable top-level section, in document order. |
-| Link collection | A reader MUST collect the links as the `<a>` **descendants** of the manifest nav, not as its direct children. An `<a>` that lies inside a §12 inert region (an HTML comment, most concretely) is **not** a manifest link and MUST NOT be collected — a commented-out example anchor inside `nav#manifest` is dead markup, not a third entry (R4a). |
+| Link collection | A reader MUST collect the links as the `<a>` **descendants** of the manifest nav, not as its direct children. An `<a>` that lies inside a §12 inert region (an HTML comment, most concretely) is **not** a manifest link and MUST NOT be collected — a commented-out example anchor inside `nav#manifest` is dead markup, not a third entry (R4a). The scan that finds them is §5.0's discovery grammar (row V44): an element whose tag name is **exactly** `a`, case-sensitively, ending at one of §6.2's OPEN-set bytes, read quote-aware to its own `>`. `<a-widget>` is not an anchor; `<A href="#x">` is not an anchor; and a `>` inside a quoted attribute value — `<a title="x>y" href="#intro" …>` — does not end the anchor's opening tag, so attribute order does not decide whether the entry is well-formed. |
 | Extent | The manifest's extent runs from its opening `<nav id="manifest">` tag to the first `</nav>` close token found at or after that point that is **not itself inside a §12 inert region** — the identical masking test §12 already applies to boundary-token and manifest-link-collection scanning, extended here to the manifest's own close (R4b). A `</nav>` written inside an HTML comment that itself lies inside `nav#manifest` (e.g. a commented-out usage example naming the literal bytes `</nav>`) is not the manifest's real close and MUST NOT truncate it; a reader MUST NOT stop at the raw byte position of the first `</nav>` substring without first checking whether that occurrence is masked. A conforming document for which no unmasked `</nav>` exists at all is non-conforming: `FAIL: <nav id="manifest"> is unterminated`. |
 
 **Document order** means the order in which elements' opening tags appear in the serialized
@@ -452,6 +493,21 @@ enumerated byte set (seven named bytes, not a class named "whitespace" and left 
 define) is pinned identically in both readers (`_BOUNDARY_NEXT`/`_classify_boundary_token` in
 verify.py, `WS_SLASH_GT`/`classifyBoundaryToken` in verify.mjs, §9.1).
 
+**A reader MUST actually consult that set for every byte value (row V47).** The byte following
+*TAG* MUST be captured by a construct that admits **every** byte — including the line terminators
+— and then tested against the enumeration above. A reader MUST NOT use a regular-expression
+wildcard (`.`) at that position, because a wildcard is a *different enumerated set in each
+engine* and neither of the two is this one: a Python **bytes** `.` without `DOTALL` excludes
+`0x0A` LF, and a JavaScript `.` excludes `0x0A` LF, `0x0D` CR, `U+2028` and `U+2029`. A reader
+that uses one silently fails to see members of its own OPEN set — the enumeration is consulted
+only for bytes the wildcard can produce — so `<section\n  id="…"\n  data-witness="…"\n>`, which
+is what an ordinary code formatter produces from a long opening tag, is not recognized as an open
+token at all, and two readers using two engines' wildcards disagree about `0x0D` CR over identical
+bytes. The failure is invisible in the enumeration's own source, which is why it is stated here as
+a MUST on the *capture* and not only on the set. `[\s\S]` — a class unioned with its own
+complement — is the reference spelling in both readers; a class built from the enumeration itself
+is equally conforming provided the classification of a non-member is unchanged.
+
 **Ruled 2026-08-22 (Operator sitting): `0x0B` VT is REMOVED from this set.** The set carried six
 whitespace bytes until that ruling, VT among them. VT is not HTML5 whitespace anywhere, and the
 position this grammar governs is precisely the one where that matters: a browser's tag-name state
@@ -648,12 +704,37 @@ member of the separator set above to the first byte that is either a member of t
 non-membership consequential: a codepoint that is not in the set does not end the name scan, so
 it is silently absorbed into the name rather than recognized as a boundary.
 
-**Attribute names are case-folded (normative — distinct from tag names, §6.2).** Once an
-attribute NAME has been scanned by the production above, a conforming reader MUST fold it to
-lowercase using ASCII case-folding (`.lower()` in Python, `.toLowerCase()` in JS) before that
-name is used for ANY comparison — duplicate-name detection (§10 rows V25/V37/R6c) and value
-lookup alike (`ID` and `id` are the same carrier: `<img ID="a">` and `<img id="a">` name the
-identical attribute to the reading side). This is the attribute-NAME rule; it is unrelated to
+**Attribute names are case-folded, ASCII `A–Z` only (normative — distinct from tag names, §6.2;
+row V45).** Once an attribute NAME has been scanned by the production above, a conforming reader
+MUST fold it before that name is used for ANY comparison — duplicate-name detection (§10 rows
+V25/V37/R6c) and value lookup alike (`ID` and `id` are the same carrier: `<img ID="a">` and
+`<img id="a">` name the identical attribute to the reading side). **The fold is exactly this and
+nothing else:** each of the twenty-six codepoints U+0041–U+005A (`A`–`Z`) is replaced by the
+codepoint 0x20 above it (`a`–`z`); **every other codepoint is left unchanged.** The fold is
+therefore table-free, evaluable by a stranger with a text editor, and length-preserving.
+
+> **A conforming reader MUST NOT use its host engine's own lowercase operation** — Python's
+> `str.lower()`, JavaScript's `String.prototype.toLowerCase()`, or any equivalent — for this
+> fold. Those are full-Unicode case mappings whose table is the *engine build's* Unicode version,
+> which this specification does not pin and a reader of this file alone cannot evaluate. Two
+> conforming readers on two engines would then disagree about which names collide: the case pair
+> U+1C89 / U+1C8A was added in Unicode 16, so `<div Ᲊ="1" ᲊ="2">` is one duplicated name to a
+> Unicode-16 engine and two distinct names to a Unicode-14 one — the same bytes, opposite
+> verdicts. The ASCII fold is also what an HTML5 tokenizer performs, so `<div K="1" k="2">`
+> (U+212A KELVIN SIGN) names two distinct attributes to a reader and to a browser alike: what is
+> verified must be what is read. This is the same ground on which §6.1 revoked non-ASCII letters
+> from the id production and §6.4's separator table replaced the engine's `\s`.
+
+**Every case-insensitive comparison a reader makes over document bytes is ASCII-only and
+length-preserving (normative; row V46).** The rule above is stated for attribute names because
+that is where a fold decides a verdict, but it binds every other site too — most consequentially
+any site that folds a span and then uses an index into the folded text against the *unfolded*
+text's offsets, such as locating a raw-text element's close tag (§12). A full-Unicode fold is not
+length-preserving (U+0130 folds to the two codepoints U+0069 U+0307), so an index taken from it
+does not name the same position in the original, and an inert region computed that way runs past
+its own close tag and masks live markup.
+
+This is the attribute-NAME rule; it is unrelated to
 and does not loosen §6.2's tag-name open/close-token grammar, which stays **case-sensitive**
 (`<section>` and `<Section>` are different byte sequences to the boundary-token walk; only tag
 NAMES are matched that way, never folded). A duplicate-attribute-name verdict (R6c) names the
@@ -827,6 +908,17 @@ matched string denotes.
 non-empty: `data-char-count=""` is a present attribute whose string is the empty string, the
 empty string does not match the grammar, and the document is therefore non-conforming. Absence of
 the attribute remains OPTIONAL and is unaffected (§5.2, §5.3b, §5.4).
+
+**A valueless `data-char-count` is an empty count, not an absent one (row V43).** An attribute
+written with no `=` at all — `<section id="x" data-witness="…" data-char-count>` — is PRESENT and
+its value is the empty string (§6.4's tokenizer paragraph). It is therefore held to the grammar
+above and refused with the identical verdict `data-char-count=""` earns, on **every** carrier
+named below. A reader MUST gate the count check on the attribute's PRESENCE, never on its value
+being non-null: a tokenizer records a valueless attribute with a null/None value, and a
+value-presence test cannot tell that byte-shape apart from an attribute that was never written.
+This is the same byte-shape distinction §6.1 already rules for a valueless `id` and §5.4 for a
+valueless `data-witness`; a skip and a refusal must not be handed to shapes this specification
+treats as equivalent everywhere else.
 
 A `data-char-count` string outside this grammar is non-conforming, and a conforming reader MUST
 refuse it (§7.3 fail-closed), naming the grammar. It MUST NOT best-effort parse a prefix (`120abc`
@@ -1109,6 +1201,26 @@ function verify(bytes):
     offset = first_invalid_utf8_offset(bytes)
     if offset is not None: FAIL("invalid UTF-8 at byte offset " + offset)  # §5.1, V38
 
+    # --- The two scans everything below rests on, named once, here ---
+    # R14/V47: wherever this pseudocode says "the byte after the tag name"
+    # (§6.2's boundary scan, and §5.0's discovery grammar below), that byte MUST
+    # be captured by a construct that admits EVERY byte and then TESTED against
+    # §6.2's enumerated OPEN set. A regular-expression wildcard MUST NOT stand
+    # there: `.` is a different enumerated set in each engine and neither is
+    # §6.2's — a Python BYTES `.` without DOTALL excludes 0x0A LF, a JavaScript
+    # `.` excludes LF, 0x0D CR, U+2028 and U+2029 — so a reader that uses one
+    # never consults its own enumeration for those bytes. Both sealed v0.5
+    # readers did, and both refused `<section\n  id="…"\n …\n>`, which is what
+    # a code formatter writes; they also disagreed about CR. `[\s\S]` is the
+    # reference spelling.
+    # R12b/V48+V49: the §12 inert-region scan MUST match a raw-text element's
+    # opening tag by the EXACT ASCII tag name under that same OPEN set (never a
+    # word-boundary assertion: `<style-x>` is not a `<style>`), and MUST resume
+    # AFTER the located close tag, never after the opening tag — a raw-text
+    # element's content is raw text and is not scanned for further raw-text
+    # elements, so a `<script>` inside a `<style>` element's content is not a
+    # second element and MUST NOT open a second span.
+
     # --- §6.1 global dup-id, over EVERY live element, before shape dispatch ---
     # Walks every opening tag in the document (outside inert regions, §12) — not only
     # addressable-unit opening tags — because §6.1's uniqueness rule is a property of the
@@ -1117,6 +1229,15 @@ function verify(bytes):
     check_global_dup_ids(bytes)                                # §6.1 fail-closed, whole-doc scope
 
     # --- Shape detection (§5.0) ---
+    # R11/V44: find_element and collect_witnessed_articles locate their element
+    # by §5.0's DISCOVERY grammar, which is §6.2's boundary-token grammar plus
+    # §6.4's quote-aware tokenizer and NOT a third, looser one. The tag name is
+    # compared byte for byte (case-SENSITIVE — attribute names are folded, §6.4,
+    # tag names are not), it must END at one of §6.2's OPEN-set bytes (a
+    # word-boundary assertion is NOT that set: it holds before `-`, which would
+    # make <nav-widget id="manifest"> the manifest and <a-widget> an anchor),
+    # and the attribute blob is read quote-aware to the tag's own `>` so a `>`
+    # inside a quoted value cannot end the tag early.
     # R4b: find_element's own close-tag step, for tag="nav", locates the first
     # `</nav>` at or after the opener's own `>` that is NOT itself inside an
     # inert region (§12) — the identical masking test §12 already applies to
@@ -1146,6 +1267,9 @@ function verify_manifest_first(bytes, manifest):
     # scans above do — an <a> whose opening tag lies inside an HTML comment
     # (or <script>/<style> raw-text) within <nav id="manifest"> is not a live
     # manifest entry and MUST NOT be added to `links`.
+    # R11/V44: collect_anchor_descendants uses the SAME §5.0 discovery grammar
+    # named at find_element above — tag name exactly `a`, case-sensitive,
+    # ending at an §6.2 OPEN-set byte, quote-aware to its own `>`.
     links = collect_anchor_descendants(manifest)               # §5.3, masked (§12, R4a)
     sections = collect_top_level_sections(bytes)               # §5.2
     if len(sections) == 0: FAIL("vacuous: zero addressable units")  # §7.3 non-vacuity
@@ -1174,8 +1298,10 @@ function verify_manifest_first(bytes, manifest):
             FAIL("manifest link missing data-witness: " + href)            # V36
         if not valid_id(href[1:]):
             FAIL("invalid id production: " + href[1:])                     # V33 — covers href="#"
-        cc_link = read_attr_quote_aware(l, "data-char-count")
-        if cc_link is not None: parse_count(cc_link)   # §6.6 — the manifest link's OWN count,
+        cc_link = count_attr(l)                       # §6.6 — the manifest link's OWN count,
+                                                        # gated on PRESENCE (R10/V43), so a
+                                                        # VALUELESS `data-char-count` is refused
+                                                        # here exactly as `data-char-count=""` is;
                                                         # the 4th parse_count call site (§9.1);
                                                         # grammar-checked here, at the point the
                                                         # link is read, not only transitively via
@@ -1223,8 +1349,8 @@ function verify_manifest_first(bytes, manifest):
         if epoch == CONSECRATED and sha256_hex(inner) != w_section: FAIL("carrier disagreement: section")  # V4
         if w_link != w_section: FAIL("carrier disagreement: link vs section")                              # V4
         if epoch == CONSECRATED and w_link != sha256_hex(inner): FAIL("carrier disagreement: link")        # V4
-        cc_link = read_attr_quote_aware(link, "data-char-count")
-        cc_sec  = read_attr_quote_aware(sec,  "data-char-count")
+        cc_link = count_attr(link)      # R10/V43 — NONE only when the attribute is ABSENT
+        cc_sec  = count_attr(sec)       # R10/V43 — likewise
         # Item 4.2 (post-round-4-validation): the link's OWN count is compared to the
         # ACTUAL codepoint count independently of whether the section carries a count
         # attribute at all — this branch is NOT conditioned on cc_sec's presence. A
@@ -1234,15 +1360,16 @@ function verify_manifest_first(bytes, manifest):
         # this comment previously showed only the cc_link-vs-cc_sec agreement check
         # and the cc_sec-vs-actual check, which together do NOT cover this case when
         # cc_sec is absent.)
-        if cc_link is not None and parse_count(cc_link) != codepoint_count(inner):
-            FAIL(f"char-count manifest={parse_count(cc_link)} actual={codepoint_count(inner)}")
+        if cc_link is not NONE and cc_link != codepoint_count(inner):
+            FAIL(f"char-count manifest={cc_link} actual={codepoint_count(inner)}")
             # verify.py: `FAIL {sid}: char-count manifest=<M> actual=<A>`
             # verify.mjs: `MISMATCH {sid}: char-count manifest=<M> actual=<A>`
             # The FAIL/MISMATCH spelling difference is the SAME pre-existing,
             # out-of-scope wording drift R5 and §13's "Residual, disclosed" note
             # already name — not introduced by this pseudocode addition.
-        if cc_link and cc_sec and cc_link != cc_sec: FAIL("char-count disagreement")
-        if cc_sec is not None and parse_count(cc_sec) != codepoint_count(inner):
+        if cc_link is not NONE and cc_sec is not NONE and cc_link != cc_sec:
+            FAIL("char-count disagreement")
+        if cc_sec is not NONE and cc_sec != codepoint_count(inner):
             FAIL("char-count wrong")                           # §6.6 (grammar checked in parse_count)
 
         sup = read_attr_quote_aware(sec, "data-supersedes")    # §8.2
@@ -1284,8 +1411,8 @@ function verify_manifest_first(bytes, manifest):
         if epoch == INVALID: FAIL("invalid witness grammar")
         if epoch == CONSECRATED:
             if sha256_hex(inner) != w: FAIL("witness mismatch (nested section)")
-        cc = read_attr_quote_aware(sec, "data-char-count")
-        if cc is not None and parse_count(cc) != codepoint_count(inner):
+        cc = count_attr(sec)                                   # R10/V43
+        if cc is not NONE and cc != codepoint_count(inner):
             FAIL("char-count wrong (nested section)")          # §6.6
 
     return PASS
@@ -1314,8 +1441,8 @@ function verify_tail(bytes, articles):
             valid_count += 1
         # Note: writing-room ordering is an Append concern (V15), not checked here in Core
 
-        cc_art = read_attr_quote_aware(art, "data-char-count")
-        if cc_art is not None and parse_count(cc_art) != codepoint_count(inner):
+        cc_art = count_attr(art)                               # R10/V43
+        if cc_art is not NONE and cc_art != codepoint_count(inner):
             FAIL("char-count wrong")                           # §6.6 (grammar checked in parse_count)
 
         sup = read_attr_quote_aware(art, "data-supersedes")    # §8.2
@@ -1351,6 +1478,9 @@ function check_global_dup_ids(bytes):
     # separate step here — see §6.4's own prose), both read through the identical tokenizer,
     # which case-folds every attribute NAME to lowercase (§6.4) before it is used for value
     # lookup or duplicate-name comparison. "id" and "ID" are the same attribute to this walk.
+    # R12/V45: that fold is the ASCII A–Z fold of §6.4 and NOTHING ELSE — never the host
+    # engine's own lowercase, whose table is the engine build's Unicode version. `K`
+    # (U+212A) and `k` are two attribute names here, as they are to a browser.
     #
     # This walk also enforces the §6.1 ASCII id PRODUCTION (V33). The production and the
     # uniqueness rule share one scope — every id-bearing element in the rendered surface —
@@ -1388,7 +1518,18 @@ function parse_count(s):
     # §6.6 count grammar — the lexical grammar of the data-char-count attribute STRING,
     # defined once here and used at every site that reads a count. `s` is the attribute's
     # value whenever the attribute is present, INCLUDING the empty string ("presence is
-    # presence", §6.6): callers gate on presence (`is not None`), never on truthiness.
+    # presence", §6.6).
+    #
+    # R10/V43 — HOW callers gate, stated exactly, because the previous spelling of this
+    # comment ("callers gate on `is not None`") prescribed a defect and both reference
+    # readers implemented it. Callers gate on the attribute's PRESENCE — `'data-char-count'
+    # in attrs` — and then read its VALUE with a falsy coalesce (`attrs[name] or ''`).
+    # A VALUE test (`is not None` / `!= null`) is WRONG: §6.4's tokenizer records a
+    # VALUELESS attribute (`data-char-count`, no `=`) with a null/None value, which such a
+    # test cannot tell apart from an attribute that was never written — so the count check
+    # was skipped on exactly the byte-shape §6.6 defines as present-with-the-empty-value.
+    # Same two-step discipline §6.1 rules for a valueless `id` and §5.4 for a valueless
+    # `data-witness`. An absent attribute stays absent and is never passed here at all.
     # A value outside the grammar is a refusal — never a best-effort parse of a prefix,
     # never a silently skipped check.
     #     count := "0" | [1-9][0-9]*
@@ -1397,6 +1538,15 @@ function parse_count(s):
     if not matches(s, /\A(0|[1-9][0-9]*)\z/):
         FAIL("invalid char-count grammar: " + s)               # §6.6, V35
     return decimal_value(s)
+
+
+function count_attr(el):
+    # R10/V43 — the presence gate, spelled ONCE and used at all four call sites below
+    # (manifest link, top-level section, nested section, tail article). Returns NONE
+    # only when `data-char-count` is ABSENT from el's opening tag; a present attribute,
+    # valueless or not, always reaches parse_count.
+    if "data-char-count" not in attribute_names(el): return NONE   # absent — OPTIONAL, §6.6
+    return parse_count(read_attr_quote_aware(el, "data-char-count") or "")
 ```
 
 ### 9.2 Build a document *(manifest-first shape)*
@@ -1514,7 +1664,7 @@ extension MUST satisfy that extension's rows.
 | V32 | Producer | tail → manifest-first | The fold is total and fail-closed: a tail containing a grammar-invalid witness, a duplicate id, a self/forward/dangling `data-supersedes`, or zero addressable units folds to **nothing** — zero bytes written, non-zero exit (§8.4). |
 | V33 | Core | both | Any **live element** (§6.1 scope: top-level unit, nested `<section>`, manifest-link target, `id`-bearing `<img>`, `append-anchor`) whose `id` does not match the §6.1 ASCII production → FAIL naming `invalid id production` — including an `id` whose only defect is a non-ASCII letter (`émile`), which conformed under v0.4 (§6.1 ground; the v0.5 boundary, §14), and including both `id=""` and a valueless `id` (`<div id>`, no `=`), which are the identical empty-string byte-shape for this test (§6.1's valueless-is-empty paragraph, R1a). Widens V8, which states the same refusal for a leading digit or whitespace and only on addressable units. |
 | V34 | Core | manifest-first only | A nested `<section>` carrying `data-witness` but no `id` → FAIL naming `nested <section data-witness> with no id`, never skipped and never absorbed by the already-verified guard — and a `data-witness` that recomputes correctly does not rescue it, because the refusal is on the missing address (§6.1 witnessed-nested pin; §9.1 nested loop ordering). |
-| V35 | Core | both | A **present** `data-char-count` whose attribute string does not match the §6.6 count grammar (`0` or `[1-9][0-9]*`) — `120abc`, `0x78`, `１２０`, `1_20`, `+120`, `" 120"`, `"120 "`, `0120`, `-0`, or the empty string `""` — → FAIL naming `invalid char-count grammar`, never a best-effort parse of a prefix and never a skipped check (§6.6; §9.1 `parse_count`). |
+| V35 | Core | both | A **present** `data-char-count` whose attribute string does not match the §6.6 count grammar (`0` or `[1-9][0-9]*`) — `120abc`, `0x78`, `１２０`, `1_20`, `+120`, `" 120"`, `"120 "`, `0120`, `-0`, the empty string `""`, or a **valueless** `data-char-count` (no `=` at all), which is the identical empty-string byte-shape for this test (§6.6's valueless-is-empty paragraph, row V43) — → FAIL naming `invalid char-count grammar`, never a best-effort parse of a prefix and never a skipped check (§6.6; §9.1 `parse_count`/`count_attr`). |
 | V36 | Core | manifest-first only | A manifest link (an `<a>` descendant of `<nav id="manifest">`, §5.3) whose `href` is not a `#`-prefixed fragment, or which carries no `data-witness`, → FAIL — never dropped from the entry list (§5.4; §9.1 manifest link well-formedness). An `<a>` outside the manifest nav is not a manifest link and is unaffected. |
 | V37 | Core | both | An opening tag encountered by the whole-document `id` walk (§6.4, §9.1 `check_global_dup_ids`) whose attribute quote opens and is never reachably closed → FAIL naming `unterminated attribute quote in tag at byte offset <N>`, `N` = the offset of that tag's own `<` — never silently skipped and never resynchronized past. Ordinary text merely resembling a tag start, with no quote ever opened, is unaffected. **R6c amendment:** the same walk, before reading a visited tag's `id`, also refuses that tag if its own tokenizer sees any attribute name twice (any name, not only `id`) → FAIL naming `duplicate attribute name '<name>' in tag at byte offset <N>`, same offset rule — extending V24/V25's no-duplicate-attribute-name rule from addressable-unit openers to every opening tag the walk visits. |
 | V38 | Core | both | The document's raw bytes are not well-formed UTF-8 → FAIL naming `invalid UTF-8 at byte offset <N>`, `N` = the offset of the first byte of the first ill-formed subsequence, checked **before** every other rule in this specification — before shape detection, before the id walk, before masking (§5.1). No substitution, no lenient decode. |
@@ -1522,6 +1672,15 @@ extension MUST satisfy that extension's rows.
 | V40 | Core | manifest-first only | An `<a>` inside a §12 inert region (an HTML comment, most concretely) within `<nav id="manifest">` is not a manifest link and MUST NOT be collected (§5.3, §12, R4a) — a pure loosening, not a narrowing (§14): the sealed `dev` baseline collected it as a live entry and could refuse an otherwise-conforming document over dead markup. Verified by the positive fixture `pass-manifest-commented-anchor.doc.html` (one live, conforming entry beside two commented-out anchors that would each independently violate V36 if live) → `PASS`, `verified 1/1 sections`, byte-identical on both readers; the mask does not over-reach, checked by `r4-live-anchor-beside-comment.doc.html` (the same commented anchors plus one genuinely live malformed anchor) → still `FAIL: manifest link href is not a fragment: example.html`, rc=1, on both readers; and the order-bijection loosening this row exists for is verified directly by `r4a-loosen-commented-duplicate.doc.html` (a commented-out duplicate `<a href="#x">` beside two live `<a href="#x">` entries) → sealed `dev` baseline `FAIL: order-bijection…`, v0.5 `PASS`, byte-identical on both readers. |
 | V41 | Core | manifest-first only | The manifest's extent (§5.3 "Extent") runs to the first `</nav>` close token found **outside** a §12 inert region, not to the first raw `</nav>`-shaped byte sequence wherever it falls (§5.3, §12, R4b) — **this moves verdicts in both directions, not only toward PASS** (§14). On `pass-manifest-comment-contains-nav-close.doc.html` (two witnessed sections, with an HTML comment between the manifest's two `<li>` entries containing the literal text `</nav>`, every real entry preceding it) the sealed `dev` baseline truncated at the in-comment `</nav>` and refused the document, misleadingly, as an order-bijection failure — the loosening: dev `FAIL` → v0.5 `PASS`, `verified 2/2 sections`, byte-identical on both readers. On `r4b-manifest-unterminated.doc.html` (a manifest whose ONLY `</nav>`-shaped bytes are inside a comment, no real close anywhere) the sealed `dev` baseline's SAME unmasked truncation happens to land past every real manifest entry, so `dev` verifies it CLEAN — the narrowing: dev `rc=0` on both sealed readers → v0.5 `FAIL: <nav id="manifest"> is unterminated`, rc=1, byte-identical on both readers. A third fixture, `r4b-nav-close-absent.doc.html` (a wholly-absent `</nav>`, no comment involved, followed by a witnessed `<article>`), closes a real `dev`-mjs fail-open — the sealed `dev` mjs baseline fell through to the tail path and could PASS a document the sealed `dev` py baseline correctly refused as mixed-shapes — both v0.5 readers now agree with `dev` py: `FAIL: mixed shapes …`, rc=1 (V18 is evaluated before the manifest path, so the unterminated verdict is unreachable on an article-bearing document). A fourth fixture, `r4b-nav-close-absent-no-article.doc.html` (the same absent close with no witnessed `<article>` anywhere), is where the unterminated verdict itself is exercised: v0.5 `FAIL: <nav id="manifest"> is unterminated`, rc=1, byte-identical on both readers; sealed `dev` py emitted the same verdict, while sealed `dev` mjs — having no unterminated verdict — reported `FAIL: shape detection failed …` (the missing-verdict divergence, closed). |
 | V42 | Core | both | A `data-witness` value that is not a **full-string** match of either witness grammar (§6.7) — most concretely, a value that is otherwise the correct 64-hex or `YYYY-MM-DDTHH:MM:SSZ` form but carries a trailing newline — → FAIL (invalid witness grammar), on both readers, byte-identically (R9). This closes a parity trap the round-7 R1 amendment already named in the abstract (§9.1's `valid_id` comment) but had not yet been found live in the witness grammar itself: `verify.py`'s pre-fix `_classify_witness` matched each witness regex with a bare `^…$` pattern via Python's `.match()`, under which `$` matches immediately before a trailing newline, so `"…Z\n"` was wrongly classified `writing-room` and `"<64-hex>\n"` was wrongly classified `consecrated` — while `verify.mjs`'s `classifyWitness` already used a true full-string `.test()` (JS's un-flagged `$` has no such exception) and refused both. The fix ports R1's own remedy: both `verify.py` regexes now carry no `^…$` anchors at all and are evaluated with `re.fullmatch`, matching `_ID_PRODUCTION_RE`/`_COUNT_PRODUCTION_RE`'s existing pattern. |
+| V43 | Core | both | A **valueless** `data-char-count` (written with no `=` at all — `<section id="x" data-witness="…" data-char-count>`) is a **present** attribute whose value is the empty string, and is refused with the identical verdict `data-char-count=""` earns (`invalid char-count grammar`, rc non-zero, byte-identical on both readers) — on **every** carrier the format defines: the manifest link (§5.4), the top-level `<section>` (§5.2), a nested `<section>` (§5.2), and a tail `<article>` (§5.3b). A conforming reader gates the count check on the attribute's PRESENCE and reads its VALUE with a falsy coalesce; a value-presence test (`is not None` / `!= null`) is non-conforming, because §6.4's tokenizer records a valueless attribute with a null value and such a test cannot tell that byte-shape apart from an attribute never written — which is exactly how the sealed v0.5 readers came to SKIP the check on all four carriers (public issue #5; §9.1's `parse_count` caller comment prescribed it). This widens V35 to the third of the three present-but-empty byte-shapes this specification rules on, alongside a valueless `id` (V33) and a valueless `data-witness` (§5.4). |
+| V44 | Core | both | The three **discovery** scans — the one that locates `<nav id="manifest">` (§5.0, §5.3), the one that locates `<article …>` for shape detection and for the tail path (§5.0, §5.3b), and the one that collects the manifest's `<a>` descendants (§5.3) — MUST use §5.0's discovery grammar: an **exact, case-sensitive ASCII tag name** whose following byte is one of §6.2's OPEN set (`0x09 0x0A 0x0C 0x0D 0x20`, `/`, `>`), with the attribute blob read **quote-aware** to the tag's own `>` (§6.4). Consequently: `<NAV id="manifest">` is not the manifest, `<A href="#x" …>` is not a manifest link, and `<ARTICLE data-witness="…">` does not make a document a tail (tag names are case-SENSITIVE, §6.2 — only attribute NAMES fold, §6.4/V45); `<a-widget>`, `<nav-widget id="manifest">` and `<article-widget data-witness="…">` are none of those things either (a word-boundary assertion is not §6.2's OPEN set — it holds before `-`); and `<a title="x>y" href="#intro" data-witness="…">` is a well-formed manifest link, because a `>` inside a quoted value does not end the tag, so attribute ORDER never decides whether a document verifies (public issue #6). This moves verdicts in **both** directions and each is fixtured (§14). |
+| V45 | Core | both | An attribute NAME is folded by mapping exactly the twenty-six codepoints U+0041–U+005A to U+0061–U+007A and leaving **every other codepoint unchanged** (§6.4). A conforming reader MUST NOT use its host engine's own lowercase operation (`str.lower()`, `String.prototype.toLowerCase()`, or any equivalent) for this fold: those are full-Unicode case mappings whose table is the engine build's Unicode version, which this specification pins nowhere and a reader of this file alone cannot evaluate. Measured on the sealed v0.5 pair, this was a LIVE cross-reader split: `<div Ᲊ="1" ᲊ="2">` (U+1C89 / U+1C8A, a case pair added in Unicode 16) was rc=0 on the Python reader (UCD 14) and rc=1 on the Node reader (UCD 16), over the same bytes (public issue #7). Under this row both accept it, as two distinct attribute names. `<div K="1" k="2">` (U+212A KELVIN SIGN), `<div AΣ="1" aς="2">` and `<div İ="1" i̇="2">` likewise name two distinct attributes — which is what an HTML5 tokenizer reads, since HTML5 ASCII-lowercases attribute names: what is verified must be what is read. `ID` and `id` still collide, and that regression guard is fixtured. |
+| V46 | Core | both | **Every** case-insensitive comparison a reader makes over document bytes is ASCII-only and **length-preserving** (§6.4). The rule binds beyond attribute names — most consequentially any site that folds a span and then uses an index taken from the folded text against the *unfolded* text's offsets, such as locating a raw-text element's close tag (§12). A full-Unicode fold is not length-preserving (U+0130 folds to the two codepoints U+0069 U+0307), so such an index does not name the same position in the original. Measured on the sealed v0.5 pair, this was a live cross-reader PASS/FAIL split in the **fail-open** direction: `verify.mjs`'s `buildInertMasks` lowercased the whole document with `toLowerCase()`, so a conforming document carrying twenty U+0130 in prose ahead of a `<style>` element had its inert span run twenty code units past the real `</style>`, swallowing a following `<img id="bad id">` — the Node reader verified CLEAN (rc=0) a document the Python reader correctly refused (`invalid id production: bad id`, rc=1), with the amount of hidden live markup bounded only by how many U+0130 the document writes. Named by no issue; found by V45's own fold-site audit. |
+| V47 | Core | both | The byte following a tag name in the §6.2 boundary scan MUST be captured by a construct admitting **every** byte and then tested against §6.2's enumerated OPEN set; a reader MUST NOT use a regular-expression wildcard (`.`) there. A wildcard is a different enumerated set in each engine and neither is §6.2's — a Python **bytes** `.` without `DOTALL` excludes `0x0A` LF, a JavaScript `.` excludes LF, `0x0D` CR, U+2028 and U+2029 — so the enumeration is consulted only for bytes the wildcard can produce and members of the OPEN set are silently never seen. Measured on the sealed v0.5 pair: `<section\n  id="…"\n  data-witness="…"\n>` (what a code formatter produces from a long opening tag) was refused by **both** readers, and `<article\rid="…">` was rc=0 on the Python reader and rc=1 on the Node reader over the same bytes — a live cross-reader split. `0x0B` VT stays OUT of the set (row V10's 2026-08-22 ruling): a byte the enumeration rejects after seeing it is a ruling, a byte it never sees is a defect, and this row repairs only the second. Pinned by `r14-boundary-lf-prettier`, `r14-boundary-crlf`, and the one-byte-apart tail triple `r14-boundary-article-lf` / `-article-cr` / `-vt-control`. Named by no issue.
+| V48 | Core | both | The §12 raw-text scan MUST resume **after** the located close tag, not after the opening tag: a raw-text element's content is raw text and is not scanned for further raw-text elements (§12). A reader that enumerates opening tags treats a `<script>` written inside a `<style>` element's content as a second element and opens an overlapping span reaching past the first element's own close, masking the live markup between them. Measured on the sealed v0.5 pair, this was a live cross-reader PASS/FAIL split in the **fail-open** direction: `<style> a <script> b </style>` then `<img id="bad id">` then `</script>` was refused by `verify.py` (`invalid id production: bad id`, rc=1) and verified CLEAN by `verify.mjs` (rc=0); the same construction hides a zero-witness nested `<section>` just as completely. Pinned by `r12b-rawtext-nested-script-in-style` and `r12b-rawtext-nested-hidden-section`. Named by no issue.
+| V49 | Core | both | The §12 raw-text scan MUST match the opening tag by the **exact ASCII tag name** `script` or `style`, ended by one of §6.2's OPEN-set bytes; a reader MUST NOT use a word-boundary assertion (§12, and the same repair row V44 made to the §5.0 discovery scans). `\b` holds before `-`, so `<style-x>` satisfied `<style\b` and every byte up to the next `</style>` went inert. Measured on the sealed v0.5 pair: `<style-x>` … `<img id="bad id">` … `</style>` verified CLEAN on **both** readers — a fail-open that no cross-reader comparison could surface, because both held it, and one a browser does not share, having no `<style-x>` raw-text element. Pinned by `r12b-rawtext-style-widget` with a `<span>` control. Named by no issue.
+| V50 | Core | both | The two §12 inert-region constructs — HTML comments and raw-text `<script>`/`<style>` content — MUST be located against the RAW bytes and interleaved in **document order**: at each point the construct that OPENS FIRST claims its span and consumes through its own close (§12). A reader MUST NOT neutralize comments as a pre-pass before the raw-text scan (nor the reverse). Consequently a `<!--` inside an open raw-text span is CONTENT — the HTML5 RAWTEXT state reads it as ordinary CSS/script text and the FIRST `</style>`/`</script>` closes the element — while a `</style>` inside a comment that started OUTSIDE raw text stays masked, and a `<style>` merely MENTIONED in such a comment opens nothing. A construct with no close claims no span; the scan resumes past its opener. Measured on the superseded pair, the comments-first layering was a fail-open **all four readers shared**: `<style><!-- </style> --> <img id="bad id"> </style>` verified CLEAN (rc=0) on both, where a browser reads that `<img>` as live markup. Pinned by `r12c-comment-in-rawtext` with the reverse-nesting control `r12c-rawtext-in-comment-control` and the chain control `r12c-comment-rawtext-comment-chain`. Named by no issue. |
+| V51 | Core | tail shape only | The tail preamble's `articles: N` count and the denominator of `verified n/N articles` (and of the mixed-epoch `PASS (verified=…, ordinal=…) articles: N`) are the number of **witnessed** `<article>` openers — those carrying a `data-witness` attribute at all, and therefore reaching a verdict — **not** the number of `<article>` opening tags in the document (§5.3b, §9.1). An `<article>` with no `data-witness` is not an addressable unit and MUST NOT be counted. Measured on the superseded pair this was the only rc=0 cross-reader OUTPUT drift in the certified pair: a tail with one witnessed and one un-witnessed `<article>` printed `articles: 1` / `verified 1/1 articles` on `verify.py` and `articles: 2` / `verified 1/2 articles` on `verify.mjs`, **rc=0 on both** — two readers printing two different counts for the same document and both calling it a PASS. It is not one of the verdict-wording drifts §13 discloses: those are refusal sentences at rc=1. Pinned by `r15-tail-unwitnessed-article`. Named by no issue. |
 
 ## 11. Conformance profiles and Definition of Done
 
@@ -1551,9 +1710,16 @@ extension MUST satisfy that extension's rows.
   either witness grammar (§6.7), the same discipline the id production already holds itself to
   (V42). A Core reader classifies a tail article's witness by grammar
   and recomputes only the consecrated epoch; it is not required to enforce writing-room ordering —
-  that is the Append seam named explicitly in §5.3b. Rows V1, V1T, V2–V12, V17–V31, V33–V42. v0.4
+  that is the Append seam named explicitly in §5.3b. Rows V1, V1T, V2–V12, V17–V31, V33–V49. v0.4
   added no Core conformance requirement; **v0.5 does** — rows V33–V42 are the one-grammar
-  recension, a Core change with the version boundary §14 states. A
+  recension — and **so does this recension**: rows V43–V46 close the four public issues #5–#8,
+  each a Core change with the version boundary §14 states. A Core reader gates a
+  `data-char-count` check on the attribute's PRESENCE, not on its value being non-null (V43); it
+  locates `nav`, `article` and the manifest's `<a>` descendants by exact, case-sensitive ASCII
+  tag name under §6.2's OPEN set, quote-aware to the tag's own `>` (V44); it folds an attribute
+  NAME by the ASCII `A`–`Z` map alone, never by the engine's lowercase (V45); and every
+  case-insensitive comparison it makes over document bytes is ASCII-only and length-preserving
+  (V46). A
   Core reader reading a folded record sees an ordinary manifest-first document and verifies it
   under the unchanged rules; no folded-record inference is ever made from link-text shape.
 - **Append (extension).** Writing-room epoch ordering, supersession resolution, append-only
@@ -1633,7 +1799,19 @@ An implementation is done when, at its declared profile, all REQUIRED boxes chec
       `invalid`, not silently accepted by an engine whose `$` matches before a trailing newline
       (§6.7 R9 note; same discipline as the id production, §6.1). Passes V42.
 - [ ] **(REQUIRED)** Fails closed and refuses vacuous passes (§7.3).
-- [ ] **(REQUIRED)** Passes Validation Matrix rows V1, V1T, V2–V12, V17–V27, V33–V42.
+- [ ] **(REQUIRED)** Refuses a **valueless** `data-char-count` (no `=` at all) exactly as it
+      refuses `data-char-count=""`, on all four carriers — the check is gated on the attribute's
+      PRESENCE, never on its value being non-null (§6.6, §9.1 `count_attr`). Passes V43.
+- [ ] **(REQUIRED)** Locates `<nav id="manifest">`, `<article …>` and the manifest's `<a>`
+      descendants by §5.0's discovery grammar — exact, case-sensitive ASCII tag name, ending at
+      one of §6.2's OPEN-set bytes, attribute blob read quote-aware to the tag's own `>`. Neither
+      a case fold, nor a word-boundary assertion, nor a `[^>]*` blob stands in for it. Passes V44.
+- [ ] **(REQUIRED)** Folds an attribute NAME with the ASCII `A`–`Z` map and nothing else, never
+      with the host engine's own lowercase operation (§6.4). Passes V45.
+- [ ] **(REQUIRED)** Makes every case-insensitive comparison over document bytes ASCII-only and
+      length-preserving — including any fold whose resulting index is used against the unfolded
+      text's offsets (§6.4, §12). Passes V46.
+- [ ] **(REQUIRED)** Passes Validation Matrix rows V1, V1T, V2–V12, V17–V27, V33–V49.
 - [ ] **(REQUIRED)** Requires no server, JS, network, or tooling to read (Tier 0).
 - [ ] *(RECOMMENDED — Append)* Resolves `data-supersedes`; enforces writing-room ordering;
       re-confirms append-only. Passes V13–V16.
@@ -1660,7 +1838,7 @@ this specification, agree byte-for-byte on clean, corrupted, and CRLF-variant fi
 full multi-corner battery (nested boundaries, comment masking, raw-text and multibyte edges) is
 the standing target, not yet a closed result.
 
-## 12. What is NOT in v0.5
+## 12. What is NOT in v0.6
 
 > **Note — the inert-region definition (not an exclusion).** §6.2 and §6.4a both refer to an
 > "inert region." An **inert region** is, for the purposes of the boundary-token grammar (§6.2),
@@ -1668,7 +1846,69 @@ the standing target, not yet a closed result.
 > the union of: (a) the bytes between a `<!--` and its matching `-->`, i.e. an HTML comment; and
 > (b) the raw-text content bytes of a `<script>` or `<style>` element — the bytes between that
 > element's own opening `>` and its own `</script>`/`</style>` closing tag, which HTML defines as
-> CDATA/raw text a browser never parses as markup. A boundary token or a prohibited
+> CDATA/raw text a browser never parses as markup.
+>
+> **The two constructs are located in DOCUMENT ORDER, and raw text wins (row V50).** A reader
+> MUST locate comments and raw-text elements against the RAW bytes in one left-to-right pass: at
+> each point, whichever construct **opens first** claims its span and consumes through **its own**
+> close. A reader MUST NOT neutralize comments as a pre-pass before scanning for raw text, and MUST
+> NOT neutralize raw text as a pre-pass before scanning for comments. Consequences, both of them
+> the browser's:
+>
+> - A `<!--` inside an already-open raw-text span is **content**, not a comment. Inside `<style>`
+>   the HTML5 tokenizer is in RAWTEXT state, where `<!--` is ordinary CSS text and the **first**
+>   `</style>` closes the element. So `<style><!-- </style> --> <img id="bad id"> </style>` closes
+>   its `<style>` at the first `</style>`, and that `<img>` is **live markup**: `FAIL`, substring
+>   `invalid id production: bad id`, byte-identical on both readers. The superseded pair verified
+>   it CLEAN on **all four readers** — a fail-open no cross-reader comparison could surface,
+>   because both readers blanked comments first.
+> - A `</style>`/`</script>` inside a comment that itself started **outside** raw text stays
+>   masked, and a `<style>`/`<script>` merely **mentioned** inside such a comment opens nothing —
+>   the comment opened first, so it consumes through its own `-->`. This is the property the
+>   comments-first pre-pass existed to guarantee, and document order keeps it without the pre-pass:
+>   `<!-- <style> --> <img id="bad id"> </style>` refuses that `<img>` on all four readers, before
+>   and after.
+>
+> A construct with **no close** — an unterminated `<!--`, a `<style>` with no `</style>` — claims
+> no span at all: the scan resumes just past its opener and looks for the next construct.
+>
+> **Two further consequences of "its own", stated normatively because both reference readers got
+> one of them wrong (rows V48, V49).**
+>
+> 1. **The scan resumes AFTER the close tag, not after the opening tag (row V48).** A raw-text
+>    element's content is raw text: it is not scanned for further raw-text elements. A reader that
+>    enumerates opening tags and resumes after each one will treat a `<script>` written *inside* a
+>    `<style>` element's content as a second element and open a second, overlapping span whose
+>    close is searched for beyond the first element's own — masking live markup that lies between
+>    them. Measured on the sealed v0.5 pair, this was a live cross-reader PASS/FAIL split in the
+>    **fail-open** direction: `<style> a <script> b </style>` followed by `<img id="bad id">` and
+>    then `</script>` was refused by `verify.py` (whose scan consumes through the close tag) and
+>    verified CLEAN by `verify.mjs` (whose scan did not). The same construction hides a whole
+>    zero-witness nested `<section>` just as completely.
+> 2. **The opening tag is matched by the EXACT ASCII tag name, bounded by §6.2's OPEN set (row
+>    V49).** A reader MUST NOT use a word-boundary assertion (`\b`) for it. `\b` holds before `-`,
+>    so `<style-x>` satisfies `<style\b`; the close search then finds the next `</style>` and every
+>    byte in between goes inert. Measured on the sealed v0.5 pair, `<style-x>` … `<img id="bad
+>    id">` … `</style>` verified CLEAN on **both** readers — a fail-open that no cross-reader
+>    comparison could surface, because both readers held it. A browser has no `<style-x>` raw-text
+>    element: *what is verified must be what is read*. This is the identical repair §5.0's
+>    discovery grammar received (row V44); the tag name is compared byte for byte, and the byte
+>    that ends it is one of §6.2's seven.
+>
+> **Residual, disclosed and NOT ruled — the raw-text opening tag's own attribute blob.** Both
+> readers still find a raw-text opening tag's `>` with a non-quote-aware scan, so
+> `<style title="a>b">` is treated as ending at the `>` inside the quoted value and a few bytes of
+> the element's own opening tag are counted as content. This is the same defect §5.0's discovery
+> grammar was repaired for and the §6.2 unit-opener re-read path still carries; it is named here
+> so it is not mistaken for a property of the definition.
+>
+> **Comment-vs-raw-text precedence — RULED (row V50), no longer a residual.** Earlier drafts of
+> this section recorded, and did not fix, that both reference readers neutralized HTML comments
+> *before* scanning for raw-text elements, so a comment written **inside** a real `<style>` element
+> was honoured as a comment and swallowed the element's own close tag. The document-order rule
+> above is that ruling: the layering is gone, the property it protected is kept, and
+> `<style><!-- </style> --> <img id="bad id"> </style>` is now refused rather than verified.
+> A boundary token or a prohibited
 > content-element tag name that occurs inside an inert region MUST NOT be counted, MUST NOT match
 > a boundary, and MUST NOT trigger the §6.4a content-profile refusal — it is prose or script/style
 > data to a browser, and a conforming reader treats it identically. An `<a>` element whose opening
@@ -1676,7 +1916,18 @@ the standing target, not yet a closed result.
 > commented-out example anchor inside `nav#manifest` MUST NOT be collected by §5.3's link-
 > collection rule (R4a). Bytes inside an inert region that also fall inside a witnessed span
 > remain part of that span's witnessed bytes; only *boundary-token, content-profile, and
-> manifest-link matching* skip them, never the witness arithmetic itself (§6.2). This note defines
+> manifest-link matching* skip them, never the witness arithmetic itself (§6.2).
+>
+> **Locating a raw-text element's close tag is a case-insensitive comparison, and §6.4's rule for
+> those binds here (row V46).** A reader matching `</script>`/`</style>` case-insensitively MUST
+> do so ASCII-only and **length-preservingly**: a full-Unicode fold of the surrounding text is not
+> length-preserving (U+0130 folds to two codepoints), so an index taken from the folded copy does
+> not name the same position in the original, and the inert span it yields runs past the element's
+> real close tag — masking live markup that must be checked, which is a **fail-open**. A
+> conforming reader either matches without folding the document at all (computing the span's end
+> from the match itself) or folds with §6.4's ASCII `A–Z` map, which cannot change a length.
+>
+> This note defines
 > a term used normatively above; it is listed in §12 for proximity to the other structural notes,
 > not because inert-region masking is out of scope — it is a Core MUST, certified by name in §10:
 > the boundary-token grammar (§6.2, row V10), the content-profile prohibition (§6.4a, row V26),
@@ -1684,7 +1935,7 @@ the standing target, not yet a closed result.
 > R4b) — not a bare reference to the §11.1 profile roster, which lists Core's scope but does not
 > itself certify any one row.
 
-A conforming v0.5 reader MUST NOT require any of these:
+A conforming v0.6 reader MUST NOT require any of these:
 
 - **The live loop** (Claim B, §4.2) — writing a turn (model call, key, disk write) is a
   platform action a scriptless browser cannot perform. The run leg is delegated to external
@@ -2118,6 +2369,81 @@ exact code path (`r2-nested-valueless-witness.doc.html`) under an EXPECT.tsv sub
 (`invalid witness grammar on nested`) chosen short enough to sidestep it. The V42 fixture uses
 the identical substring for the identical reason.
 
+### Vector set 7 — the recension-II refusals (§6.6, §5.0, §5.3, §6.2, §6.4, §12; rows V43–V51)
+
+This vector set names the required verdicts for the seven Core rules this recension adds. Four
+close public issues #5, #6 and #7; three (V47, V48, V49) were named by no issue and were found
+by adversarial review of the first four — two of them live cross-reader splits and one a
+fail-open both readers shared. Every row below was **measured** on the superseded reference pair
+(`seal-readers-20260822`) before the rule was written, and every "required verdict" is what both
+readers produce after it; nothing here is predicted. As in vector set 6, "required verdict" names
+the substring a conforming reader MUST emit, not the whole sentence.
+
+| Vector | Rule | Document | Required verdict |
+|---|---|---|---|
+| **valueless count, manifest link** | §6.6 valueless-is-empty, V43 | A conforming manifest-first document whose one manifest `<a>` carries `data-char-count` with **no `=` at all** | `FAIL`, substring `invalid char-count grammar`, non-zero exit — byte-identical to the verdict `data-char-count=""` earns on the same carrier. The superseded pair verified this document CLEAN on both readers. |
+| **valueless count, top-level section** | §6.6, V43 | The same, on the top-level `<section>` opening tag | `FAIL`, substring `invalid char-count grammar`. |
+| **valueless count, nested section** | §6.6, V43 | The same, on a nested `<section data-witness>` opening tag | `FAIL`, substring `invalid char-count grammar`. |
+| **valueless count, tail article** | §6.6, V43 | The same, on a tail `<article data-witness>` opening tag | `FAIL`, substring `invalid char-count grammar`. |
+| **valueless count, positive control** | §6.6, V43 (control) | The identical documents with the attribute **absent** | `PASS`. Absence is OPTIONAL and unaffected; only presence-with-no-value moves. |
+| **quoted `>` in a manifest anchor** | §5.0/§5.3 discovery grammar, V44 | `<a title="x>y" href="#intro" data-witness="…">` as the manifest's only entry, everything else conforming | `PASS`. The `>` inside the quoted `title` does not end the anchor's opening tag. The superseded pair refused this conforming document (`manifest link href is not a fragment`), and refused it **only when `title` preceded `href`** — attribute order decided the verdict. |
+| **quoted `>` on the manifest nav** | §5.0 discovery grammar, V44 | `<nav title="a>b" id="manifest">` on an otherwise-conforming manifest-first document | `PASS`. The superseded pair failed shape detection on it. |
+| **`<a-widget>` inside the manifest** | §5.0/§5.3 exact tag name, V44 | One conforming `<a href="#intro" …>` entry plus an `<a-widget>` element inside `nav#manifest` | `PASS`, `verified 1/1 sections`. `<a-widget>` is not an anchor; a word-boundary assertion would make it one. The superseded pair collected it and refused the document. |
+| **`<article-widget data-witness>`** | §5.0 exact tag name, V44 | An `<article-widget data-witness="…">` element in an otherwise-conforming **manifest-first** document | `PASS`, `verified 1/1 sections`. An `<article-widget>` is not an `<article>`, so the document is not mixed-shape. The superseded pair counted it a witnessed article for V18 and refused the document `FAIL: mixed shapes …` for containing an `<article>` it does not contain. |
+| **`<A>` manifest entry** | §5.0/§5.3 case-sensitive tag name, V44 | An uppercase `<A href="#intro" data-witness="…">` as the manifest's only entry | `FAIL`, substring `has no <a> entries`. Tag names are case-sensitive (§6.2); the superseded pair collected it and verified the document clean. |
+| **`<NAV id="manifest">`** | §5.0 case-sensitive tag name, V44 | `<NAV id="manifest">…</nav>` on an otherwise-conforming manifest-first document | `FAIL`, substring `shape detection failed`, non-zero exit — the document has no manifest, and (carrying no witnessed `<article>`) is neither shape. The superseded pair verified it clean. |
+| **`<nav-widget id="manifest">`** | §5.0 exact tag name, V44 | `<nav-widget id="manifest">…</nav>` carrying what looks like a manifest | `FAIL`, substring `shape detection failed`. A `<nav-widget>` is not a `<nav>`; the superseded pair accepted it **as the manifest** and verified the document clean. |
+| **`<ARTICLE data-witness>`** | §5.0 case-sensitive tag name, V44 | An uppercase `<ARTICLE id="t-one" data-witness="…">` as a document's only unit | `FAIL`, substring `shape detection failed` — the document is not a tail. The superseded pair called it a tail at detection and then found no `<article>` opener at unit discovery, refusing it as `vacuous`: the two scans disagreed with each other. |
+| **lowercase control** | §5.0, V44 (control) | The identical document with `<article>` lowercase | `PASS`, `verified 1/1 articles`, on the superseded pair and after alike. This is what makes the row above a case rule and not a witness or count rule. |
+| **KELVIN SIGN attribute name** | §6.4 ASCII fold, V45 | `<div K="1" k="2">` (U+212A + `k`) inside a conforming section | `PASS`. Two distinct attribute names, as an HTML5 tokenizer reads them. The superseded pair refused both readers alike (`duplicate attribute name 'k'`). |
+| **U+1C89 / U+1C8A attribute names** | §6.4 ASCII fold, V45 | `<div Ᲊ="1" ᲊ="2">` inside a conforming section | `PASS` on **both** readers. **This is the live-split vector:** on the superseded pair the Python reader (UCD 14) verified it clean and the Node reader (UCD 16) refused it, over the same bytes — a PASS/FAIL split closed by this row. |
+| **final-sigma and dotted-I attribute names** | §6.4 ASCII fold, V45 | `<div AΣ="1" aς="2">` and `<div İ="1" i̇="2">` | `PASS` for both. Both engines' full-Unicode folds collapse each pair (SpecialCasing final sigma; `İ` → `i` + U+0307); the ASCII fold does not. |
+| **ASCII fold still bites** | §6.4 ASCII fold, V45 (control) | `<div DATA-X="1" data-x="2">`, and separately `<section id="intro" ID="intro" data-witness="…">` | `FAIL`, substring `duplicate attribute name`, for both — the first through the whole-document walk, the second through the §6.4 canonical checker. The fold is narrowed, not removed. |
+| **length-preserving fold** | §6.4/§12, V46 | A conforming manifest-first document carrying twenty U+0130 in prose, then a `<style>` element, then `<img id="bad id" …>` | `FAIL`, substring `invalid id production: bad id`, on **both** readers. On the superseded pair the Node reader verified this CLEAN (rc=0) — its whole-document `toLowerCase()` lengthened the text, so the recorded inert span ran twenty code units past the real `</style>` and swallowed the malformed `<img>`. A **fail-open**, closed by this row. |
+| **length-preserving fold, control** | §6.4/§12, V46 (control) | The identical document with an ASCII `I` in place of each U+0130 | `FAIL`, the identical substring, on all four readers (superseded pair and after). One letter is the whole difference. |
+| **length-preserving fold, the OTHER direction** | §6.4/§12, V46 | A conforming manifest-first document whose section ends with a `<style>` block and whose prose is ordinary Turkish — twelve words, twelve U+0130 | `PASS`, `verified 1/1 sections`, on **both** readers. On the superseded pair the Node reader REFUSED it, `verified 0/1 sections (mismatches: 0, missing: 1)`, rc=1, while the Python reader passed it: the same non-length-preserving fold, here swallowing the section's own `</section>` instead of a defect. **V46 is a split in both directions** — fail-open when the shift hides a defect, **false refusal of a conforming, non-adversarial document** when it hides a close tag — and the second is reachable by ordinary Turkish or Azeri prose. |
+| **formatter-wrapped opening tag** | §6.2 boundary capture, V47 | A conforming manifest-first document whose `<section>` opening tag is wrapped across lines, LF before each attribute and before the `>` | `PASS`, `verified 1/1 sections`. `0x0A` LF is a member of §6.2's OPEN set and always was; the superseded pair refused this document on **both** readers, because neither engine's `.` can produce LF and the enumeration was never asked. |
+| **the same tag written CRLF** | §6.2 boundary capture, V47 | The identical document with each in-tag LF written CRLF, so `0x0D` CR immediately follows the tag name | `PASS` on **both** readers. **This is a live-split vector:** on the superseded pair the Python reader verified it clean (a bytes `.` matches CR) and the Node reader refused it (a JavaScript `.` does not — CR is a line terminator in ECMA-262), over the same bytes. |
+| **tail unit joined by LF, then CR, then VT** | §6.2 boundary capture, V47 | Three documents, byte-for-byte identical but for the single byte between `<article` and `id`: LF, CR, `0x0B` VT. Each has a second, ordinarily-joined article | LF: `verified 2/2 articles` (superseded pair: `1/1`). CR: `verified 2/2` on both (superseded pair: `2/2` on Python, `1/1` on Node — an **output split at rc=0**, the failure mode a same-rc comparison cannot see). VT: `verified 1/1` on all four, before and after — the 2026-08-22 ruling still holds and V47 re-admits nothing that was ruled out. |
+| **a script inside a style element's content** | §12 resume position, V48 | `<style> a <script> b </style>` then `<img id="bad id" …>` then `</script>`, inside a conforming section | `FAIL`, substring `invalid id production: bad id`, on **both** readers. On the superseded pair the Node reader verified it CLEAN — it resumed its raw-text scan after each OPENING tag, so the inner `<script>` opened a span running to the trailing `</script>` and swallowed the malformed `<img>`. A **fail-open** and a PASS/FAIL split, closed. |
+| **the same, hiding a whole section** | §12 resume position, V48 | The identical construction hiding a zero-witness nested `<section id="inner">` instead of the `<img>` | `FAIL`, substring `nested section id=inner: claimed=…`, on both readers (spelled `FAIL nested …` by verify.py and `MISMATCH nested …` by verify.mjs — the second of the five drifts this appendix already discloses, reached, not introduced). Superseded pair: Python refused, Node verified CLEAN. |
+| **a hyphenated raw-text tag name** | §12 exact tag name, V49 | `<style-x>` … `<img id="bad id" …>` … `</style>` inside a conforming section | `FAIL`, substring `invalid id production: bad id`, on both readers. The superseded pair verified it CLEAN on **both** — `\b` holds before `-`, so `<style-x>` was a raw-text element and everything to the next `</style>` went inert. A fail-open **no cross-reader comparison could have surfaced**, because both readers held it. |
+| **hyphenated raw-text, control** | §12, V49 (control) | The identical document with `<span>`/`</span>` in place of `<style-x>`/`</style>` | `FAIL`, the identical substring, on all four readers. An ordinary element never masked anything; this is what makes the row above a raw-text-scan rule. |
+| **non-boundary byte after a discovered tag name** | §5.0/§5.3, V44 (reword, declared) | A tail `<article\u00a0id="t-one" data-witness="…">` (U+00A0 NBSP), and separately an `<a\u00a0href="#intro" …>` inside `nav#manifest` | `FAIL`, substrings `shape detection failed` and `has no <a> entries`. The superseded pair FOUND both elements (`\b` holds before a non-word byte) and refused them later, for the wrong reason — `vacuous` and `manifest link href is not a fragment` — because the §6.4 tokenizer absorbed the NBSP into the first attribute NAME. Same rc, better-reasoned sentence, different bytes: a verdict move, and declared as one. VT, U+2028, U+3000 and `-` take the identical path. |
+| **a comment inside a real raw-text element** | §12 document order, V50 | `<style><!-- </style> --> <img id="bad id" …> </style>` inside a conforming section | `FAIL`, substring `invalid id production: bad id`, byte-identical on both readers. The superseded pair verified it CLEAN on **all four** — both blanked the comment first, so the `</style>` inside it vanished and the element ran to the FINAL `</style>`. A browser closes the element at the FIRST `</style>`. |
+| **a raw-text element inside a comment** | §12 document order, V50 (control) | `<!-- <style> --> <img id="bad id" …> </style>` | `FAIL`, the identical substring, on all four readers, before and after. The comment opens first and consumes through its own `-->`, so the `<style>` mentioned inside it opens nothing and the `<img>` is live. This is the property document order must NOT break, which is why V50 is a precedence rule and not simply "stop blanking comments". |
+| **comment, then raw text, then comment** | §12 document order, V50 (chain control) | A lead comment mentioning `<style>`, then a real `<style> a <!-- inner --> b </style>`, then a trailing comment containing `<img id="bad id" …>` | `PASS`, `verified 1/1 sections`, on all four readers, before and after. Each construct claims exactly its own span: document order changes the answer only where the two constructs actually overlap. |
+| **a tail with an un-witnessed article** | §5.3b/§9.1 denominator, V51 | One witnessed `<article id="t-one" data-witness=… data-char-count=…>` and one `<article class="aside">` carrying no witness | `PASS`, `articles: 1`, `verified 1/1 articles (mismatches: 0, missing: 0)`, byte-identical on both readers. The superseded pair was rc=0 on both and printed `articles: 1` / `verified 1/1` on `verify.py` against `articles: 2` / `verified 1/2` on `verify.mjs` — the only rc=0 cross-reader output drift in the certified pair. |
+
+**CLOSED, not residual — the "shape detection failed" wording drift is ruled away (RP-2,
+2026-08-23).** That drift was the fourth of the five instances vector set 6's residual note names:
+`verify.py` wrote `… and no witnessed <article> with valid grammar` and `verify.mjs` wrote
+`… and no witnessed <article> elements with valid-grammar witness` — same rc, same finding,
+different sentence. **There is now ONE canonical sentence and it is `verify.py`'s**, chosen on
+byte-churn grounds (it is the shorter of the two and it moves exactly one reader's line, leaving
+`verify.py`'s output — and therefore every tracked document `verify.py` refuses this way —
+unmoved). `verify.mjs` emits it byte for byte; the loser's phrasing exists nowhere in either reader
+any more. V44's `<NAV id="manifest">`, `<nav-widget id="manifest">`, `<ARTICLE data-witness>` and
+`<article\u00a0id=…>` vectors all land on that verdict and are now held to **byte-identity**,
+their four allow-list entries deleted rather than reworded — a stale exemption is a gate that has
+stopped checking something. The two disclosed parity COSTS the earlier draft recorded here (the
+`<ARTICLE>` vector and the `<article\u00a0id=…>` vector each moved from a byte-IDENTICAL `vacuous`
+ONTO the drift) are repaid in full by this ruling, and the credit it recorded (the
+`<article title="a>b" …>` residual vector moving OFF the drift) still stands. **Four wording
+drifts remain**, not five. A separate fixture,
+`r12b-rawtext-nested-hidden-section`, lands on the SECOND of the five drifts (the
+`FAIL`/`MISMATCH` prefix) for the same reason: reached, not introduced.
+
+**Residual, disclosed — the unit-opener re-read path is still not quote-aware.** V44 puts the
+three DISCOVERY scans under the quote-aware grammar. It does not touch the separate step that
+re-reads an ALREADY-LOCATED `<section>`/`<article>` opener's own attributes by searching forward
+for the next `>` — the pre-existing defect vector set 6's R6 note already lists as out of blast
+radius. Measured consequence, unchanged: `<article title="a>b" id="t-one" data-witness="…">` is
+still refused. V44 moves it from `shape detection failed` to `vacuous` — a refusal for a better
+reason, not an acceptance — because the discovery scan now finds the article while unit discovery
+still truncates its opening tag at the in-quote `>`. A conforming document is still refused on
+that shape; the fix is a separate ruling.
+
 ## 14. Versioning policy
 
 This document specifies **version 0.5** of the doc.html format.
@@ -2312,8 +2638,156 @@ a production resting on a versioned Unicode table is not, and would let two read
 this text alone disagree about the same document. v0.5 therefore pins **no** Unicode version for
 ids, and needs none.
 
+**This recension — rows V43–V51, closing public issues #5, #6, #7 and #8, and five defects no
+issue named.** The nine rules added here supersede `seal-readers-20260822` as the reference
+certification; that seal and its Reckoning stay byte-intact, as correction is by supersession.
+Rows V43–V46 close the four public issues; rows **V47, V48 and V49** were found by adversarial
+review of those four, and rows **V50 and V51** were found by adversarial review of THAT review and
+ruled by the 2026-08-23 sitting (RP-3 and RP-4). Of the five nobody filed, three are live
+cross-reader splits on the sealed pair, one is a fail-open **both** sealed readers shared, and one
+is an rc=0 count two readers printed differently while both saying PASS. Each rule's own boundary,
+in both directions, measured against that seal and not predicted:
+
+1. **A valueless `data-char-count` is refused (row V43)** — a **narrowing**, on all four carriers.
+   A document that verified clean under `seal-readers-20260822` with `data-char-count` written and
+   given no value is now refused, with the identical verdict `data-char-count=""` already earned.
+   No shipped or tracked document carries the shape.
+2. **The discovery scans use exact, case-sensitive tag names, read quote-aware (row V44)** —
+   **both directions, and the loosenings are the point.** Loosening: a manifest anchor or a
+   manifest `<nav>` whose earlier attribute value contains a quoted `>`
+   (`<a title="x>y" href="#intro" …>`) was refused by the sealed pair as a malformed link or a
+   failed shape detection, and now verifies — a **conforming document that attribute ORDER alone
+   decided the verdict for**; likewise an `<a-widget>` inside `nav#manifest` is no longer
+   collected as an anchor and no longer refuses the document around it. Narrowing:
+   `<NAV id="manifest">`, `<nav-widget id="manifest">` and an uppercase `<A href="#…">` manifest
+   entry were all accepted by the sealed pair — the first two **as the manifest itself** — and are
+   now refused; an uppercase `<ARTICLE data-witness>` document moves from one refusal to another.
+   And in the loosening direction again, an `<article-widget data-witness="…">` no longer counts
+   as a witnessed `<article>` for the homogeneity rule, so a manifest-first document carrying one
+   is no longer refused as mixed-shape. No shipped or tracked document carries any of these
+   shapes.
+3. **Attribute names fold ASCII `A–Z` only (row V45)** — a **loosening**, four shapes, one of
+   which closes a **PASS/FAIL split on the sealed pair**. Two attribute names that differ only
+   outside ASCII no longer collide, on either reader; the Unicode-16 case pair U+1C89 / U+1C8A was
+   rc=0 on the sealed Python reader and rc=1 on the sealed Node reader, over the same bytes, and
+   both now accept it. This closes the last engine-defined operation in either reader's attribute-name path — the operation public issue #7 named. (The bundle numbered **v0.6.0** is a BUNDLE version and carries **format v0.5**; the two numbering lines are not the same line, and nothing in that CHANGELOG reserves a format number.)
+   No shipped document carries a non-ASCII attribute name.
+4. **Every case-insensitive comparison is ASCII-only and length-preserving (row V46)** — a
+   **split on the sealed pair in BOTH directions**, closed. The sealed Node reader's
+   whole-document `toLowerCase()` in its §12 inert-region scan is not length-preserving, so every
+   U+0130 written ahead of a `<script>`/`<style>` element pushed that element's recorded inert
+   span past its real close tag. Which way that reads depends only on what the overshoot lands on,
+   and both directions are real and measured: **fail-open** when it swallows a defect (twenty
+   U+0130, then a `<style>`, then `<img id="bad id">` — the Node reader verified CLEAN a document
+   the Python reader correctly refused), and **false refusal of a conforming, non-adversarial
+   document** when it swallows the unit's own `</section>` (twelve ordinary Turkish words before a
+   closing `<style>` block — the Node reader reported the section MISSING, rc=1, where the Python
+   reader passed it). The second is reachable by ordinary **Turkish or Azeri prose**, with no
+   attacker and no crafted byte-shape, and is the more serious of the two: a correct document
+   refused on one platform for a reason nothing in it makes visible. Both readers now agree, both
+   ways. Found by row V45's own fold-site audit; named by no issue.
+5. **The §6.2 boundary scan actually consults its own OPEN set (row V47)** — **loosenings only,
+   and one of them closes a split.** Both sealed readers captured the byte after a tag name with a
+   regular-expression wildcard, which is a different enumerated set in each engine and neither is
+   §6.2's: Python's bytes `.` excludes `0x0A` LF; JavaScript's `.` excludes LF, `0x0D` CR, U+2028
+   and U+2029. So a `<section>` opening tag wrapped across lines by an ordinary code formatter was
+   refused by **both** sealed readers, and `<article\rid="…">` was rc=0 on one sealed reader and
+   rc=1 on the other over the same bytes. **This is the widest-blast-radius rule in the recension**
+   — every other one moves byte-shapes no ordinary document writes, and this one moves the shape
+   ordinary formatting tools produce — so the lockstep gate's corpus pin, measured over the whole
+   tracked corpus on every run, is where its impact is established rather than asserted. `0x0B` VT
+   remains outside the set: a byte the enumeration rejects after seeing it is a ruling (row V10,
+   2026-08-22), a byte it never sees is a defect, and only the second is repaired.
+6. **The §12 raw-text scan resumes after the close tag (row V48)** — a **split closed**, in the
+   fail-open direction. The sealed Node reader enumerated raw-text OPENING tags and resumed after
+   each, so a `<script>` written inside a `<style>` element's content opened an overlapping span
+   reaching past that element's own close and masked the live markup between them; the sealed
+   Python reader's scan consumed through the close tag, which is what §12 says. A malformed `<img>`
+   — or a whole zero-witness nested `<section>` — could be hidden from the Node reader alone.
+7. **The §12 raw-text scan matches the exact ASCII tag name (row V49)** — a **narrowing on both
+   readers at once**, closing a fail-open **no cross-reader comparison could have surfaced**. Both
+   sealed readers matched the tag name with a word-boundary assertion, which holds before `-`, so
+   `<style-x>` was a raw-text element and everything up to the next `</style>` went inert on all
+   four readers. A browser has no `<style-x>` raw-text element. This is the same defect row V44
+   removed from the three discovery scans, in the one scan V44's blast radius did not reach; no
+   tracked or shipped document carries the shape.
+8. **The §12 masks are interleaved in document order, and raw text wins (row V50)** — a
+   **narrowing on both readers at once**, closing a second fail-open **no cross-reader comparison
+   could have surfaced**. Both sealed readers neutralized HTML comments before scanning for
+   raw-text elements, so a comment written *inside* a real `<style>` element swallowed that
+   element's own `</style>`: `<style><!-- </style> --> <img id="bad id"> </style>` verified CLEAN
+   on all four readers, where a browser — RAWTEXT state, `<!--` is CSS text — closes the element
+   at the first `</style>` and reads the `<img>` as live markup. The layering is replaced by one
+   left-to-right pass in which the earliest-opening construct consumes through its own close, which
+   keeps the property the layering existed to protect (a `<style>` merely mentioned inside a
+   comment still opens nothing) and drops the one it did not intend. No tracked or shipped document
+   carries the shape.
+9. **The tail `articles:` denominator counts witnessed articles (row V51)** — an **rc=0 OUTPUT
+   move on one reader**, and the only one this recension makes. The sealed pair printed two
+   different counts for the same tail document and both called it a PASS: `verify.py` counted
+   witnessed openers, `verify.mjs` counted every `<article>` opening tag. `verify.mjs` now prints
+   `verify.py`'s number. Exactly **one** tracked document is affected — `canon/mnemon/Mnemon.doc.html`,
+   the project's own memory organ, whose tail carries 48 `<article>` openers of which 38 are
+   witnessed; both readers refused it before (ORDINAL-ONLY, rc=1) and refuse it now, and the
+   `articles:` line moves from 48 to 38 on `verify.mjs` alone, onto `verify.py`'s unmoved bytes.
+   No shipped document is affected.
+
+**And one verdict SENTENCE is ruled, which is a change of a different kind (RP-2).** The
+"shape detection failed" refusal had two spellings, one per reader — the fourth of the five
+verdict-wording drifts §13 discloses. There is now **one** canonical sentence, `verify.py`'s, and
+`verify.mjs` emits it byte for byte. This moves no exit code and no document's conformance; it
+moves **output bytes on `verify.mjs` alone**, over every document that reaches that refusal.
+Measured, not asserted: **24** of the 360 tracked documents the lockstep gate's corpus reaches,
+and **54** of the 731 further tracked HTML files outside it, print that refusal — 78 documents in
+all, every one of them already failing before and after, at the same exit code, now in one
+sentence instead of two. The gate carries an explicit declared list of them (a "reworded verdict"
+corpus class), because a no-drift clause that quietly widens to admit them would have stopped
+meaning anything. Four wording drifts remain, not five.
+
+**And what this recension does NOT repair, stated with the rest.**
+
+- A `>` inside a quoted attribute value on a `<section>`/`<article>` **unit** opening tag still
+  truncates that opener when the reader re-reads its attributes, so
+  `<article title="a>b" id="t-one" data-witness="…">` remains a conforming document that both
+  readers refuse (row V44 moves the refusal from `shape detection failed` to `vacuous` — a better
+  reason, not an acceptance). The same non-quote-aware truncation still governs a raw-text
+  element's own opening tag under §12 (`<style title="a>b">`), a fourth site with the same defect.
+- The **discovery scans are flat byte scans and are not structure-aware** (§5.0, corrected there):
+  a `<nav id="manifest">` or an `<a href="#…">` written inside another element's quoted attribute
+  value is still found, and still refuses a conforming document, on all four readers.
+- The **remaining four verdict-wording drifts** §13 discloses are untouched. The fifth — the
+  "shape detection failed" spelling — is closed by RP-2 above, and the four allow-list entries that
+  existed only to excuse it are deleted. Row V44 routes three fixtures onto that verdict and takes
+  one back off it; all four are now byte-identical. Row V48 routes one fixture onto the
+  `FAIL`/`MISMATCH` prefix drift, which stands. None is hidden; the remaining four are a later
+  ruling's work.
+- The `body order [None]` / `body order []` difference a `<section/ id=…>` opener produces at rc=1
+  (the `seen_ids.add(None)` residual the superseded seal's Reckoning already discloses) is
+  unmoved.
+
+**Version label — RULED (Operator, 2026-08-23): this recension is v0.6.** This document's status
+line reads **v0.6**, and this recension's boundary is **v0.5 → v0.6**. The ground is this section's
+own practice, applied without exception: a version is bumped when a Core conformance requirement is
+ADDED or when a conforming document becomes non-conforming, and rows V43–V51 do both — V43 refuses
+a byte-shape v0.5 accepted on four carriers, V44 removes `<NAV id="manifest">` and an uppercase
+`<A>` manifest entry from the conforming set while admitting two shapes v0.5 refused, V49 removes
+`<style-x>` from the raw-text elements, V50 refuses a construction all four v0.5 readers verified
+clean, and V47 admits two byte-shapes v0.5 refused on at least one reader. The v0.4 precedent
+points the same way: a minor bump for a purely additive release, where this release is not even
+purely additive. It is **v0.6**, not v0.5.1.
+
+A **bundle** version is not a **format** version, and the distinction survives this ruling
+unchanged: the bundle numbered v0.6.0 carries **format v0.5**, and the bundle that will carry
+format v0.6 is **v0.7.0**. Nothing in any CHANGELOG reserved a format number, and no argument here
+rests on one.
+
+**Historical references to the v0.4 → v0.5 boundary stay as they are written.** §11.1's "v0.5
+does", vector set 6's "the eight Core rules v0.5 adds", the "sealed v0.5 pair" measurements in rows
+V45–V49 and the "What v0.5 is" narrative above all name a boundary that happened; renaming them
+would falsify the record. Only the statements about **this** document's own current version move.
+
 The version is stated here in
-prose; it is **not** encoded in any machine-readable attribute. A reader implementing v0.5
+prose; it is **not** encoded in any machine-readable attribute. A reader implementing v0.6
 SHOULD fail loudly when it encounters a non-conforming manifest shape (for example, a v0.1
 JSON-island manifest). Silent degradation is discouraged. Future
 versions will be specified in their own document; this text remains the canonical

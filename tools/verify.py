@@ -104,6 +104,33 @@ def _classify_witness(value: str) -> str:
 # five, and the earlier inversion is closed.
 _ATTR_SEP = frozenset('\t\n\x0c\r ')
 
+# §6.4 ATTRIBUTE-NAME case fold (R12 — public issue #7). Exactly the 26
+# codepoints U+0041–U+005A map to U+0061–U+007A; EVERY other codepoint is left
+# alone. This is not `str.lower()` and must never again be spelled as one.
+#
+# `str.lower()` / `String.prototype.toLowerCase()` are full-Unicode folds whose
+# mapping table is the ENGINE's Unicode version — Python 3.11 carries UCD 14,
+# Node 22 carries UCD 16 — and this specification pins no Unicode version. The
+# consequence was not hypothetical: `<div Ᲊ="1" ᲊ="2">` (U+1C89 / U+1C8A, a case
+# pair added in Unicode 16) was rc=0 on the sealed Python reader and rc=1 on the
+# sealed Node reader, over the same bytes — a live cross-reader split, the exact
+# disease the one-grammar recension was cut to remove, in the one organ it did
+# not reach. Independently, HTML5 ASCII-lowercases attribute names, so
+# `<div K="1" k="2">` (U+212A KELVIN SIGN) is TWO attributes to a browser and
+# was one duplicate to both sealed readers: what is verified must be what is
+# read (the V4 Discernment), the same ground as both 2026-08-22 rulings.
+#
+# The fold is also LENGTH-PRESERVING by construction, which the engine folds are
+# not (U+0130 folds to TWO codepoints) — see `_build_inert_mask`'s ASCII-only
+# raw-text scan and verify.mjs's `asciiLower` for why that property is
+# load-bearing and not incidental. Identical, member for member, to verify.mjs's
+# `asciiLower`.
+_ASCII_FOLD = {c: c + 0x20 for c in range(0x41, 0x5B)}
+
+
+def _ascii_lower(s: str) -> str:
+    return s.translate(_ASCII_FOLD)
+
 
 def _attrs(tag_inner: bytes, dup_names: list = None) -> dict:
     """Quote-aware attribute tokenizer (§6.4) — the reader's single value scan.
@@ -145,7 +172,7 @@ def _attrs(tag_inner: bytes, dup_names: list = None) -> dict:
         if i == name_start:
             i += 1
             continue
-        name = s[name_start:i].lower()
+        name = _ascii_lower(s[name_start:i])   # §6.4 ASCII fold (R12/V45)
         if dup_names is not None and name in attrs:
             dup_names.append(name)
         j = i
@@ -177,7 +204,8 @@ def _attrs(tag_inner: bytes, dup_names: list = None) -> dict:
 
 
 # ─── Comment masking (§6.2) ──────────────────────────────────────────────────
-_COMMENT_RE = re.compile(rb'<!--.*?-->', re.DOTALL)
+_COMMENT_OPEN = b'<!--'
+_COMMENT_CLOSE = b'-->'
 
 
 def _in_mask(pos: int, masks: list) -> bool:
@@ -190,34 +218,98 @@ def _in_mask(pos: int, masks: list) -> bool:
 
 
 # ─── Inert regions (§12) — comments + raw-text <script>/<style> content ──────
-_RAWTEXT_RE = re.compile(rb'<(script|style)\b[^>]*>.*?</\1>', re.IGNORECASE | re.DOTALL)
+# RP-3 RULED (Operator, 2026-08-23) — RAW TEXT WINS OVER COMMENTS, LIKE A
+# BROWSER. The two masking constructs are located against the RAW bytes and
+# interleaved in DOCUMENT ORDER: at each point the EARLIEST-OPENING construct
+# claims its span and consumes through ITS OWN close. Consequences, both of
+# them the browser's behaviour:
+#
+#   * A `<!--` inside an OPEN raw-text span is CONTENT. `<style><!-- </style>
+#     --> <img id="bad id"> </style>` closes the style element at the FIRST
+#     `</style>` — exactly where the HTML5 RAWTEXT state closes it, `<!--`
+#     being ordinary CSS text there — so the `<img>` is LIVE markup and its
+#     off-grammar id is refused. That document verified CLEAN on ALL FOUR
+#     readers before this ruling (recorded as RP-3 in the recension contract),
+#     because both readers blanked comments BEFORE scanning for raw text.
+#   * A `</style>`/`</script>` inside a comment that itself started OUTSIDE raw
+#     text stays masked, and a `<style>`/`<script>` merely MENTIONED inside such
+#     a comment opens nothing — the comment opened first, so it consumes
+#     through its own `-->` and the reader never sees the tag inside it. That
+#     is the property the old comments-first layering existed to guarantee, and
+#     document order keeps it without the layering.
+#
+# When a construct has no close (an unterminated `<!--`, a `<style>` with no
+# `</style>`), it claims NO span: the scan resumes just past its opener and
+# looks for the next construct. Both readers do this identically.
+#
+# R12b(b) — the tag name is bounded by §6.2's OPEN set, not by `\b`. `\b` is a
+# word-boundary assertion and therefore holds before `-`, so `<style-x>`
+# satisfied `<style\b`; the close search then made every byte up to the next
+# `</style>` inert. Measured on the sealed pair: `<style-x>` …
+# `<img id="bad id">` … `</style>` verified CLEAN on ALL FOUR readers — the
+# very `\b` defect R11 outlawed in the three discovery scans, still standing in
+# §12's scan, and NOT a cross-reader split, so no lockstep comparison could
+# ever have caught it. A browser has no `<style-x>` raw-text element: what is
+# verified must be what is read (the V4 Discernment).
+#
+# The lookahead is §6.2's OPEN set verbatim — byte for byte the class R11's
+# `_DISCOVERY_NEXT` carries and R14 now makes §6.2's own boundary scan consult.
+# IGNORECASE is RETAINED: a BYTES-mode IGNORECASE folds ASCII only (fold-site
+# audit, site 7), which is exactly what HTML5 does to a tag name. The close-tag
+# search uses `bytes.lower()`, which is ASCII-only AND length-preserving on a
+# bytes object — R12a's non-length-preserving-fold defect cannot arise here.
+#
+# R12b(a) — the scan resumes AFTER the located close tag, not after the opening
+# tag, so a `<script>` written inside a `<style>` element's CONTENT is never a
+# second raw-text element. §12 defines the inert region as the bytes between
+# that element's own opening `>` and its own close tag, which is this.
+_RAWTEXT_OPEN_RE = re.compile(rb'<(script|style)(?=[\t\n\x0c\r />])[^>]*>',
+                              re.IGNORECASE)
 
 
 def _build_inert_mask(html: bytes) -> list:
     """Union of comment spans and raw-text (<script>/<style>) content spans (§12),
-    sorted by start offset. Used for boundary-token matching (§6.2), unit
-    discovery (§9.1), the count guard, shape detection, the content-profile
-    prohibition (§6.4a), and the dup-id scan (§6.1).
+    in document order. Used for boundary-token matching (§6.2), unit discovery
+    (§9.1), the count guard, shape detection, the content-profile prohibition
+    (§6.4a), and the dup-id scan (§6.1).
 
-    Comment bytes are neutralized (blanked to spaces, length-preserving) BEFORE
-    the raw-text scan so a `<script>`/`<style>` — or a `</style>`/`</script>` —
-    that appears only as text INSIDE a comment cannot be mistaken for a real
-    raw-text element. Otherwise the non-greedy raw-text regex, once anchored at a
-    comment's `<style>` mention, would consume through to the next REAL
-    `</style>`, spawning a bogus span that masks every byte of legitimate markup
-    in between (and starving the real element of its own span). Same-length
-    blanking preserves every byte offset, so the spans below are valid offsets
-    into the original document."""
-    comment_spans = [(m.start(), m.end()) for m in _COMMENT_RE.finditer(html)]
-    scan = _COMMENT_RE.sub(lambda m: b' ' * (m.end() - m.start()), html)
-    spans = list(comment_spans)
-    for m in _RAWTEXT_RE.finditer(scan):
-        # Only the raw-text CONTENT (between the opening '>' and the closing tag's '<')
-        # is inert per §12; the element's own open/close tags are ordinary markup.
-        open_end = scan.index(b'>', m.start()) + 1
-        close_start = m.end() - len(b'</' + m.group(1) + b'>')
-        if open_end < close_start:
-            spans.append((open_end, close_start))
+    ONE left-to-right walk over the RAW bytes (RP-3). At each position the two
+    candidate constructs — the next `<!--` and the next raw-text opening tag —
+    are located, and the one that OPENS FIRST claims its span and consumes
+    through its own close. A comment span covers its own delimiters; a raw-text
+    span covers only the element's CONTENT, its own open/close tags being
+    ordinary markup. Spans never overlap and are produced in ascending order.
+    """
+    spans: list = []
+    lowered = html.lower()      # ASCII-only and length-preserving on bytes
+    pos = 0
+    n = len(html)
+    while pos < n:
+        c_start = html.find(_COMMENT_OPEN, pos)
+        m = _RAWTEXT_OPEN_RE.search(html, pos)
+        r_start = m.start() if m else -1
+        if c_start < 0 and r_start < 0:
+            break
+        if r_start < 0 or (0 <= c_start < r_start):
+            # The comment opens first — it consumes through its own `-->`.
+            c_end = html.find(_COMMENT_CLOSE, c_start + len(_COMMENT_OPEN))
+            if c_end < 0:
+                pos = c_start + len(_COMMENT_OPEN)
+                continue
+            spans.append((c_start, c_end + len(_COMMENT_CLOSE)))
+            pos = c_end + len(_COMMENT_CLOSE)
+        else:
+            # The raw-text element opens first — it consumes through its own
+            # close tag, and every `<!--` in between is CONTENT.
+            open_end = m.end()
+            close_tag = b'</' + m.group(1).lower() + b'>'
+            close_idx = lowered.find(close_tag, open_end)
+            if close_idx < 0:
+                pos = open_end
+                continue
+            if open_end < close_idx:
+                spans.append((open_end, close_idx))
+            pos = close_idx + len(close_tag)
     spans.sort()
     return spans
 
@@ -475,7 +567,7 @@ def _refuse_noncanonical_attrs(tag_inner: bytes, tag_inner_start: int) -> None:
         if i == name_start:
             i += 1
             continue
-        name = s[name_start:i].lower()
+        name = _ascii_lower(s[name_start:i])   # §6.4 ASCII fold (R12/V45)
         if name in seen:
             raise NonCanonical(
                 f"duplicate attribute name '{name}' "
@@ -530,8 +622,29 @@ def _boundary_scan_re(tag: str):
     tag_b = tag.encode()
     # Group 1: open-ish '<TAG' immediately followed by captured next byte.
     # Group 2: close-ish '</TAG' followed by everything up to (and including) '>'.
+    #
+    # R14 — the capture is `[\s\S]`, NOT `.`. A Python BYTES `.` without
+    # re.DOTALL matches every byte EXCEPT 0x0A LF, so `<section\nid="x">`
+    # produced no open-ish match at all and LF — a member of `_BOUNDARY_NEXT`
+    # above, and the byte every code formatter writes after a long tag name —
+    # was silently not a boundary. verify.mjs's `.` was worse still (JS `.`
+    # excludes LF, CR, U+2028 and U+2029), so the two readers disagreed about
+    # CR: `<article\rid=…>` was rc=0 on the sealed Python reader and rc=1 on
+    # the sealed Node reader, over the same bytes. The enumerated OPEN set was
+    # never consulted for bytes the wildcard could not produce.
+    #
+    # `[\s\S]` is a class unioned with its own complement and is therefore
+    # EVERY byte, in both engines, with no flag and no engine-defined table:
+    # the decision about which of those bytes is a boundary is made in exactly
+    # ONE place, `_BOUNDARY_NEXT` / `_classify_boundary_token`, per R8's
+    # one-place-only corollary. This is deliberately NOT spelled as a class
+    # built from the OPEN set: capturing any byte and then TESTING it keeps
+    # `<section-foo>` classified as ('content', None) with the same advance
+    # arithmetic it has always had. The close-ish alternative's `[^>]*` already
+    # admits every byte and is untouched. Identical, construction for
+    # construction, to verify.mjs's `boundaryScanRe`.
     return re.compile(
-        rb'<' + tag_b + rb'(?P<open_next>.)'
+        rb'<' + tag_b + rb'(?P<open_next>[\s\S])'
         rb'|</' + tag_b + rb'(?P<close_tail>[^>]*)>',
     )
 
@@ -899,14 +1012,18 @@ def _verify_tail(html: bytes, inert_masks: list) -> int:
             valid_count += 1
         # writing-room ordering is Append (V15), not checked in Core.
 
-        # §6.6 char-count (optional). Read via .get() and test for None:
-        # the §6.4 tokenizer records a VALUELESS attribute as None (Node
-        # parity), so a presence test alone would hand None to the parser.
-        # A PRESENT value is held to the §6.6 count grammar — off-grammar is a
-        # refusal, not a best-effort parse and not a skip.
-        cc_str = a.get('data-char-count')
-        if cc_str is not None:
-            claimed_cc = _parse_count(cc_str)
+        # §6.6 char-count (optional). R10 (public issue #5): the gate is
+        # attribute PRESENCE, not value-presence. The §6.4 tokenizer records a
+        # VALUELESS attribute (`data-char-count`, no `=`) as None, which an
+        # `is not None` gate cannot tell apart from "never written" — so the
+        # count check was SKIPPED on exactly the byte-shape §6.4 defines as
+        # present-with-the-empty-value. `in` distinguishes the two; the falsy
+        # coalesce then supplies the VALUE the grammar is tested against. Same
+        # two-step discipline R1a applies to a valueless `id` and §5.4 to a
+        # valueless `data-witness`. A PRESENT value is held to the §6.6 count
+        # grammar — off-grammar is a refusal, not a best-effort parse, not a skip.
+        if 'data-char-count' in a:
+            claimed_cc = _parse_count(a['data-char-count'] or '')
             if claimed_cc is None:
                 return 1
             actual_cc = len(inner.decode('utf-8', errors='strict'))
@@ -960,9 +1077,50 @@ def _verify_tail(html: bytes, inert_masks: list) -> int:
     return 0
 
 
+# ─── §5.0/§5.3 DISCOVERY scans (R11 — public issue #6) ───────────────────────
+# The three scans that FIND an element by name — `<nav id="manifest">` (§5.0
+# shape detection and §5.3 manifest location), `<article …>` (§5.0 shape
+# detection and the tail path's own detection), and `<a …>` inside the manifest
+# (§5.3's link gate) — are ONE grammar with the whole-document walk's, not
+# three looser ones. Until R11 each was spelled `<TAG\b([^>]*)>` with
+# `re.IGNORECASE`, which is wrong three ways at once:
+#
+#   * `[^>]*` cannot tell a `>` INSIDE a quoted attribute value from the tag's
+#     own terminator — R6's BLOCKER B, on three scans R6 did not reach. Live
+#     consequence: `<a title="x>y" href="#intro" data-witness="…">` inside the
+#     manifest was truncated at the in-quote `>`, the tokenizer saw no `href`
+#     at all, and a CONFORMING document was refused `manifest link href is not
+#     a fragment`. Attribute ORDER decided whether a document verified.
+#   * `\b` is a word-boundary assertion, so it holds before `-`: `<a-widget>`
+#     satisfied `<a\b` and was collected as a manifest anchor, and
+#     `<nav-widget id="manifest">` satisfied `<nav\b` and WAS ACCEPTED AS THE
+#     MANIFEST. §6.2's boundary set answers exactly this question.
+#   * `re.IGNORECASE` folded the tag NAME, while §6.2's boundary-token grammar
+#     — and §6.4's own cross-reference to it — hold tag names CASE-SENSITIVE.
+#     `<NAV id="manifest">` was the manifest; `<A href="#x" …>` was a link.
+#
+# The replacement asserts §6.2's OPEN set as a LOOKAHEAD (asserted, never
+# consumed, so group 1 stays exactly the attribute blob the tokenizer already
+# receives and every byte offset is unchanged), then captures the attribute
+# blob with R6's quote-aware alternation. No `\s`, no `\b`, no IGNORECASE: the
+# whitespace decision belongs to `_ATTR_SEP` alone (§6.4's one-place-only
+# corollary), and the tag name is compared byte for byte.
+_DISCOVERY_NEXT = rb'[\t\n\x0c\r />]'   # §6.2's ruled OPEN set, verbatim
+
+
+def _discovery_open_re(tag: str):
+    return re.compile(
+        rb'<' + tag.encode('ascii') + rb'(?=' + _DISCOVERY_NEXT + rb')'
+        rb'((?:"[^"]*"|\'[^\']*\'|[^<>\'"])*)>')
+
+
+_NAV_DISCOVERY_RE     = _discovery_open_re('nav')
+_ARTICLE_DISCOVERY_RE = _discovery_open_re('article')
+_A_DISCOVERY_RE       = _discovery_open_re('a')
+
 # ─── Manifest-first path (§5.3 / §9.1 verify_manifest_first) ─────────────────
-_NAV_OPEN_RE     = re.compile(rb'<nav\b([^>]*)>', re.IGNORECASE)
-_A_TAG_RE        = re.compile(rb'<a\b([^>]*)>', re.IGNORECASE)
+_NAV_OPEN_RE     = _NAV_DISCOVERY_RE
+_A_TAG_RE        = _A_DISCOVERY_RE
 # _HREF_RE / _DW_RE / _CC_RE removed (post-round-4-validation cleanup): zero
 # call sites — href, data-witness, and data-char-count are all read via the
 # quote-aware `_attrs` tokenizer everywhere in this reader, not by these
@@ -1049,9 +1207,10 @@ def _verify_manifest_first(html: bytes, inert_masks: list) -> int:
             print(f"FAIL: invalid id production: {sid}")
             return 1
         cc = None
-        cc_str = a.get('data-char-count')
-        if cc_str is not None:
-            cc = _parse_count(cc_str)
+        # R10 — presence, not value-presence: a valueless `data-char-count` on
+        # a manifest link is present with the empty value (§6.4/§6.6, V43).
+        if 'data-char-count' in a:
+            cc = _parse_count(a['data-char-count'] or '')
             if cc is None:
                 return 1
         sections.append({'id': sid, 'witness': dw, 'manifest_cc': cc})
@@ -1239,10 +1398,10 @@ def _verify_manifest_first(html: bytes, inert_masks: list) -> int:
             mismatch += 1
             bad_cc = True
 
-        sec_cc_str = section_attrs.get('data-char-count')
         sec_cc = None
-        if sec_cc_str is not None:
-            sec_cc = _parse_count(sec_cc_str)
+        # R10 — presence, not value-presence (V43).
+        if 'data-char-count' in section_attrs:
+            sec_cc = _parse_count(section_attrs['data-char-count'] or '')
             if sec_cc is None:
                 return 1
 
@@ -1337,9 +1496,9 @@ def _verify_manifest_first(html: bytes, inert_masks: list) -> int:
                 nested_mismatch += 1
                 continue
 
-        ncc_str = a.get('data-char-count')
-        if ncc_str is not None:
-            ncc = _parse_count(ncc_str)
+        # R10 — presence, not value-presence (V43).
+        if 'data-char-count' in a:
+            ncc = _parse_count(a['data-char-count'] or '')
             if ncc is None:
                 return 1
             nactual_cc = len(ninner.decode('utf-8', errors='strict'))
@@ -1438,8 +1597,9 @@ def main(file_path: str) -> int:
     # Shape detection (§5.0)
     # 1. manifest-first if <nav id="manifest"> is present
     nav_found = False
-    nav_re = re.compile(rb'<nav\b([^>]*)>', re.IGNORECASE)
-    for m in nav_re.finditer(html):
+    # R11 — the §5.0 discovery grammar: exact ASCII tag name bounded by §6.2's
+    # OPEN set, quote-aware to the tag's own '>' (see `_discovery_open_re`).
+    for m in _NAV_DISCOVERY_RE.finditer(html):
         if _in_mask(m.start(), inert_masks):
             continue
         a = _attrs(m.group(1))
@@ -1449,8 +1609,8 @@ def main(file_path: str) -> int:
 
     # 2. tail if ≥1 <article data-witness> with valid-grammar witness
     tail_found = False
-    article_re = re.compile(rb'<article\b([^>]*)>', re.IGNORECASE)
-    for m in article_re.finditer(html):
+    # R11 — the same §5.0 discovery grammar as the nav scan above.
+    for m in _ARTICLE_DISCOVERY_RE.finditer(html):
         if _in_mask(m.start(), inert_masks):
             continue
         a = _attrs(m.group(1))
@@ -1476,6 +1636,12 @@ def main(file_path: str) -> int:
         return _verify_tail(html, inert_masks)
 
     # 3. neither
+    # RP-2 RULED (Operator, 2026-08-23) — ONE canonical shape-detection
+    # sentence, byte-identical on both readers. THIS phrasing is the canonical
+    # one; verify.mjs used to spell the same finding `… and no witnessed
+    # <article> elements with valid-grammar witness` (the fourth of the five
+    # pre-existing verdict-WORDING drifts SPEC.md §13 disclosed) and now emits
+    # these bytes. Nothing on this line moved — that is the point of the choice.
     print("FAIL: shape detection failed — "
           "no <nav id=\"manifest\"> and no witnessed <article> with valid grammar")
     return 1

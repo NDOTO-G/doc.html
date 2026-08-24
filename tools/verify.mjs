@@ -209,6 +209,37 @@ const ATTR_SEP = new Set([
 ]);
 
 // ────────────────────────────────────────────────────────────────────────────
+// §6.4 ATTRIBUTE-NAME case fold (R12 — public issue #7). Exactly the 26 code
+// units U+0041–U+005A map to U+0061–U+007A; EVERY other code unit is left
+// alone. This is not `String.prototype.toLowerCase()` and must never again be
+// spelled as one.
+//
+// `toLowerCase()` / Python's `str.lower()` are full-Unicode folds whose mapping
+// table is the ENGINE's Unicode version — Node 22 carries UCD 16, Python 3.11
+// carries UCD 14 — and this specification pins no Unicode version. The
+// consequence was not hypothetical: `<div Ᲊ="1" ᲊ="2">` (U+1C89 / U+1C8A, a
+// case pair added in Unicode 16) was rc=1 here and rc=0 on the sealed Python
+// reader, over the same bytes — a live cross-reader split, the exact disease the
+// one-grammar recension was cut to remove, in the one organ it did not reach.
+// Independently, HTML5 ASCII-lowercases attribute names, so `<div K="1" k="2">`
+// (U+212A KELVIN SIGN) is TWO attributes to a browser and was one duplicate to
+// both sealed readers: what is verified must be what is read (the V4
+// Discernment), the same ground as both 2026-08-22 rulings.
+//
+// The `[A-Z]` class carries no `u` and no `i` flag, so it is exactly those 26
+// code units and nothing else, and the substitution is one code unit for one —
+// the fold is LENGTH-PRESERVING by construction. That property is load-bearing,
+// not incidental: `buildInertMasks` below indexes the folded string and uses the
+// result against the ORIGINAL string's offsets, and `toLowerCase()` is NOT
+// length-preserving (U+0130 folds to the TWO code units U+0069 U+0307). See
+// R12a at that call site. Identical, member for member, to verify.py's
+// `_ascii_lower`.
+// ────────────────────────────────────────────────────────────────────────────
+function asciiLower(s) {
+  return s.replace(/[A-Z]/g, (c) => String.fromCharCode(c.charCodeAt(0) + 0x20));
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 function parseTagAttrs(tagInner, dupNames) {
   const attrs = {};
   const seenNames = dupNames ? new Set() : null;
@@ -220,7 +251,7 @@ function parseTagAttrs(tagInner, dupNames) {
     const nameStart = i;
     while (i < n && !ATTR_SEP.has(tagInner[i]) && tagInner[i] !== "=" && tagInner[i] !== '"' && tagInner[i] !== "'") i++;
     if (i === nameStart) { i++; continue; }
-    const name = tagInner.slice(nameStart, i).toLowerCase();
+    const name = asciiLower(tagInner.slice(nameStart, i));   // §6.4 ASCII fold (R12/V45)
     if (seenNames) {
       if (seenNames.has(name)) dupNames.push(name);
       else seenNames.add(name);
@@ -252,24 +283,12 @@ function parseTagAttrs(tagInner, dupNames) {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// Comment masking — build a list of [start, end) char offsets for all HTML
-// comments so that open/close tokens inside comments are ignored during
-// the depth-walk (§6.2).
+// Comment masking — [start, end) char offsets so open/close tokens inside HTML
+// comments are ignored during the depth-walk (§6.2). Located in ONE document-
+// order walk together with the raw-text spans below (RP-3); there is no longer
+// a separate comment pre-pass, because a pre-pass is exactly what made a
+// comment beat a raw-text element that opened before it.
 // ────────────────────────────────────────────────────────────────────────────
-function buildCommentMasks(src) {
-  const masks = [];
-  let pos = 0;
-  while (pos < src.length) {
-    const s = src.indexOf("<!--", pos);
-    if (s < 0) break;
-    const e = src.indexOf("-->", s + 4);
-    if (e < 0) break;
-    masks.push([s, e + 3]);
-    pos = e + 3;
-  }
-  return masks;
-}
-
 function inMaskedRange(idx, masks) {
   for (const [s, e] of masks) {
     if (s > idx) break;
@@ -280,33 +299,86 @@ function inMaskedRange(idx, masks) {
 
 // ────────────────────────────────────────────────────────────────────────────
 // Inert regions (§12) — comments + raw-text <script>/<style> content. Used for
-// both boundary-token matching (§6.2) and the content-profile prohibition
-// (§6.4a). Only the raw-text CONTENT is inert; the element's own open/close
-// tags are ordinary markup.
+// boundary-token matching (§6.2), unit discovery (§9.1), the count guard, shape
+// detection, the content-profile prohibition (§6.4a) and the dup-id scan
+// (§6.1). Only the raw-text CONTENT is inert; the element's own open/close tags
+// are ordinary markup. A comment's span covers its own delimiters.
+//
+// RP-3 RULED (Operator, 2026-08-23) — RAW TEXT WINS OVER COMMENTS, LIKE A
+// BROWSER. Both constructs are located against the RAW source and interleaved
+// in DOCUMENT ORDER: at each point the EARLIEST-OPENING construct claims its
+// span and consumes through ITS OWN close.
+//
+//   * A `<!--` inside an OPEN raw-text span is CONTENT. `<style><!-- </style>
+//     --> <img id="bad id"> </style>` closes the style element at the FIRST
+//     `</style>` — where the HTML5 RAWTEXT state closes it, `<!--` being
+//     ordinary CSS text there — so the `<img>` is LIVE markup and its
+//     off-grammar id is refused. That document verified CLEAN on ALL FOUR
+//     readers before this ruling (RP-3 in the recension contract), because both
+//     readers blanked comments BEFORE scanning for raw text.
+//   * A `</style>`/`</script>` inside a comment that itself started OUTSIDE raw
+//     text stays masked, and a `<style>`/`<script>` merely MENTIONED in such a
+//     comment opens nothing — the comment opened first, so it consumes through
+//     its own `-->` and the scan never sees the tag inside it. That is the
+//     property the old comments-first layering existed to guarantee, and
+//     document order keeps it without the layering.
+//
+// A construct with no close (an unterminated `<!--`, a `<style>` with no
+// `</style>`) claims NO span: the scan resumes just past its opener. Identical,
+// construction for construction, to verify.py's `_build_inert_mask`.
+//
+// R12b(b) — the tag name is bounded by §6.2's OPEN set, not by `\b`. `\b` holds
+// before `-`, so `<style-x>` satisfied `<style\b` and every code unit up to the
+// next `</style>` went inert — measured CLEAN on ALL FOUR sealed/trial readers
+// before the fix, and NOT a cross-reader split, so no lockstep comparison could
+// have caught it. The class is §6.2's OPEN set verbatim, byte for byte the one
+// `discoveryOpenRe` carries. The `i` flag is RETAINED: a non-`u`, `i`-flagged
+// literal folds ASCII only (fold-site audit, site 8), which is what HTML5 does
+// to a tag name.
+//
+// R12a — the close-tag search folds with `asciiLower`, never `toLowerCase()`.
+// `toLowerCase()` is NOT length-preserving (U+0130 folds to TWO code units), and
+// the index it produces is used against the ORIGINAL string's offset space, so
+// every U+0130 ahead of a <script>/<style> shifted the recorded span end past
+// the element's real close tag — a live cross-reader split in BOTH directions
+// (fail-open, and a false refusal of ordinary Turkish prose).
+//
+// R12b(a) — the scan resumes AFTER the located close tag, not after the opening
+// tag, so a `<script>` inside a `<style>` element's CONTENT is never a second
+// raw-text element. §12 defines the inert region as the bytes between that
+// element's own opening `>` and ITS OWN close tag, which is this.
 // ────────────────────────────────────────────────────────────────────────────
+const COMMENT_OPEN = "<!--";
+const COMMENT_CLOSE = "-->";
+const RAWTEXT_OPEN_RE = /<(script|style)(?=[\t\n\f\r \/>])[^>]*>/gi;
+
 function buildInertMasks(src) {
-  const commentSpans = buildCommentMasks(src);
-  // Neutralize comment bytes (blank to spaces, length-preserving) BEFORE the
-  // raw-text scan so a <script>/<style> — or a </style>/</script> — that appears
-  // only as text INSIDE a comment cannot be mistaken for a real raw-text
-  // element. Otherwise the non-greedy close search, once anchored at a comment's
-  // <style> mention, runs on to the next REAL </style>, spawning a bogus span
-  // that masks every byte of legitimate markup in between. Same-length blanking
-  // preserves every offset, so the spans are valid indices into the original.
-  let scan = src;
-  if (commentSpans.length) {
-    let out = "", last = 0;
-    for (const [s, e] of commentSpans) { out += src.slice(last, s) + " ".repeat(e - s); last = e; }
-    scan = out + src.slice(last);
-  }
-  const spans = commentSpans.slice();
-  const RAWTEXT_RE = /<(script|style)\b[^>]*>/gi;
-  const scanLower = scan.toLowerCase();
-  for (const m of scan.matchAll(RAWTEXT_RE)) {
-    const tag = m[1].toLowerCase();
-    const openEnd = m.index + m[0].length;
-    const closeIdx = scanLower.indexOf(`</${tag}>`, openEnd);
-    if (closeIdx > openEnd) spans.push([openEnd, closeIdx]);
+  const spans = [];
+  const lowered = asciiLower(src);
+  const n = src.length;
+  let pos = 0;
+  while (pos < n) {
+    const cStart = src.indexOf(COMMENT_OPEN, pos);
+    RAWTEXT_OPEN_RE.lastIndex = pos;
+    const m = RAWTEXT_OPEN_RE.exec(src);
+    const rStart = m ? m.index : -1;
+    if (cStart < 0 && rStart < 0) break;
+    if (rStart < 0 || (cStart >= 0 && cStart < rStart)) {
+      // The comment opens first — it consumes through its own `-->`.
+      const cEnd = src.indexOf(COMMENT_CLOSE, cStart + COMMENT_OPEN.length);
+      if (cEnd < 0) { pos = cStart + COMMENT_OPEN.length; continue; }
+      spans.push([cStart, cEnd + COMMENT_CLOSE.length]);
+      pos = cEnd + COMMENT_CLOSE.length;
+    } else {
+      // The raw-text element opens first — it consumes through its own close
+      // tag, and every `<!--` in between is CONTENT.
+      const openEnd = m.index + m[0].length;
+      const closeTag = `</${asciiLower(m[1])}>`;
+      const closeIdx = lowered.indexOf(closeTag, openEnd);
+      if (closeIdx < 0) { pos = openEnd; continue; }
+      if (closeIdx > openEnd) spans.push([openEnd, closeIdx]);
+      pos = closeIdx + closeTag.length;
+    }
   }
   spans.sort((a, b) => a[0] - b[0]);
   return spans;
@@ -595,7 +667,7 @@ function refuseNonCanonicalAttrs(tagInner, tagInnerStart) {
     const nameStart = i;
     while (i < n && !ATTR_SEP.has(tagInner[i]) && tagInner[i] !== "=" && tagInner[i] !== '"' && tagInner[i] !== "'") i++;
     if (i === nameStart) { i++; continue; }
-    const name = tagInner.slice(nameStart, i).toLowerCase();
+    const name = asciiLower(tagInner.slice(nameStart, i));   // §6.4 ASCII fold (R12/V45)
     if (seen.has(name)) {
       throw new NonCanonical(
         `duplicate attribute name '${name}' on a witnessed-unit opening tag (§6.4, V25)`,
@@ -649,9 +721,30 @@ function checkUnitTagCanonical(tagMatch, openStart) {
 // name sharing TAG as a prefix — is NON-CANONICAL.
 // ────────────────────────────────────────────────────────────────────────────
 function boundaryScanRe(tag) {
-  // group 1 = the single byte after an open-ish '<TAG'
+  // group 1 = the single code unit after an open-ish '<TAG'
   // group 2 = everything between a close-ish '</TAG' and the next '>'
-  return new RegExp(`<${tag}(.)|<\\/${tag}([^>]*)>`, "g");
+  //
+  // R14 — the capture is `[\s\S]`, NOT `.`. A JavaScript `.` matches every code
+  // unit EXCEPT the four LINE TERMINATORS 0x0A LF, 0x0D CR, U+2028 and U+2029,
+  // so `<section\nid="x">` and `<section\rid="x">` produced no open-ish match at
+  // all — and LF and CR are both members of `WS_SLASH_GT` below. verify.py's
+  // twin was a BYTES `.` without re.DOTALL, which excludes LF only, so the two
+  // readers disagreed about CR: `<article\rid=…>` was rc=0 on the sealed Python
+  // reader and rc=1 on the sealed Node reader, over the same bytes. The
+  // enumerated OPEN set was never consulted for bytes the wildcard could not
+  // produce, and `<section\n  id="…"\n  data-witness="…"\n>` — what Prettier
+  // produces from a long opening tag — was refused by both.
+  //
+  // `[\s\S]` is a class unioned with its own complement and is therefore EVERY
+  // code unit, in both engines, with no flag and no engine-defined table: the
+  // decision about which of those is a boundary is made in exactly ONE place,
+  // `WS_SLASH_GT` / `classifyBoundaryToken`, per R8's one-place-only corollary.
+  // Deliberately NOT a class built from the OPEN set: capturing any code unit
+  // and then TESTING it keeps `<section-foo>` classified as "content" with the
+  // same advance arithmetic it has always had. The close-ish alternative's
+  // `[^>]*` already admits every code unit and is untouched. Identical,
+  // construction for construction, to verify.py's `_boundary_scan_re`.
+  return new RegExp(`<${tag}([\\s\\S])|<\\/${tag}([^>]*)>`, "g");
 }
 
 // §6.2 BOUNDARY-TOKEN OPEN set (RULED by the Operator, 2026-08-22 — the second
@@ -676,6 +769,43 @@ const WS_SLASH_GT = new Set([" ", "\t", "\n", "\r", "\f", "/", ">"]);
 // dev pair. The 2026-08-22 VT ruling names the OPEN set; this position is
 // recorded in SPEC.md §6.2 as its own residual, not folded in silently.
 const WS_GT = new Set([" ", "\t", "\n", "\r", "\f", "\v", ">"]);
+
+// ────────────────────────────────────────────────────────────────────────────
+// §5.0/§5.3 DISCOVERY scans (R11 — public issue #6). The three scans that FIND
+// an element by name — `<nav id="manifest">` (§5.0 shape detection and §5.3
+// manifest location), `<article …>` (§5.0 shape detection and the tail path's
+// own detection), and `<a …>` inside the manifest (§5.3's link gate) — are ONE
+// grammar with the whole-document walk's, not three looser ones. Until R11
+// each was spelled /<TAG\b([^>]*)>/gi, which is wrong three ways at once:
+//
+//   * `[^>]*` cannot tell a `>` INSIDE a quoted attribute value from the tag's
+//     own terminator — R6's BLOCKER B, on three scans R6 did not reach. Live
+//     consequence: `<a title="x>y" href="#intro" data-witness="…">` inside the
+//     manifest was truncated at the in-quote `>`, the tokenizer saw no `href`
+//     at all, and a CONFORMING document was refused `manifest link href is not
+//     a fragment`. Attribute ORDER decided whether a document verified.
+//   * `\b` is a word-boundary assertion, so it holds before `-`: `<a-widget>`
+//     satisfied `<a\b` and was collected as a manifest anchor, and
+//     `<nav-widget id="manifest">` satisfied `<nav\b` and WAS ACCEPTED AS THE
+//     MANIFEST. §6.2's boundary set answers exactly this question.
+//   * the `i` flag folded the tag NAME, while §6.2's boundary-token grammar —
+//     and §6.4's own cross-reference to it — hold tag names CASE-SENSITIVE.
+//     `<NAV id="manifest">` was the manifest; `<A href="#x" …>` was a link.
+//
+// The replacement asserts §6.2's OPEN set as a LOOKAHEAD (asserted, never
+// consumed, so group 1 stays exactly the attribute blob parseTagAttrs already
+// receives and every offset is unchanged), then captures the attribute blob
+// with R6's quote-aware alternation. No `\s`, no `\b`, no `i` flag: the
+// whitespace decision belongs to `ATTR_SEP` alone (§6.4's one-place-only
+// corollary), and the tag name is compared code unit for code unit. Identical,
+// construction for construction, to verify.py's `_discovery_open_re`.
+// ────────────────────────────────────────────────────────────────────────────
+function discoveryOpenRe(tag) {
+  // `[\t\n\f\r />]` is §6.2's ruled OPEN set, verbatim (0x0B VT is NOT a
+  // member — the 2026-08-22 ruling).
+  return new RegExp(
+    `<${tag}(?=[\\t\\n\\f\\r />])((?:"[^"]*"|'[^']*'|[^<>'"])*)>`, "g");
+}
 
 function classifyBoundaryToken(m) {
   // m[1] set  → open-ish; m[2] set (possibly "") → close-ish
@@ -855,7 +985,7 @@ if (globalIdFault !== null) {
 // ────────────────────────────────────────────────────────────────────────────
 // Shape detection (§5.0)
 // ────────────────────────────────────────────────────────────────────────────
-const NAV_OPEN_RE = /<nav\b([^>]*)>/gi;
+const NAV_OPEN_RE = discoveryOpenRe("nav");
 let navStart = -1;
 for (const m of html.matchAll(NAV_OPEN_RE)) {
   if (inMaskedRange(m.index, inertMasks)) continue;
@@ -876,7 +1006,7 @@ const navFound = navStart >= 0;
 // Independent tail-shape detection (≥1 <article data-witness> with
 // valid-grammar witness) — computed regardless of navFound so V18 mixed-shape
 // refusal is reachable even when a manifest IS present.
-const ARTICLE_OPEN_RE_DETECT = /<article\b([^>]*)>/gi;
+const ARTICLE_OPEN_RE_DETECT = discoveryOpenRe("article");
 let tailFound = false;
 for (const m of html.matchAll(ARTICLE_OPEN_RE_DETECT)) {
   if (inMaskedRange(m.index, inertMasks)) continue;
@@ -901,7 +1031,7 @@ if (navFound && tailFound) {
 // is a valid grammar.
 if (!navFound) {
   // Check for tail shape.
-  const ARTICLE_OPEN_RE = /<article\b([^>]*)>/gi;
+  const ARTICLE_OPEN_RE = discoveryOpenRe("article");
   const articles = [];
   for (const m of html.matchAll(ARTICLE_OPEN_RE)) {
     if (inMaskedRange(m.index, inertMasks)) continue;
@@ -913,7 +1043,20 @@ if (!navFound) {
   }
 
   if (articles.length === 0) {
-    console.error("FAIL: shape detection failed — no <nav id=\"manifest\"> and no witnessed <article> elements with valid-grammar witness");
+    // RP-2 RULED (Operator, 2026-08-23) — ONE canonical shape-detection
+    // sentence, byte-identical on both readers. This reader used to spell it
+    // `… and no witnessed <article> elements with valid-grammar witness`
+    // while verify.py spelled the same finding `… and no witnessed <article>
+    // with valid grammar` — the fourth of the five pre-existing verdict-WORDING
+    // drifts SPEC.md §13 discloses, and the one R11/E6 routed four fixtures
+    // onto. The ruling closes the drift by fiat and picks verify.py's phrasing
+    // as canonical on the byte-churn ground stated in the contract: it is the
+    // shorter sentence, it moves ONE reader line instead of one plus its
+    // baseline records, and it leaves verify.py's output — and therefore every
+    // tracked document verify.py refuses this way — unmoved. The loser's bytes
+    // (`elements with valid-grammar witness`) die here and in the four
+    // allow-list entries that existed only to excuse them.
+    console.error("FAIL: shape detection failed — no <nav id=\"manifest\"> and no witnessed <article> with valid grammar");
     process.exit(1);
   }
 
@@ -1028,12 +1171,18 @@ if (!navFound) {
     }
     // writing-room ordering is Append (V15), not checked here in Core.
 
-    // §6.6 char-count check (optional attribute). A PRESENT value is held to
-    // the §6.6 count grammar — off-grammar is a refusal, not a best-effort
-    // parse and not a skip.
-    const ccStr = a["data-char-count"];
-    if (ccStr != null) {
-      const claimedCC = parseCount(ccStr);
+    // §6.6 char-count check (optional attribute). R10 (public issue #5): the
+    // gate is attribute PRESENCE, not value-presence. parseTagAttrs records a
+    // VALUELESS attribute (`data-char-count`, no `=`) as null, which a
+    // `!= null` gate cannot tell apart from "never written" — so the count
+    // check was SKIPPED on exactly the byte-shape §6.4 defines as
+    // present-with-the-empty-value. `in` distinguishes the two; the `??`
+    // coalesce then supplies the VALUE the grammar is tested against. Same
+    // two-step discipline R1a applies to a valueless `id` and §5.4 to a
+    // valueless `data-witness`. A PRESENT value is held to the §6.6 count
+    // grammar — off-grammar is a refusal, not a best-effort parse, not a skip.
+    if ("data-char-count" in a) {
+      const claimedCC = parseCount(a["data-char-count"] ?? "");
       const innerStr  = innerBuf.toString("utf8");
       const actualCC  = Array.from(innerStr).length;
       if (claimedCC !== actualCC) {
@@ -1055,7 +1204,23 @@ if (!navFound) {
     process.exit(1);
   }
 
-  console.log(`articles: ${openers.length}`);
+  // RP-4 RULED (Operator, 2026-08-23) — the tail denominator counts WITNESSED
+  // articles, not every `<article>` opener. `ok + mismatch + missing` is the
+  // number of openers that carried a `data-witness` attribute at all and
+  // therefore reached a verdict; an opener with no `data-witness` is skipped by
+  // the loop above (`if (!("data-witness" in a)) continue;`) and is not an
+  // addressable unit. This reader used to print `openers.length` here and in
+  // both verdict lines below, so a tail document with one witnessed and one
+  // un-witnessed `<article>` printed `articles: 2` / `verified 1/2 articles`
+  // here and `articles: 1` / `verified 1/1 articles` on verify.py — rc=0 on
+  // BOTH, two different numbers for the same document, and the only rc=0
+  // cross-reader output drift in the shipped pair (RP-4; found by Elenchos's
+  // review, rediscovered independently by R14's 256-byte sweep at separator
+  // byte 0x3E). verify.py's `total = ok + mismatch + missing` is the
+  // denominator ruled correct; this is exact parity with it.
+  const total = ok + mismatch + missing;
+
+  console.log(`articles: ${total}`);
   console.log();
 
   // ORDINAL-ONLY (this packet, P0.4): zero consecrated witnesses recomputed,
@@ -1073,10 +1238,10 @@ if (!navFound) {
     // explicitly — verified (recomputed, consecrated) vs ordinal
     // (grammar-valid, writing-room) — rather than folding the two registers
     // into one undifferentiated count.
-    console.log(`PASS (verified=${validCount}, ordinal=${ordinalCount}) articles: ${openers.length} ` +
+    console.log(`PASS (verified=${validCount}, ordinal=${ordinalCount}) articles: ${total} ` +
                 `(mismatches: ${mismatch}, missing: ${missing})`);
   } else {
-    console.log(`verified ${ok}/${openers.length} articles (mismatches: ${mismatch}, missing: ${missing})`);
+    console.log(`verified ${ok}/${total} articles (mismatches: ${mismatch}, missing: ${missing})`);
   }
   if (mismatch > 0 || missing > 0) process.exit(1);
   process.exit(0);
@@ -1110,7 +1275,7 @@ if (navEnd < 0) {
 const navInner = html.slice(navStart, navEnd);
 
 const sections = [];
-const A_TAG_RE = /<a\b([^>]*)>/gi;
+const A_TAG_RE = discoveryOpenRe("a");
 for (const m of navInner.matchAll(A_TAG_RE)) {
   // §12 inert regions (comments etc.) are invisible to every check — mirrors
   // the adjacent nav-locating scan's mask idiom above. An <a> written inside
@@ -1146,7 +1311,11 @@ for (const m of navInner.matchAll(A_TAG_RE)) {
     console.error(`FAIL: invalid id production: ${id}`);
     process.exit(1);
   }
-  const manifestCharCount = a["data-char-count"] != null ? parseCount(a["data-char-count"]) : null;
+  // R10 — presence, not value-presence: a valueless `data-char-count` on a
+  // manifest link is present with the empty value (§6.4/§6.6, V43).
+  const manifestCharCount = "data-char-count" in a
+    ? parseCount(a["data-char-count"] ?? "")
+    : null;
   sections.push({ id, sha256, manifestCharCount });
 }
 
@@ -1329,8 +1498,9 @@ for (const s of sections) {
   // parses it at exactly this point; a section carrying both a manifest-count
   // mismatch and an off-grammar section count must produce the same lines in
   // the same order on both readers.
-  const sectionCharCount = sectionAttrs["data-char-count"] != null
-    ? parseCount(sectionAttrs["data-char-count"])
+  // R10 — presence, not value-presence (V43).
+  const sectionCharCount = "data-char-count" in sectionAttrs
+    ? parseCount(sectionAttrs["data-char-count"] ?? "")
     : null;
   if (sectionCharCount !== null && sectionCharCount !== actualCharCount) {
     charCountOk = false;
@@ -1430,9 +1600,9 @@ for (const { openEnd, attrs: a, depth, parentClose } of openers) {
     }
   }
 
-  const nccStr = a["data-char-count"];
-  if (nccStr != null) {
-    const nClaimedCC = parseCount(nccStr);
+  // R10 — presence, not value-presence (V43).
+  if ("data-char-count" in a) {
+    const nClaimedCC = parseCount(a["data-char-count"] ?? "");
     const nActualCC = Array.from(ninnerBuf.toString("utf8")).length;
     if (nClaimedCC !== nActualCC) {
       nestedMismatch++;
