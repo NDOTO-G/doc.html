@@ -6,7 +6,7 @@ doc.html is a public-domain, web-native format for AI knowledge, memory, agents,
 
 **Human-readable. Agent-navigable. Integrity-witnessed. Public domain.**
 
-**Version:** v0.7.0 · updated 2026-08-24 · see [CHANGELOG.md](CHANGELOG.md)
+**Version:** v0.7.1 · updated 2026-08-24 · see [CHANGELOG.md](CHANGELOG.md)
 
 ---
 

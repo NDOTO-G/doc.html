@@ -26,8 +26,30 @@
 // that emitted list against the shelf the page actually renders. That
 // comparison is the final step of the check, and it belongs to the reader.
 //
-// The masking of comments and of five raw-text/inert containers below is
-// discovery HYGIENE, not a browser model, and is disclosed as incomplete.
+// TWO MASKS FOR TWO JOBS (wiki-lockstep trial, plans/wiki-lockstep/CONTRACT.md).
+// W-A (law): manifest-witness extraction (manifestWitnesses) uses the Core
+// reader's OWN §12 mask — comments plus <script>/<style> raw-text content,
+// coreInertMask, ported VERBATIM from verify.mjs's buildInertMasks (RP-3:
+// earliest-opening construct wins and consumes through its own close) —
+// plus the Core's exact discovery grammar (discoveryOpenRe, §6.2's OPEN
+// set, no \b, no i flag) and the Core's masked </nav>-close idiom (R4b).
+// This is not a browser model either, but it is the SAME mask and the SAME
+// grammar the shipped Core reader already used to accept the leaf, so the
+// witness list extracted here cannot diverge from what Core certified over
+// the same bytes.
+// W-B (policy): shelf-entry discovery (the root's own <a data-doc-pin> scan,
+// plus the <base href> check) keeps its OWN, deliberately WIDER five-
+// container mask (inertMasks) — script/style/textarea/title/template plus
+// comments, because textarea/title are RCDATA to a browser and un-masking
+// them would certify carriers a browser renders as text. This is discovery
+// HYGIENE, not a browser model, and is disclosed as incomplete. What
+// changed is the MECHANICS, brought to the same RP-3 ground as the Core
+// mask: the same left-to-right earliest-opener walk (raw text wins over
+// comments; an unclosed construct claims nothing and the scan resumes past
+// its own opener), exact ASCII tag names bounded by §6.2's OPEN set (no
+// \b), ASCII-only, length-preserving case handling (asciiLower, never
+// toLowerCase), and quote-aware tag-end capture (R6) so a quoted '>' inside
+// the opening tag's own attributes cannot end it early.
 // Whether an HTML reader presents these carriers as live links is outside
 // this companion's claim. No additional document grammar is specified here.
 //
@@ -142,53 +164,35 @@ function exactCaseResolve(base, href) {
   return { ok: true, path: cur, detail: '' };
 }
 
-// ─── Inert regions: comments + raw-text/inert container content ──────────────
-// script/style are raw-text; textarea/title are raw-text/RCDATA; template is
-// inert. Discovery HYGIENE, disclosed as incomplete: masking these five names
-// keeps the commonest inert text out of the carrier scan, but it is not HTML's
-// tokenizer and does not make the scan browser-equivalent. What the run
-// certifies is the serialized shelf; the emitted VERIFIED SHELF block is how a
-// consumer compares that against the shelf a reader presents.
-function inertMasks(html) {
-  const spans = [];
-  const commentRe = /<!--[\s\S]*?-->/g;
-  let m;
-  while ((m = commentRe.exec(html)) !== null) spans.push([m.index, m.index + m[0].length]);
-  const blanked = html.replace(commentRe, (c) => ' '.repeat(c.length));
-  const rawRe = /<(script|style|textarea|title|template)\b[^>]*>[\s\S]*?<\/\1>/gi;
-  while ((m = rawRe.exec(blanked)) !== null) {
-    const openEnd = blanked.indexOf('>', m.index) + 1;
-    const closeStart = m.index + m[0].length - (`</${m[1]}>`).length;
-    if (openEnd < closeStart) spans.push([openEnd, closeStart]);
-  }
-  spans.sort((a, b) => a[0] - b[0]);
-  return spans;
+// ─── §6.4 ATTR_SEP + ASCII fold — Core's verify.mjs, ported VERBATIM (W1/W2) ─
+// Replaces a full-Unicode /\s/ test and toLowerCase() name fold, both of
+// which lagged the Core reader's own two 2026-08-22 Operator rulings by two
+// recensions (R8, R12) — see plans/wiki-lockstep/CONTRACT.md classes W1/W2.
+// HTML5's five ASCII whitespace code units are the separator ground
+// everywhere in THIS reader now, one predicate, not several. Identical,
+// member for member, to verify.mjs's ATTR_SEP / asciiLower.
+const ATTR_SEP = new Set(['\t', '\n', '\f', '\r', ' ']);
+function asciiLower(s) {
+  return s.replace(/[A-Z]/g, (c) => String.fromCharCode(c.charCodeAt(0) + 0x20));
 }
-const masked = (pos, masks) => {
-  for (const [s, e] of masks) {
-    if (s <= pos && pos < e) return true;
-    if (s > pos) break;
-  }
-  return false;
-};
 
-// ─── Attribute tokenizer (Core's parseTagAttrs, verbatim) — extraction only ──
+// ─── Attribute tokenizer (Core's parseTagAttrs, ported VERBATIM) — W2 ───────
 function attrs(tagInner) {
   const out = {};
   const n = tagInner.length;
   let i = 0;
   while (i < n) {
-    while (i < n && /\s/.test(tagInner[i])) i++;
+    while (i < n && ATTR_SEP.has(tagInner[i])) i++;
     if (i >= n) break;
     const nameStart = i;
-    while (i < n && !/\s/.test(tagInner[i]) && tagInner[i] !== '=' && tagInner[i] !== '"' && tagInner[i] !== "'") i++;
+    while (i < n && !ATTR_SEP.has(tagInner[i]) && tagInner[i] !== '=' && tagInner[i] !== '"' && tagInner[i] !== "'") i++;
     if (i === nameStart) { i++; continue; }
-    const name = tagInner.slice(nameStart, i).toLowerCase();
+    const name = asciiLower(tagInner.slice(nameStart, i));
     let j = i;
-    while (j < n && /\s/.test(tagInner[j])) j++;
+    while (j < n && ATTR_SEP.has(tagInner[j])) j++;
     if (j < n && tagInner[j] === '=') {
       j++;
-      while (j < n && /\s/.test(tagInner[j])) j++;
+      while (j < n && ATTR_SEP.has(tagInner[j])) j++;
       if (j < n && (tagInner[j] === '"' || tagInner[j] === "'")) {
         const quote = tagInner[j];
         j++;
@@ -198,7 +202,7 @@ function attrs(tagInner) {
         if (j < n) j++;
       } else {
         const valStart = j;
-        while (j < n && !/\s/.test(tagInner[j])) j++;
+        while (j < n && !ATTR_SEP.has(tagInner[j])) j++;
         out[name] = tagInner.slice(valStart, j);
       }
       i = j;
@@ -209,6 +213,94 @@ function attrs(tagInner) {
   }
   return out;
 }
+
+// ─── W-A mask: Core's §12 mask, ported VERBATIM (W5) ─────────────────────────
+// coreInertMask is verify.mjs's buildInertMasks, unchanged in every
+// particular: two containers (script/style), RP-3's earliest-opener walk.
+// Used ONLY by manifestWitnesses below, on the LEAF — the path that must
+// reproduce exactly what the Core reader's §9.1 gate already certified over
+// the same bytes (W-A: law).
+const COMMENT_OPEN = '<!--';
+const COMMENT_CLOSE = '-->';
+const CORE_RAWTEXT_OPEN_RE = /<(script|style)(?=[\t\n\f\r \/>])[^>]*>/gi;
+
+function coreInertMask(src) {
+  const spans = [];
+  const lowered = asciiLower(src);
+  const n = src.length;
+  let pos = 0;
+  while (pos < n) {
+    const cStart = src.indexOf(COMMENT_OPEN, pos);
+    CORE_RAWTEXT_OPEN_RE.lastIndex = pos;
+    const m = CORE_RAWTEXT_OPEN_RE.exec(src);
+    const rStart = m ? m.index : -1;
+    if (cStart < 0 && rStart < 0) break;
+    if (rStart < 0 || (cStart >= 0 && cStart < rStart)) {
+      const cEnd = src.indexOf(COMMENT_CLOSE, cStart + COMMENT_OPEN.length);
+      if (cEnd < 0) { pos = cStart + COMMENT_OPEN.length; continue; }
+      spans.push([cStart, cEnd + COMMENT_CLOSE.length]);
+      pos = cEnd + COMMENT_CLOSE.length;
+    } else {
+      const openEnd = m.index + m[0].length;
+      const closeTag = `</${asciiLower(m[1])}>`;
+      const closeIdx = lowered.indexOf(closeTag, openEnd);
+      if (closeIdx < 0) { pos = openEnd; continue; }
+      if (closeIdx > openEnd) spans.push([openEnd, closeIdx]);
+      pos = closeIdx + closeTag.length;
+    }
+  }
+  spans.sort((a, b) => a[0] - b[0]);
+  return spans;
+}
+
+// ─── W-B mask: shelf-discovery — wiki's OWN policy, RP-3 mechanics (W6) ──────
+// Five-container set kept (script|style|textarea|title|template — textarea
+// and title are RCDATA to a browser and un-masking them would certify
+// carriers a browser renders as text); mechanics rebuilt on the same RP-3
+// ground as coreInertMask above: earliest-opener walk, exact ASCII tag names
+// bounded by §6.2's OPEN set (no \b — R11/R12b(b)), and quote-aware tag-end
+// capture (R6) so a quoted '>' inside the opening tag's own attributes
+// cannot end it early (an extension coreInertMask's open-tag scan does not
+// need, because this five-name set is wiki's own surface).
+const SHELF_RAWTEXT_OPEN_RE =
+  /<(script|style|textarea|title|template)(?=[\t\n\f\r \/>])(?:"[^"]*"|'[^']*'|[^<>'"])*>/gi;
+
+function inertMasks(src) {
+  const spans = [];
+  const lowered = asciiLower(src);
+  const n = src.length;
+  let pos = 0;
+  while (pos < n) {
+    const cStart = src.indexOf(COMMENT_OPEN, pos);
+    SHELF_RAWTEXT_OPEN_RE.lastIndex = pos;
+    const m = SHELF_RAWTEXT_OPEN_RE.exec(src);
+    const rStart = m ? m.index : -1;
+    if (cStart < 0 && rStart < 0) break;
+    if (rStart < 0 || (cStart >= 0 && cStart < rStart)) {
+      const cEnd = src.indexOf(COMMENT_CLOSE, cStart + COMMENT_OPEN.length);
+      if (cEnd < 0) { pos = cStart + COMMENT_OPEN.length; continue; }
+      spans.push([cStart, cEnd + COMMENT_CLOSE.length]);
+      pos = cEnd + COMMENT_CLOSE.length;
+    } else {
+      const openEnd = m.index + m[0].length;
+      const closeTag = `</${asciiLower(m[1])}>`;
+      const closeIdx = lowered.indexOf(closeTag, openEnd);
+      if (closeIdx < 0) { pos = openEnd; continue; }
+      if (closeIdx > openEnd) spans.push([openEnd, closeIdx]);
+      pos = closeIdx + closeTag.length;
+    }
+  }
+  spans.sort((a, b) => a[0] - b[0]);
+  return spans;
+}
+
+const masked = (pos, masks) => {
+  for (const [s, e] of masks) {
+    if (s <= pos && pos < e) return true;
+    if (s > pos) break;
+  }
+  return false;
+};
 
 // ─── §6.4 refusal (V24/V25) — shelf entries only; Core owns unit tags ────────
 class NonCanonical extends Error {}
@@ -248,20 +340,75 @@ function refuseNonCanonicalAttrs(tagInner, context) {
   }
 }
 
+// ─── Discovery grammar — Core's discoveryOpenRe, ported VERBATIM (W3) ────────
+// DISCOVERY_NEXT is §6.2's ruled OPEN set (no 0x0B VT — the second
+// 2026-08-22 ruling); the tag name is compared code unit for code unit (no
+// `i` flag — R11/R14: `<NAV id="manifest">` is NOT the manifest, `<A
+// href=...>` is NOT a link); the attribute blob is captured quote-aware
+// (R6), so a quoted '>' inside an attribute value can never end the tag
+// early.
+function discoveryOpenRe(tag) {
+  return new RegExp(
+    `<${tag}(?=[\\t\\n\\f\\r />])((?:"[^"]*"|'[^']*'|[^<>'"])*)>`, 'g');
+}
+const NAV_OPEN_RE = discoveryOpenRe('nav');
+const A_TAG_RE = discoveryOpenRe('a');
+const BASE_TAG_RE = discoveryOpenRe('base');
+
 // ─── Extraction: manifest witnesses, <base> detection ────────────────────────
+// W-A (law): *masks* is expected to be coreInertMask(html) — the Core's OWN
+// §12 mask — so the <nav>/<a> discovery below, and the </nav>-close search,
+// see EXACTLY what the Core reader's §9.1 gate already certified over the
+// same bytes (W3, W4, W5, ported verbatim).
 function manifestWitnesses(html, masks) {
-  const navRe = /<nav\b([^>]*)>/gi;
+  NAV_OPEN_RE.lastIndex = 0;
   let m;
-  while ((m = navRe.exec(html)) !== null) {
+  while ((m = NAV_OPEN_RE.exec(html)) !== null) {
     if (masked(m.index, masks)) continue;
     if (attrs(m[1]).id !== 'manifest') continue;
-    const navEnd = html.indexOf('</nav>', m.index + m[0].length);
-    if (navEnd < 0) return null;
-    const navInner = html.slice(m.index + m[0].length, navEnd);
+    const navStart = m.index + m[0].length;
+    // W4 / R4b (ported verbatim from verify.mjs's manifest-first path): the
+    // first </nav> at or after navStart that is NOT itself inside a masked
+    // (§12) region. A </nav> written inside an HTML comment INSIDE the
+    // manifest (e.g. a commented-out usage example) is not the manifest's
+    // real close and must not truncate the witness list.
+    let navEnd = -1;
+    {
+      let searchPos = navStart;
+      while (true) {
+        const candidate = html.indexOf('</nav>', searchPos);
+        if (candidate < 0) break;
+        if (masked(candidate, masks)) { searchPos = candidate + 1; continue; }
+        navEnd = candidate;
+        break;
+      }
+    }
+    if (navEnd < 0) {
+      // W4-note: the wiki layer never re-judges the document — the leaf was
+      // already Core-ACCEPTED, so an unterminated manifest cannot legally
+      // reach here on the law path. If it nonetheless does, return the same
+      // "no manifest witnesses" outcome as before — never invent a
+      // document verdict that belongs to the Core.
+      return null;
+    }
     const ws = [];
-    const aRe = /<a\b([^>]*)>/gi;
-    let am;
-    while ((am = aRe.exec(navInner)) !== null) {
+    // Ported verbatim from verify.mjs's manifest-first path: the <a> re-scan
+    // runs over the SLICE html.slice(navStart, navEnd), never over the full
+    // string with an index check. JS regex has no endpos: an index guard
+    // (`am.index >= navEnd`) does not stop a match that STARTS before navEnd
+    // from CONSUMING bytes past it — when navEnd lands inside a tag (a
+    // `</nav>` inside a quoted attribute value truncates the byte-find on
+    // the Core pair too, identically), the unbounded scan absorbed a witness
+    // the Core never certified, a live wiki-py/mjs split on a Core-ACCEPTED
+    // leaf (Elenchos F1, fixture p7). Python's finditer(html, pos, endpos)
+    // is hard-bounded and never had the gap; the slice makes mjs match it.
+    const navInner = html.slice(navStart, navEnd);
+    for (const am of navInner.matchAll(A_TAG_RE)) {
+      // §12 masked regions are invisible here too — an <a> written inside a
+      // comment inside nav#manifest is not a live manifest entry, mirroring
+      // verify.mjs's manifest-first path. am.index is relative to navInner,
+      // so the mask lookup needs the ABSOLUTE offset (navStart + am.index).
+      if (masked(navStart + am.index, masks)) continue;
       const a = attrs(am[1]);
       const href = a.href ?? '';
       const dw = a['data-witness'];
@@ -272,10 +419,11 @@ function manifestWitnesses(html, masks) {
   return null;
 }
 
+// W-B: *masks* is the wiki's own five-container mask (inertMasks).
 function hasBaseHref(html, masks) {
-  const baseRe = /<base\b([^>]*)>/gi;
+  BASE_TAG_RE.lastIndex = 0;
   let m;
-  while ((m = baseRe.exec(html)) !== null) {
+  while ((m = BASE_TAG_RE.exec(html)) !== null) {
     if (masked(m.index, masks)) continue;
     if ('href' in attrs(m[1])) return true;
   }
@@ -353,9 +501,9 @@ function verifyWiki(rootPath, core, out = console.log) {
   out('R2 base-neutral       : PASS  (no <base href>)');
 
   const entries = [];
-  const aRe = /<a\b([^>]*)>/gi;
+  A_TAG_RE.lastIndex = 0;
   let am;
-  while ((am = aRe.exec(html)) !== null) {
+  while ((am = A_TAG_RE.exec(html)) !== null) {
     if (masked(am.index, masks)) continue;
     const a = attrs(am[1]);
     if (!('data-doc-pin' in a)) continue;
@@ -404,7 +552,10 @@ function verifyWiki(rootPath, core, out = console.log) {
       failures += 1; continue;
     }
     const leafHtml = readFileSync(leaf, 'utf8');
-    const ws = manifestWitnesses(leafHtml, inertMasks(leafHtml));
+    // W-A: the Core's own §12 mask, not the wiki's wider W-B mask — the
+    // witness list must reproduce exactly what the Core reader's §9.1 gate
+    // already certified over these same bytes.
+    const ws = manifestWitnesses(leafHtml, coreInertMask(leafHtml));
     if (!ws || ws.length === 0) {
       out(`E2 leaf-verifies      : FAIL  ${label} (no manifest witnesses to pin)`);
       failures += 1; continue;
