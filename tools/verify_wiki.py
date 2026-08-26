@@ -28,8 +28,30 @@ full pin, one line per certified entry; the consumer compares that emitted
 list against the shelf the page actually renders. That comparison is the
 final step of the check, and it belongs to the reader.
 
-The masking of comments and of five raw-text/inert containers below is
-discovery HYGIENE, not a browser model, and is disclosed as incomplete.
+TWO MASKS FOR TWO JOBS (wiki-lockstep trial, plans/wiki-lockstep/CONTRACT.md).
+W-A (law): manifest-witness extraction (`manifest_witnesses`) uses the Core
+reader's OWN §12 mask — comments plus <script>/<style> raw-text content,
+`_core_inert_mask`, ported VERBATIM from verify.py's `_build_inert_mask`
+(RP-3: earliest-opening construct wins and consumes through its own close) —
+plus the Core's exact discovery grammar (`_discovery_open_re`, §6.2's OPEN
+set, no `\b`, no IGNORECASE) and the Core's masked `</nav>`-close idiom
+(R4b). This is not a browser model either, but it is the SAME mask and the
+SAME grammar the shipped Core reader already used to accept the leaf, so the
+witness list extracted here cannot diverge from what Core certified over the
+same bytes.
+W-B (policy): shelf-entry discovery (the root's own `<a data-doc-pin>` scan,
+plus the `<base href>` check) keeps its OWN, deliberately WIDER five-
+container mask (`_inert_masks`) — script/style/textarea/title/template plus
+comments, because textarea/title are RCDATA to a browser and un-masking them
+would certify carriers a browser renders as text. This is discovery HYGIENE,
+not a browser model, and is disclosed as incomplete. What changed is the
+MECHANICS, brought to the same RP-3 ground as the Core mask: the same
+left-to-right earliest-opener walk (raw text wins over comments; an unclosed
+construct claims nothing and the scan resumes past its own opener), exact
+ASCII tag names bounded by §6.2's OPEN set (no `\b`), ASCII-only,
+length-preserving case handling (bytes-mode IGNORECASE / `bytes.lower()`),
+and quote-aware tag-end capture (R6) so a quoted '>' inside the opening
+tag's own attributes cannot end it early.
 Whether an HTML reader presents these carriers as live links is outside
 this companion's claim. No additional document grammar is specified here.
 
@@ -104,78 +126,58 @@ from pathlib import Path
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(errors='replace')
 
-# ─── Inert regions: comments + raw-text/inert container content ──────────────
-# script/style are raw-text; textarea/title are raw-text/RCDATA; template is
-# inert. Discovery HYGIENE, disclosed as incomplete: masking these five names
-# keeps the commonest inert text out of the carrier scan, but it is not HTML's
-# tokenizer and does not make the scan browser-equivalent. What the run
-# certifies is the serialized shelf; the emitted VERIFIED SHELF block is how a
-# consumer compares that against the shelf a reader presents.
-_COMMENT_RE = re.compile(rb'<!--.*?-->', re.DOTALL)
-_RAWTEXT_RE = re.compile(rb'<(script|style|textarea|title|template)\b[^>]*>.*?</\1>',
-                         re.IGNORECASE | re.DOTALL)
+# ─── §6.4 ATTR_SEP + ASCII fold — Core's verify.py, ported VERBATIM (W1/W2) ──
+# The frozen 25-codepoint JS-`\s` list (`_JS_WS`) and the full-Unicode
+# `.lower()` name fold this constant and function replace both LAGGED the
+# Core reader's own two 2026-08-22 Operator rulings by two recensions
+# (R8, R12) — see plans/wiki-lockstep/CONTRACT.md classes W1/W2. HTML5's five
+# ASCII whitespace bytes are the separator ground everywhere in THIS reader
+# now, one predicate, not several. Identical, member for member, to verify.py's
+# `_ATTR_SEP` / `_ascii_lower` / `_ASCII_FOLD`.
+_ATTR_SEP = frozenset('\t\n\x0c\r ')
+_ASCII_FOLD = {c: c + 0x20 for c in range(0x41, 0x5B)}
 
 
-def _inert_masks(html: bytes):
-    spans = [(m.start(), m.end()) for m in _COMMENT_RE.finditer(html)]
-    scan = _COMMENT_RE.sub(lambda m: b' ' * (m.end() - m.start()), html)
-    for m in _RAWTEXT_RE.finditer(scan):
-        open_end = scan.index(b'>', m.start()) + 1
-        close_start = m.end() - len(b'</' + m.group(1) + b'>')
-        if open_end < close_start:
-            spans.append((open_end, close_start))
-    spans.sort()
-    return spans
+def _ascii_lower(s: str) -> str:
+    return s.translate(_ASCII_FOLD)
 
 
-def _masked(pos: int, masks) -> bool:
-    for s, e in masks:
-        if s <= pos < e:
-            return True
-        if s > pos:
-            break
-    return False
-
-
-# ─── Attribute tokenizer — quote-aware (§6.4), extraction only ───────────────
-# The post-#134 character walk carried from the Core reader (verify.py /
-# verify.mjs parseTagAttrs). NOT a regex: an unanchored restart regex re-opens
-# the attr-restart forgery class (x:data-witness impersonating the carrier).
-# `_JS_WS` — the character class verify.mjs's tokenizer skips (it reads the
-# document as a UTF-8 string, so its separators are Unicode whitespace).
-_JS_WS = frozenset('\t\n\x0b\x0c\r \xa0\u1680'
-                   + ''.join(chr(c) for c in range(0x2000, 0x200b))
-                   + '\u2028\u2029\u202f\u205f\u3000\ufeff')
-
-
-def _attrs(tag_inner: bytes) -> dict:
-    """Character-level attribute walk. A name runs to the first JS-whitespace,
-    '=', or quote, so a name containing ':' or '.' is ONE name and can never
-    restart the scan mid-name to impersonate a real carrier. Names fold to
-    lowercase; a valueless attribute records None. Last occurrence wins,
-    matching the Core readers."""
+# ─── Attribute tokenizer — quote-aware (§6.4), extraction only ────────────────────────────────────
+# Core's `_attrs`, ported VERBATIM (W2). NOT a regex: an unanchored restart
+# regex re-opens the attr-restart forgery class (x:data-witness impersonating
+# the carrier). *dup_names* is carried from the Core signature but unused by
+# every call site in this file (kept so the function stays byte-for-byte
+# portable, not re-abridged).
+def _attrs(tag_inner: bytes, dup_names: list = None) -> dict:
+    """Character-level attribute walk. A name runs to the first ATTR_SEP
+    byte, '=', or quote, so a name containing ':' or '.' is ONE name and can
+    never restart the scan mid-name to impersonate a real carrier. Names fold
+    ASCII-only (R12 — NOT `str.lower()`); a valueless attribute records None.
+    Last occurrence wins, matching the Core readers."""
     s = tag_inner.decode('utf-8', 'replace')
     attrs = {}
     n = len(s)
     i = 0
     while i < n:
-        while i < n and s[i] in _JS_WS:
+        while i < n and s[i] in _ATTR_SEP:
             i += 1
         if i >= n:
             break
         name_start = i
-        while i < n and s[i] not in _JS_WS and s[i] not in ('=', '"', "'"):
+        while i < n and s[i] not in _ATTR_SEP and s[i] not in ('=', '"', "'"):
             i += 1
         if i == name_start:
             i += 1
             continue
-        name = s[name_start:i].lower()
+        name = _ascii_lower(s[name_start:i])
+        if dup_names is not None and name in attrs:
+            dup_names.append(name)
         j = i
-        while j < n and s[j] in _JS_WS:
+        while j < n and s[j] in _ATTR_SEP:
             j += 1
         if j < n and s[j] == '=':
             j += 1
-            while j < n and s[j] in _JS_WS:
+            while j < n and s[j] in _ATTR_SEP:
                 j += 1
             if j < n and s[j] in ('"', "'"):
                 quote = s[j]
@@ -188,7 +190,7 @@ def _attrs(tag_inner: bytes) -> dict:
                     j += 1
             else:
                 val_start = j
-                while j < n and s[j] not in _JS_WS:
+                while j < n and s[j] not in _ATTR_SEP:
                     j += 1
                 attrs[name] = s[val_start:j]
             i = j
@@ -196,6 +198,112 @@ def _attrs(tag_inner: bytes) -> dict:
             attrs[name] = None
             i = j
     return attrs
+
+
+# ─── W-A mask: Core's §12 mask, ported VERBATIM (W5) ──────────────────────────────
+# `_core_inert_mask` is verify.py's `_build_inert_mask`, unchanged in every
+# particular: two containers (script/style), RP-3's earliest-opener walk.
+# Used ONLY by `manifest_witnesses` below, on the LEAF — the path that must
+# reproduce exactly what the Core reader's §9.1 gate already certified over
+# the same bytes (W-A: law).
+_COMMENT_OPEN = b'<!--'
+_COMMENT_CLOSE = b'-->'
+_CORE_RAWTEXT_OPEN_RE = re.compile(rb'<(script|style)(?=[\t\n\x0c\r />])[^>]*>',
+                                   re.IGNORECASE)
+
+
+def _core_inert_mask(html: bytes) -> list:
+    """RP-3 walk: at each position, the EARLIEST-opening of {next `<!--`,
+    next <script>/<style> open} claims its span and consumes through its OWN
+    close; an unclosed construct claims nothing and the scan resumes just
+    past its opener. Ported verbatim from verify.py's `_build_inert_mask`."""
+    spans = []
+    lowered = html.lower()      # ASCII-only and length-preserving on bytes
+    pos = 0
+    n = len(html)
+    while pos < n:
+        c_start = html.find(_COMMENT_OPEN, pos)
+        m = _CORE_RAWTEXT_OPEN_RE.search(html, pos)
+        r_start = m.start() if m else -1
+        if c_start < 0 and r_start < 0:
+            break
+        if r_start < 0 or (0 <= c_start < r_start):
+            c_end = html.find(_COMMENT_CLOSE, c_start + len(_COMMENT_OPEN))
+            if c_end < 0:
+                pos = c_start + len(_COMMENT_OPEN)
+                continue
+            spans.append((c_start, c_end + len(_COMMENT_CLOSE)))
+            pos = c_end + len(_COMMENT_CLOSE)
+        else:
+            open_end = m.end()
+            close_tag = b'</' + m.group(1).lower() + b'>'
+            close_idx = lowered.find(close_tag, open_end)
+            if close_idx < 0:
+                pos = open_end
+                continue
+            if open_end < close_idx:
+                spans.append((open_end, close_idx))
+            pos = close_idx + len(close_tag)
+    spans.sort()
+    return spans
+
+
+# ─── W-B mask: shelf-discovery — wiki's OWN policy, RP-3 mechanics (W6) ──────
+# Five-container set kept (script|style|textarea|title|template — textarea
+# and title are RCDATA to a browser and un-masking them would certify
+# carriers a browser renders as text); mechanics rebuilt on the same RP-3
+# ground as `_core_inert_mask` above: earliest-opener walk, exact ASCII tag
+# names bounded by §6.2's OPEN set (no `\b` — R11/R12b(b)), and quote-aware
+# tag-end capture (R6) so a quoted '>' inside the opening tag's own
+# attributes cannot end it early (an extension `_core_inert_mask`'s open-tag
+# scan does not need, because this five-name set is wiki's own surface).
+_SHELF_RAWTEXT_OPEN_RE = re.compile(
+    rb'<(script|style|textarea|title|template)(?=[\t\n\x0c\r />])'
+    rb'(?:"[^"]*"|\'[^\']*\'|[^<>\'"])*>',
+    re.IGNORECASE)
+
+
+def _inert_masks(html: bytes) -> list:
+    """W-B: root shelf-discovery mask (`<a data-doc-pin>` scan, `<base>`
+    detection). Same RP-3 walk as `_core_inert_mask`, wider container set."""
+    spans = []
+    lowered = html.lower()
+    pos = 0
+    n = len(html)
+    while pos < n:
+        c_start = html.find(_COMMENT_OPEN, pos)
+        m = _SHELF_RAWTEXT_OPEN_RE.search(html, pos)
+        r_start = m.start() if m else -1
+        if c_start < 0 and r_start < 0:
+            break
+        if r_start < 0 or (0 <= c_start < r_start):
+            c_end = html.find(_COMMENT_CLOSE, c_start + len(_COMMENT_OPEN))
+            if c_end < 0:
+                pos = c_start + len(_COMMENT_OPEN)
+                continue
+            spans.append((c_start, c_end + len(_COMMENT_CLOSE)))
+            pos = c_end + len(_COMMENT_CLOSE)
+        else:
+            open_end = m.end()
+            close_tag = b'</' + m.group(1).lower() + b'>'
+            close_idx = lowered.find(close_tag, open_end)
+            if close_idx < 0:
+                pos = open_end
+                continue
+            if open_end < close_idx:
+                spans.append((open_end, close_idx))
+            pos = close_idx + len(close_tag)
+    spans.sort()
+    return spans
+
+
+def _masked(pos: int, masks) -> bool:
+    for s, e in masks:
+        if s <= pos < e:
+            return True
+        if s > pos:
+            break
+    return False
 
 
 # ─── §6.4 refusal (V24/V25) — shelf entries only; Core owns unit tags ────────
@@ -253,9 +361,36 @@ def _refuse_noncanonical_attrs(tag_inner: bytes, context: str) -> None:
 
 
 # ─── Extraction: manifest witnesses, shelf entries, <base> detection ─────────
-_NAV_OPEN_RE = re.compile(rb'<nav\b([^>]*)>', re.IGNORECASE)
-_A_TAG_RE = re.compile(rb'<a\b([^>]*)>', re.IGNORECASE)
-_BASE_TAG_RE = re.compile(rb'<base\b([^>]*)>', re.IGNORECASE)
+# W3: Core's `_discovery_open_re`, ported VERBATIM. `_DISCOVERY_NEXT` is
+# §6.2's ruled OPEN set (no 0x0B VT — the second 2026-08-22 ruling); the
+# tag name is compared byte for byte (no IGNORECASE — R11/R14: `<NAV
+# id="manifest">` is NOT the manifest, `<A href=...>` is NOT a link); the
+# attribute blob is captured quote-aware (R6), so a quoted '>' inside an
+# attribute value can never end the tag early.
+_DISCOVERY_NEXT = rb'[\t\n\x0c\r />]'   # §6.2's ruled OPEN set, verbatim
+
+
+def _discovery_open_re(tag: str):
+    return re.compile(
+        rb'<' + tag.encode('ascii') + rb'(?=' + _DISCOVERY_NEXT + rb')'
+        rb'((?:"[^"]*"|\'[^\']*\'|[^<>\'"])*)>')
+
+
+_NAV_OPEN_RE = _discovery_open_re('nav')
+_A_TAG_RE = _discovery_open_re('a')
+# <base> is the ONE discovery carrier whose referent is the BROWSER, not the
+# ruled format: R2 exists because an HTML reader re-aims every rendered shelf
+# href against <base href>, and a browser's tag-name match is ASCII
+# case-insensitive — <BASE> IS a base to the hazard R2 refuses. So the tag
+# NAME folds ASCII case here, enumerated letter by letter (no IGNORECASE
+# flag), while the §6.2 OPEN-set lookahead and the quote-aware tag end stay
+# exactly as `_discovery_open_re` builds them. <nav>/<a> above stay
+# case-sensitive: their referent IS the ruled format (R11/R14). 2026-08-26,
+# from Codex's PR #10 finding, confirmed by Elenchos and Mnemon; sort each
+# check by what it answers to before porting its grammar.
+_BASE_TAG_RE = re.compile(
+    rb'<[Bb][Aa][Ss][Ee](?=' + _DISCOVERY_NEXT + rb')'
+    rb'((?:"[^"]*"|\'[^\']*\'|[^<>\'"])*)>')
 _HEX64_RE = re.compile(r'^[0-9a-f]{64}$')
 
 # Portable shelf-link grammar — the only href shape the wiki layer will
@@ -312,17 +447,48 @@ def _exact_case_resolve(base: Path, href: str):
 def manifest_witnesses(html: bytes, masks):
     """Ordered manifest data-witness values from <nav id="manifest"> fragment
     links. Extraction only — called AFTER the Core reader has accepted the
-    document, so the values are already law-checked. None if no manifest."""
+    document, so the values are already law-checked. None if no manifest.
+
+    W-A (law): *masks* is expected to be `_core_inert_mask(html)` — the
+    Core's OWN §12 mask — so the `<nav>`/`<a>` discovery below, and the
+    `</nav>`-close search, see EXACTLY what the Core reader's §9.1 gate
+    already certified over the same bytes (W3, W4, W5, ported verbatim)."""
     for m in _NAV_OPEN_RE.finditer(html):
         if _masked(m.start(), masks):
             continue
         if _attrs(m.group(1)).get('id') != 'manifest':
             continue
-        nav_end = html.find(b'</nav>', m.end())
+        nav_start = m.end()
+        # W4 / R4b (ported verbatim from verify.py's `_verify_manifest_first`):
+        # the first `</nav>` at or after nav_start that is NOT itself inside a
+        # masked (§12) region. A `</nav>` written inside an HTML comment
+        # INSIDE the manifest (e.g. a commented-out usage example) is not the
+        # manifest's real close and must not truncate the witness list.
+        search_pos = nav_start
+        nav_end = -1
+        while True:
+            candidate = html.find(b'</nav>', search_pos)
+            if candidate < 0:
+                break
+            if _masked(candidate, masks):
+                search_pos = candidate + 1
+                continue
+            nav_end = candidate
+            break
         if nav_end < 0:
+            # W4-note: the wiki layer never re-judges the document — the leaf
+            # was already Core-ACCEPTED, so an unterminated manifest cannot
+            # legally reach here on the law path. If it nonetheless does,
+            # return the same "no manifest witnesses" outcome as before —
+            # never invent a document verdict that belongs to the Core.
             return None
         ws = []
-        for am in _A_TAG_RE.finditer(html, m.end(), nav_end):
+        for am in _A_TAG_RE.finditer(html, nav_start, nav_end):
+            # §12 masked regions are invisible here too — an <a> written
+            # inside a comment inside nav#manifest is not a live manifest
+            # entry, mirroring verify.py's `_verify_manifest_first`.
+            if _masked(am.start(), masks):
+                continue
             a = _attrs(am.group(1))
             href = a.get('href') or ''
             dw = a.get('data-witness')
@@ -334,7 +500,8 @@ def manifest_witnesses(html: bytes, masks):
 
 def has_base_href(html: bytes, masks) -> bool:
     """True if the document carries a live <base> with an href — which changes
-    where every relative shelf href points (fail-closed trigger, R2)."""
+    where every relative shelf href points (fail-closed trigger, R2). W-B:
+    *masks* is the wiki's own five-container mask (`_inert_masks`)."""
     for m in _BASE_TAG_RE.finditer(html):
         if _masked(m.start(), masks):
             continue
@@ -486,7 +653,10 @@ def verify_wiki(root_path: Path, core: Path) -> int:
             failures += 1
             continue
         leaf_html = leaf.read_bytes()
-        ws = manifest_witnesses(leaf_html, _inert_masks(leaf_html))
+        # W-A: the Core's own §12 mask, not the wiki's wider W-B mask — the
+        # witness list must reproduce exactly what the Core reader's §9.1
+        # gate already certified over these same bytes.
+        ws = manifest_witnesses(leaf_html, _core_inert_mask(leaf_html))
         if not ws:
             print(f'E2 leaf-verifies      : FAIL  {label} '
                   '(no manifest witnesses to pin)')
@@ -666,6 +836,18 @@ def selftest(core: Path) -> int:
                  base_href='other/')
         code, out = run(root)
         checks.append(('T10 <base href> on the root is refused (fail closed)',
+                       code == 1 and 'R2 base-neutral       : FAIL' in out))
+        root.write_bytes(root_bytes)
+
+        # T10b case-variant <BASE href> -> refused all the same. R2's referent
+        # is the browser, whose tag-name match is ASCII case-insensitive; the
+        # Codex PR #10 finding was this exact shape slipping through a
+        # case-sensitive port of the discovery grammar.
+        _mk_root(d, [('a.doc.html', doc_pin(ws_a)), ('b.doc.html', doc_pin(ws_b))],
+                 base_href='other/')
+        root.write_bytes(root.read_bytes().replace(b'<base ', b'<BASE ', 1))
+        code, out = run(root)
+        checks.append(('T10b case-variant <BASE href> is refused (fail closed)',
                        code == 1 and 'R2 base-neutral       : FAIL' in out))
         root.write_bytes(root_bytes)
 

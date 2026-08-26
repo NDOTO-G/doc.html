@@ -12,6 +12,54 @@ path breaks every link that pointed at it.
 
 ---
 
+## v0.7.1 — 2026-08-26
+
+**The wiki companions join the ruled grammar.** `tools/verify_wiki.py` and `verify_wiki.mjs`
+are replaced by the repaired pair from the maker's repository. The Core readers, `SPEC.md`, and
+every document are byte-unchanged from v0.7.0; the shipped shelf verifies identically before and
+after (9 carriers, both languages, byte-identical output).
+
+**Why.** The v0.6.0 and v0.7.0 CHANGELOGs disclosed that the wiki companions still carried v0.4
+manifest semantics — by v0.7.0 they lagged the Core pair by two recensions. The lag was real and
+live: the companions' own discovery grammar (full-Unicode case-insensitive scans, word-boundary
+tag matches, quote-unaware tag ends, a raw `</nav>` byte-find, a 25-codepoint separator set, and
+comments-over-raw-text mask precedence) could locate a different manifest, extract a different
+witness list, or hide a different set of shelf carriers than the Core reader certifies over the
+same accepted bytes — the same two-readers-two-grammars disease the Core recensions were cut
+for, one layer up. The repair ports the Core's ruled primitives: witness extraction (which feeds
+the doc-pin) now reproduces the Core's §12 view verbatim, and shelf discovery keeps its
+disclosed five-container hygiene rebuilt on the ruled mechanics (left-to-right earliest-opener
+walk, exact ASCII tag names, ASCII-only folding, quote-aware tag ends).
+
+**Found in review, fixed before release — twice.** First, the repair briefly introduced a
+boundary defect in the JS companion (an index-guarded scan that a regex match could straddle
+where Python's is hard-bounded); adversarial review caught it as a live py/mjs split on a
+Core-accepted leaf, and the shipped pair carries the slice-bounded fix with a fixture pinning
+the shape. Second, the port briefly applied the Core's case-sensitive discovery grammar to
+`<base>` detection, so a case-variant `<BASE href>` slipped past the base-neutrality refusal
+(R2) on both languages — caught by Codex's automated review on this release's open PR, and
+confirmed by adversarial review before merge. The shipped pair matches the `<base>` tag name
+ASCII-case-insensitively — R2 exists for the browser's sake, and a browser's tag-name match is
+case-insensitive — while `<nav>`/`<a>` discovery stays exactly case-sensitive (their referent
+is the ruled format). A fixture pins the case-variant shape.
+
+**Boundary (call-out).** Against the previously shipped companions this narrows two shapes (a
+case-mismatched decoy manifest can no longer supply the pin's witness list; separator bytes
+outside HTML5's five no longer split attributes in shelf discovery) and loosens five (quoted `>`
+no longer truncates manifest anchors or hides carriers; a commented-out `</nav>` no longer
+truncates the witness list; carriers after unclosed or custom-element raw-text openers are no
+longer silently invisible). No shipped document's verdict moves; every change is fixtured and
+declared in the maker's repository. The `<base href>` refusal's reach is unchanged from the
+previously shipped companions: every ASCII casing of `<base>` is refused, as before (the
+case-variant slip described above lived only in this release's pre-merge candidate and never
+shipped).
+
+The maker-side gate (`wiki_lockstep`) now certifies the pair: rc agreement and byte-identical
+verdicts across both languages, a cross-check of witness extraction against the Core reader's
+own grammar, and the shipped-shelf non-movement check.
+
+---
+
 ## v0.7.0 — 2026-08-24
 
 **The second one-grammar recension: format v0.5 → v0.6.** Both reference readers and `SPEC.md`
