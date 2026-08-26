@@ -353,7 +353,18 @@ function discoveryOpenRe(tag) {
 }
 const NAV_OPEN_RE = discoveryOpenRe('nav');
 const A_TAG_RE = discoveryOpenRe('a');
-const BASE_TAG_RE = discoveryOpenRe('base');
+// <base> is the ONE discovery carrier whose referent is the BROWSER, not the
+// ruled format: R2 exists because an HTML reader re-aims every rendered shelf
+// href against <base href>, and a browser's tag-name match is ASCII
+// case-insensitive — <BASE> IS a base to the hazard R2 refuses. So the tag
+// NAME folds ASCII case here, enumerated letter by letter (no `i` flag),
+// while the §6.2 OPEN-set lookahead and the quote-aware tag end stay exactly
+// as `discoveryOpenRe` builds them. <nav>/<a> above stay case-sensitive:
+// their referent IS the ruled format (R11/R14). 2026-08-26, from Codex's PR
+// #10 finding, confirmed by Elenchos and Mnemon; sort each check by what it
+// answers to before porting its grammar.
+const BASE_TAG_RE = new RegExp(
+  `<[Bb][Aa][Ss][Ee](?=[\\t\\n\\f\\r />])((?:"[^"]*"|'[^']*'|[^<>'"])*)>`, 'g');
 
 // ─── Extraction: manifest witnesses, <base> detection ────────────────────────
 // W-A (law): *masks* is expected to be coreInertMask(html) — the Core's OWN
@@ -699,6 +710,17 @@ function selftest(core) {
     mkRoot(dir, [['a.doc.html', docPin(wsA)], ['b.doc.html', docPin(wsB)]], [], 'other/');
     r = run(root);
     checks.push(['T10 <base href> on the root is refused (fail closed)',
+      r.code === 1 && r.out.includes('R2 base-neutral       : FAIL')]);
+    writeFileSync(root, rootBytes, 'utf8');
+
+    // T10b case-variant <BASE href> -> refused all the same. R2's referent
+    // is the browser, whose tag-name match is ASCII case-insensitive; the
+    // Codex PR #10 finding was this exact shape slipping through a
+    // case-sensitive port of the discovery grammar.
+    mkRoot(dir, [['a.doc.html', docPin(wsA)], ['b.doc.html', docPin(wsB)]], [], 'other/');
+    writeFileSync(root, readFileSync(root, 'utf8').replace('<base ', '<BASE '), 'utf8');
+    r = run(root);
+    checks.push(['T10b case-variant <BASE href> is refused (fail closed)',
       r.code === 1 && r.out.includes('R2 base-neutral       : FAIL')]);
     writeFileSync(root, rootBytes, 'utf8');
 

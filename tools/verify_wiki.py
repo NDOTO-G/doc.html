@@ -378,7 +378,19 @@ def _discovery_open_re(tag: str):
 
 _NAV_OPEN_RE = _discovery_open_re('nav')
 _A_TAG_RE = _discovery_open_re('a')
-_BASE_TAG_RE = _discovery_open_re('base')
+# <base> is the ONE discovery carrier whose referent is the BROWSER, not the
+# ruled format: R2 exists because an HTML reader re-aims every rendered shelf
+# href against <base href>, and a browser's tag-name match is ASCII
+# case-insensitive — <BASE> IS a base to the hazard R2 refuses. So the tag
+# NAME folds ASCII case here, enumerated letter by letter (no IGNORECASE
+# flag), while the §6.2 OPEN-set lookahead and the quote-aware tag end stay
+# exactly as `_discovery_open_re` builds them. <nav>/<a> above stay
+# case-sensitive: their referent IS the ruled format (R11/R14). 2026-08-26,
+# from Codex's PR #10 finding, confirmed by Elenchos and Mnemon; sort each
+# check by what it answers to before porting its grammar.
+_BASE_TAG_RE = re.compile(
+    rb'<[Bb][Aa][Ss][Ee](?=' + _DISCOVERY_NEXT + rb')'
+    rb'((?:"[^"]*"|\'[^\']*\'|[^<>\'"])*)>')
 _HEX64_RE = re.compile(r'^[0-9a-f]{64}$')
 
 # Portable shelf-link grammar — the only href shape the wiki layer will
@@ -824,6 +836,18 @@ def selftest(core: Path) -> int:
                  base_href='other/')
         code, out = run(root)
         checks.append(('T10 <base href> on the root is refused (fail closed)',
+                       code == 1 and 'R2 base-neutral       : FAIL' in out))
+        root.write_bytes(root_bytes)
+
+        # T10b case-variant <BASE href> -> refused all the same. R2's referent
+        # is the browser, whose tag-name match is ASCII case-insensitive; the
+        # Codex PR #10 finding was this exact shape slipping through a
+        # case-sensitive port of the discovery grammar.
+        _mk_root(d, [('a.doc.html', doc_pin(ws_a)), ('b.doc.html', doc_pin(ws_b))],
+                 base_href='other/')
+        root.write_bytes(root.read_bytes().replace(b'<base ', b'<BASE ', 1))
+        code, out = run(root)
+        checks.append(('T10b case-variant <BASE href> is refused (fail closed)',
                        code == 1 and 'R2 base-neutral       : FAIL' in out))
         root.write_bytes(root_bytes)
 
